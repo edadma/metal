@@ -2,7 +2,6 @@
 #define METAL_H
 
 #include <setjmp.h>
-#include <stddef.h>
 #include <stdint.h>
 
 // Cell types
@@ -21,8 +20,9 @@ typedef enum : uint8_t {
   CELL_EMPTY,
   CELL_NIL,
   CELL_DATETIME,
-  CELL_PAIR,
+  CELL_COORDINATE,
   CELL_COMPLEX,
+  CELL_RGB,
 
   // combined types
   CELL_INT_PAIR,
@@ -63,7 +63,7 @@ typedef struct cell {
     } datetime;
     struct {
       float lon, lat;
-    } pair;
+    } coordinate;
     struct {
       float re, im;
     } complex;
