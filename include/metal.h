@@ -36,7 +36,32 @@ typedef enum : uint8_t {
   CELL_FLAG_TEMPORARY = 1 << 3,   // 0x0008
 } cell_flags_t;
 
-typedef void (*native_func_t)(void);
+#define DATA_STACK_SIZE 256
+#define RETURN_STACK_SIZE 256
+
+// Execution context
+typedef struct {
+  // Stack management
+  cell_t data_stack[DATA_STACK_SIZE];
+  cell_t return_stack[RETURN_STACK_SIZE];
+  int data_stack_ptr;
+  int return_stack_ptr;
+
+  // Instruction pointer (for threaded code)
+  cell_t** ip;
+
+  // Error handling
+  jmp_buf error_jmp;  // For longjmp on errors
+  int error_code;
+  const char* error_msg;
+
+  // Context identification
+  const char* name;  // "REPL", "TIMER_IRQ", etc.
+  bool is_interrupt_handler;
+
+} context_t;
+
+typedef void (*native_func_t)(context_t* context);
 
 // Metal cell - 12 bytes
 typedef struct cell {
@@ -76,27 +101,6 @@ typedef struct {
   // Actual data follows
 } alloc_header_t;
 
-// Execution context
-typedef struct {
-  // Stack management
-  cell_t* data_stack;
-  cell_t* data_top;
-  cell_t* data_limit;
-
-  cell_t* return_stack;
-  cell_t* return_top;
-  cell_t* return_limit;
-
-  // Instruction pointer (for threaded code)
-  cell_t** ip;
-
-  // Error handling
-  jmp_buf error_jmp;  // For longjmp on errors
-  int error_code;
-  const char* error_msg;
-
-} context_t;
-
 // Dictionary entry
 typedef struct {
   char name[32];      // Word name
@@ -126,11 +130,11 @@ context_t* metal_current_context(void);
 cell_t new_int32(int32_t value);
 cell_t new_int64(int64_t value);
 cell_t new_float(double value);
-cell_t new_string(const char* str);
+cell_t new_string(const char* utf8);
 cell_t new_empty(void);
 cell_t new_nil(void);
 cell_t new_code(void);
-cell_t new_nil(void);
+cell_t new_native(void);
 
 // Memory management
 void* metal_alloc(size_t size);
