@@ -14,17 +14,14 @@
 
 #include "core.h"
 #include "debug.h"
+#include "dictionary.h"
 #include "metal.h"
 #include "stack.h"
+#include "tools.h"
 #include "util.h"
 
 // Global state
 static context_t main_context;
-
-// Simple dictionary - just a linear array
-#define MAX_DICT_ENTRIES 256
-static dict_entry_t dictionary[MAX_DICT_ENTRIES];
-static int dict_size = 0;
 
 #ifdef METAL_TARGET_PICO
 static mutex_t memory_mutex;
@@ -261,87 +258,12 @@ void error(const char* msg) {
   // For now, just continue. Later we'll use longjmp
 }
 
-static void native_dot_s(context_t* ctx) { print_data_stack(ctx); }
-
-static void native_bye([[maybe_unused]] context_t* ctx) {
-  printf("Goodbye!\n");
-  exit(0);
-}
-
 // New cell creation function
 cell_t new_pointer(cell_t* target) {
   cell_t cell = {0};
   cell.type = CELL_POINTER;
   cell.payload.pointer = target;
   return cell;
-}
-
-// WORDS - List all words in the dictionary
-static void native_words([[maybe_unused]] context_t* ctx) {
-  printf("Dictionary (%d words):\n", dict_size);
-
-  int words_per_line = 8;  // Adjust for readability
-  for (int i = 0; i < dict_size; i++) {
-    printf("%-12s", dictionary[i].name);  // Left-aligned, 12 chars wide
-
-    if ((i + 1) % words_per_line == 0 || i == dict_size - 1) {
-      printf("\n");
-    }
-  }
-}
-
-// Dictionary management
-void add_native_word(const char* name, native_func_t func, const char* help) {
-  if (dict_size >= MAX_DICT_ENTRIES) {
-    error("Dictionary full");
-    return;
-  }
-
-  strncpy(dictionary[dict_size].name, name, 31);
-  dictionary[dict_size].name[31] = '\0';
-
-  cell_t def = {0};
-  def.type = CELL_NATIVE;
-  def.payload.native = func;
-
-  dictionary[dict_size].definition = def;
-  dictionary[dict_size].help = help;  // Store help text
-  dict_size++;
-}
-
-// HELP - Show help for a word
-static void native_help([[maybe_unused]] context_t* ctx) {
-  // We need to get the next token from input
-  // For now, let's implement a simple version that shows all help
-  printf("Available words with help:\n\n");
-
-  for (int i = 0; i < dict_size; i++) {
-    if (dictionary[i].help) {
-      printf("%-12s %s\n", dictionary[i].name, dictionary[i].help);
-    }
-  }
-}
-
-int stricmp(const char* s1, const char* s2) {
-  while (*s1 && *s2) {
-    int c1 = tolower((unsigned char)*s1);
-    int c2 = tolower((unsigned char)*s2);
-
-    if (c1 != c2) return c1 - c2;
-    s1++;
-    s2++;
-  }
-
-  return tolower((unsigned char)*s1) - tolower((unsigned char)*s2);
-}
-
-dict_entry_t* find_word(const char* name) {
-  for (int i = dict_size - 1; i >= 0; i--) {
-    if (stricmp(dictionary[i].name, name) == 0) {
-      return &dictionary[i];
-    }
-  }
-  return NULL;
 }
 
 // Simple tokenizer
@@ -403,7 +325,7 @@ metal_result_t metal_interpret(const char* input) {
     }
 
     // Try to find in dictionary
-    dict_entry_t* word = find_word(token);
+    dict_entry_t* word = dict_find_word(token);
     if (word) {
       if (word->definition.type == CELL_NATIVE) {
         word->definition.payload.native(&main_context);
@@ -423,17 +345,12 @@ metal_result_t metal_interpret(const char* input) {
 
 // Initialize built-in words
 void init_dictionary(void) {
-  add_core_words();
-
-  add_native_word(".S", native_dot_s, "( -- ) Show stack contents");
-  add_native_word("BYE", native_bye, "( -- ) Exit Metal");
-  // Dictionary introspection
-  add_native_word("WORDS", native_words, "( -- ) List all available words");
-  add_native_word("HELP", native_help, "( -- ) Show help for all words");
+  add_core_words();   // Core language features
+  add_tools_words();  // Development tools
 
   // Debug words (only when debug support compiled in)
 #ifdef DEBUG_ENABLED
-  add_debug_words();
+  add_debug_words();  // Debug commands
 #endif
 }
 
@@ -490,6 +407,7 @@ int main(void) {
 
   // Initialize system
   metal_init_context(&main_context);
+  dict_init();  // Initialize dictionary first
   init_dictionary();
   char input[256];
   while (1) {

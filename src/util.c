@@ -1,5 +1,6 @@
 #include "util.h"
 
+#include <ctype.h>
 #include <stdio.h>
 
 void print_cell(const cell_t* cell) {
@@ -48,4 +49,18 @@ void print_cell(const cell_t* cell) {
       printf("<type %d>", cell->type);
       break;
   }
+}
+
+// Case-insensitive string comparison
+int stricmp(const char* s1, const char* s2) {
+  while (*s1 && *s2) {
+    int c1 = tolower((unsigned char)*s1);
+    int c2 = tolower((unsigned char)*s2);
+
+    if (c1 != c2) return c1 - c2;
+    s1++;
+    s2++;
+  }
+
+  return tolower((unsigned char)*s1) - tolower((unsigned char)*s2);
 }

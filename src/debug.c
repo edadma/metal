@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "dictionary.h"
 #include "metal.h"  // Need this for context_t and add_native_word
 
 // Global debug flag
@@ -41,8 +42,10 @@ static void native_debug_off([[maybe_unused]] context_t* ctx) {
 
 // Add debug words to dictionary
 void add_debug_words(void) {
-  add_native_word("DEBUG-ON", native_debug_on, "( -- ) Enable debug output");
-  add_native_word("DEBUG-OFF", native_debug_off, "( -- ) Disable debug output");
+  dict_add_native_word("DEBUG-ON", native_debug_on,
+                       "( -- ) Enable debug output");
+  dict_add_native_word("DEBUG-OFF", native_debug_off,
+                       "( -- ) Disable debug output");
 }
 
 #endif
