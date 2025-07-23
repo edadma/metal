@@ -8,7 +8,7 @@
 #include "stack.h"
 
 // External references to dictionary (defined in main.c)
-extern dict_entry_t dictionary[];
+extern dictionary_entry_t dictionary[];
 extern int dict_size;
 
 // Stack introspection
@@ -25,13 +25,14 @@ static void native_bye([[maybe_unused]] context_t* ctx) {
 // Meta commands
 
 static void native_words([[maybe_unused]] context_t* ctx) {
-  printf("Dictionary (%d words):\n", dict_get_size());
+  printf("Dictionary (%d words):\n", get_dictionary_size());
 
   int words_per_line = 8;  // Adjust for readability
-  for (int i = 0; i < dict_get_size(); i++) {
-    printf("%-12s", dict_get_entry(i)->name);  // Left-aligned, 12 chars wide
+  for (int i = 0; i < get_dictionary_size(); i++) {
+    printf("%-12s",
+           get_dictionary_entry(i)->name);  // Left-aligned, 12 chars wide
 
-    if ((i + 1) % words_per_line == 0 || i == dict_get_size() - 1) {
+    if ((i + 1) % words_per_line == 0 || i == get_dictionary_size() - 1) {
       printf("\n");
     }
   }
@@ -42,8 +43,8 @@ static void native_help([[maybe_unused]] context_t* ctx) {
   // For now, let's implement a simple version that shows all help
   printf("Available words with help:\n\n");
 
-  for (int i = 0; i < dict_get_size(); i++) {
-    dict_entry_t* entry = dict_get_entry(i);
+  for (int i = 0; i < get_dictionary_size(); i++) {
+    dictionary_entry_t* entry = get_dictionary_entry(i);
 
     printf("%-12s %s\n", entry->name, entry->help);
   }

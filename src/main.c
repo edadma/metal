@@ -96,7 +96,7 @@ metal_result_t metal_interpret(const char* input) {
     }
 
     // Try to find in dictionary
-    dict_entry_t* word = dict_find_word(token);
+    dictionary_entry_t* word = find_word(token);
     if (word) {
       if (word->definition.type == CELL_NATIVE) {
         word->definition.payload.native(&main_context);
@@ -115,7 +115,7 @@ metal_result_t metal_interpret(const char* input) {
 }
 
 // Initialize built-in words
-void init_dictionary(void) {
+void populate_dictionary(void) {
   add_core_words();   // Core language features
   add_tools_words();  // Development tools
 
@@ -179,8 +179,8 @@ int main(void) {
   // Initialize system
   memory_init();
   init_context(&main_context);
-  dict_init();  // Initialize dictionary first
-  init_dictionary();
+  dictionary_init();  // Initialize dictionary first
+  populate_dictionary();
   char input[256];
   while (1) {
     printf("\nok> ");
