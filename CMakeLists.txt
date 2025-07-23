@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
+# Options
+option(DEBUG_OPTION "Enable debug output" ON)
+
 # Check TARGET_PLATFORM variable
 if (NOT DEFINED TARGET_PLATFORM)
     set(TARGET_PLATFORM "host")
@@ -38,6 +41,7 @@ endif ()
 # Common source files
 set(METAL_SOURCES
         src/main.c
+        src/debug.c
 )
 
 # Common include directories
@@ -73,4 +77,12 @@ else ()
 
     # Host-specific settings
     target_compile_options(metal PRIVATE -Wall -Wextra)
+
+    # Link pthread on host
+    target_link_libraries(metal pthread)
+endif ()
+
+# Debug option
+if (DEBUG_OPTION)
+    target_compile_definitions(metal PRIVATE DEBUG_ENABLED=1)
 endif ()

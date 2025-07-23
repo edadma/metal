@@ -141,7 +141,7 @@ typedef enum {
 // Core interpreter functions
 metal_result_t metal_interpret(const char* input);
 bool metal_input_complete(const char* input);
-void metal_error(const char* msg);
+void error(const char* msg);
 
 // Context management
 void metal_init_context(context_t* ctx);
@@ -167,9 +167,9 @@ void metal_retain(cell_t* cell);
 void metal_release(cell_t* cell);
 
 // Stack operations
-void metal_push(context_t* ctx, cell_t cell);
-cell_t metal_pop(context_t* ctx);
-cell_t metal_peek(context_t* ctx, int depth);
-bool metal_stack_empty(context_t* ctx);
+void data_push(context_t* ctx, cell_t cell);
+cell_t data_pop(context_t* ctx);
+cell_t data_peek(context_t* ctx, int depth);
+bool is_data_empty(context_t* ctx);
 
 #endif  // METAL_H

@@ -14,6 +14,7 @@
 #endif
 
 // Include our header
+#include "debug.h"
 #include "metal.h"
 
 // Global state
@@ -32,6 +33,8 @@ static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Memory management
 void* metal_alloc(size_t size) {
+  debug("Allocating %zu bytes", size);
+
 #ifdef METAL_TARGET_PICO
   mutex_enter_blocking(&memory_mutex);
 #else
@@ -40,7 +43,7 @@ void* metal_alloc(size_t size) {
 
   alloc_header_t* header = malloc(sizeof(alloc_header_t) + size);
   if (!header) {
-    metal_error("Out of memory");
+    error("Out of memory");
 #ifdef METAL_TARGET_PICO
     mutex_exit(&memory_mutex);
 #else
@@ -70,7 +73,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
     // Just allocate new
     alloc_header_t* header = malloc(sizeof(alloc_header_t) + new_size);
     if (!header) {
-      metal_error("Out of memory");
+      error("Out of memory");
 #ifdef METAL_TARGET_PICO
       mutex_exit(&memory_mutex);
 #else
@@ -93,7 +96,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
       realloc(old_header, sizeof(alloc_header_t) + new_size);
 
   if (!new_header) {
-    metal_error("Out of memory");
+    error("Out of memory");
 #ifdef METAL_TARGET_PICO
     mutex_exit(&memory_mutex);
 #else
@@ -246,12 +249,14 @@ cell_t new_nil(void) {
 }
 
 // Stack operations
-// Stack operations
-void metal_push(context_t* ctx, cell_t cell) {
+void data_push(context_t* ctx, cell_t cell) {
   if (ctx->data_stack_ptr >= DATA_STACK_SIZE) {
-    metal_error("Data stack overflow");
+    error("Data stack overflow");
     return;
   }
+
+  debug("Pushing cell type %d to stack (depth: %d)", cell.type,
+        ctx->data_stack_ptr);
 
   // Retain reference if needed
   metal_retain(&cell);
@@ -259,9 +264,9 @@ void metal_push(context_t* ctx, cell_t cell) {
   ctx->data_stack[ctx->data_stack_ptr++] = cell;
 }
 
-cell_t metal_pop(context_t* ctx) {
+cell_t data_pop(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
-    metal_error("Data stack underflow");
+    error("Data stack underflow");
     return new_empty();
   }
 
@@ -270,16 +275,16 @@ cell_t metal_pop(context_t* ctx) {
   return cell;
 }
 
-cell_t metal_peek(context_t* ctx, int depth) {
+cell_t data_peek(context_t* ctx, int depth) {
   if (depth >= ctx->data_stack_ptr || depth < 0) {
-    metal_error("Stack index out of range");
+    error("Stack index out of range");
     return new_empty();
   }
 
   return ctx->data_stack[ctx->data_stack_ptr - 1 - depth];
 }
 
-bool metal_stack_empty(context_t* ctx) { return ctx->data_stack_ptr == 0; }
+bool is_data_empty(context_t* ctx) { return ctx->data_stack_ptr == 0; }
 
 // Context management
 void metal_init_context(context_t* ctx) {
@@ -288,7 +293,7 @@ void metal_init_context(context_t* ctx) {
 }
 
 // Error handling
-void metal_error(const char* msg) {
+void error(const char* msg) {
   printf("ERROR: %s\n", msg);
   // For now, just continue. Later we'll use longjmp
 }
@@ -296,52 +301,52 @@ void metal_error(const char* msg) {
 // Native word implementations
 static void native_dup(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
-    metal_error("DUP: stack underflow");
+    error("DUP: stack underflow");
     return;
   }
 
-  cell_t top = metal_peek(ctx, 0);
-  metal_push(ctx, top);
+  cell_t top = data_peek(ctx, 0);
+  data_push(ctx, top);
 }
 
 static void native_drop(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
-    metal_error("DROP: stack underflow");
+    error("DROP: stack underflow");
     return;
   }
 
-  cell_t cell = metal_pop(ctx);
+  cell_t cell = data_pop(ctx);
   metal_release(&cell);
 }
 
 static void native_swap(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
-    metal_error("SWAP: insufficient stack");
+    error("SWAP: insufficient stack");
     return;
   }
 
-  cell_t a = metal_pop(ctx);
-  cell_t b = metal_pop(ctx);
-  metal_push(ctx, a);
-  metal_push(ctx, b);
+  cell_t a = data_pop(ctx);
+  cell_t b = data_pop(ctx);
+  data_push(ctx, a);
+  data_push(ctx, b);
 }
 
 static void native_add(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
-    metal_error("+ : insufficient stack");
+    error("+ : insufficient stack");
     return;
   }
 
-  cell_t b = metal_pop(ctx);
-  cell_t a = metal_pop(ctx);
+  cell_t b = data_pop(ctx);
+  cell_t a = data_pop(ctx);
 
   // Simple integer addition for now
   if (a.type == CELL_INT32 && b.type == CELL_INT32) {
-    metal_push(ctx, new_int32(a.payload.i32 + b.payload.i32));
+    data_push(ctx, new_int32(a.payload.i32 + b.payload.i32));
   } else {
-    metal_error("+ : type mismatch");
-    metal_push(ctx, a);
-    metal_push(ctx, b);
+    error("+ : type mismatch");
+    data_push(ctx, a);
+    data_push(ctx, b);
   }
 
   metal_release(&a);
@@ -399,11 +404,11 @@ void print_cell(const cell_t* cell) {
 // Updated PRINT function to handle arrays
 static void native_print(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
-    metal_error("PRINT: stack underflow");
+    error("PRINT: stack underflow");
     return;
   }
 
-  cell_t cell = metal_pop(ctx);
+  cell_t cell = data_pop(ctx);
   print_cell(&cell);
   metal_release(&cell);
 }
@@ -470,24 +475,24 @@ static void native_words([[maybe_unused]] context_t* ctx) {
 }
 
 // [] - Create empty array (push CELL_NIL)
-static void native_array_start(context_t* ctx) { metal_push(ctx, new_nil()); }
+static void native_array_start(context_t* ctx) { data_push(ctx, new_nil()); }
 
 // , - Append element to array
 static void native_comma(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
-    metal_error(", : insufficient stack (need array and element)");
+    error(", : insufficient stack (need array and element)");
     return;
   }
 
-  cell_t element = metal_pop(ctx);
-  cell_t array_cell = metal_pop(ctx);
+  cell_t element = data_pop(ctx);
+  cell_t array_cell = data_pop(ctx);
 
   if (array_cell.type == CELL_NIL) {
     // Convert NIL to ARRAY with first element
     array_data_t* data = create_array_data(1);
     if (!data) {
-      metal_push(ctx, array_cell);
-      metal_push(ctx, element);
+      data_push(ctx, array_cell);
+      data_push(ctx, element);
       return;
     }
 
@@ -501,7 +506,7 @@ static void native_comma(context_t* ctx) {
     new_array.type = CELL_ARRAY;
     new_array.payload.ptr = data;
 
-    metal_push(ctx, new_array);
+    data_push(ctx, new_array);
     metal_release(&array_cell);
 
   } else if (array_cell.type == CELL_ARRAY) {
@@ -511,8 +516,8 @@ static void native_comma(context_t* ctx) {
     if (data->length >= data->capacity) {
       data = resize_array_data(data, data->capacity + 1);
       if (!data) {
-        metal_push(ctx, array_cell);
-        metal_push(ctx, element);
+        data_push(ctx, array_cell);
+        data_push(ctx, element);
         return;
       }
       // Update the array cell's pointer (realloc might have moved it)
@@ -524,12 +529,12 @@ static void native_comma(context_t* ctx) {
     data->length++;
     metal_retain(&element);  // Array now owns this reference
 
-    metal_push(ctx, array_cell);
+    data_push(ctx, array_cell);
 
   } else {
-    metal_error(", : can only append to arrays");
-    metal_push(ctx, array_cell);
-    metal_push(ctx, element);
+    error(", : can only append to arrays");
+    data_push(ctx, array_cell);
+    data_push(ctx, element);
     return;
   }
 
@@ -539,20 +544,20 @@ static void native_comma(context_t* ctx) {
 // LENGTH - Get array length
 static void native_length(context_t* ctx) {
   if (ctx->data_stack_ptr < 1) {
-    metal_error("LENGTH: stack underflow");
+    error("LENGTH: stack underflow");
     return;
   }
 
-  cell_t array_cell = metal_pop(ctx);
+  cell_t array_cell = data_pop(ctx);
 
   if (array_cell.type == CELL_NIL) {
-    metal_push(ctx, new_int32(0));
+    data_push(ctx, new_int32(0));
   } else if (array_cell.type == CELL_ARRAY) {
     array_data_t* data = (array_data_t*)array_cell.payload.ptr;
-    metal_push(ctx, new_int32((int32_t)data->length));
+    data_push(ctx, new_int32((int32_t)data->length));
   } else {
-    metal_error("LENGTH: not an array");
-    metal_push(ctx, array_cell);
+    error("LENGTH: not an array");
+    data_push(ctx, array_cell);
     return;
   }
 
@@ -562,46 +567,46 @@ static void native_length(context_t* ctx) {
 // INDEX - Get pointer to array element
 static void native_index(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
-    metal_error("INDEX: insufficient stack (need array and index)");
+    error("INDEX: insufficient stack (need array and index)");
     return;
   }
 
-  cell_t index_cell = metal_pop(ctx);
-  cell_t array_cell = metal_pop(ctx);
+  cell_t index_cell = data_pop(ctx);
+  cell_t array_cell = data_pop(ctx);
 
   if (index_cell.type != CELL_INT32) {
-    metal_error("INDEX: index must be integer");
-    metal_push(ctx, array_cell);
-    metal_push(ctx, index_cell);
+    error("INDEX: index must be integer");
+    data_push(ctx, array_cell);
+    data_push(ctx, index_cell);
     return;
   }
 
   int32_t index = index_cell.payload.i32;
 
   if (array_cell.type == CELL_NIL) {
-    metal_error("INDEX: cannot index empty array");
-    metal_push(ctx, array_cell);
-    metal_push(ctx, index_cell);
+    error("INDEX: cannot index empty array");
+    data_push(ctx, array_cell);
+    data_push(ctx, index_cell);
     return;
   } else if (array_cell.type != CELL_ARRAY) {
-    metal_error("INDEX: not an array");
-    metal_push(ctx, array_cell);
-    metal_push(ctx, index_cell);
+    error("INDEX: not an array");
+    data_push(ctx, array_cell);
+    data_push(ctx, index_cell);
     return;
   }
 
   array_data_t* data = (array_data_t*)array_cell.payload.ptr;
 
   if (index < 0 || index >= (int32_t)data->length) {
-    metal_error("INDEX: index out of bounds");
-    metal_push(ctx, array_cell);
-    metal_push(ctx, index_cell);
+    error("INDEX: index out of bounds");
+    data_push(ctx, array_cell);
+    data_push(ctx, index_cell);
     return;
   }
 
   // Create pointer to the element
   cell_t pointer = new_pointer(&data->elements[index]);
-  metal_push(ctx, pointer);
+  data_push(ctx, pointer);
 
   metal_release(&array_cell);
   metal_release(&index_cell);
@@ -610,28 +615,28 @@ static void native_index(context_t* ctx) {
 // @ - Dereference pointer
 static void native_fetch(context_t* ctx) {
   if (ctx->data_stack_ptr < 1) {
-    metal_error("@ : stack underflow");
+    error("@ : stack underflow");
     return;
   }
 
-  cell_t pointer_cell = metal_pop(ctx);
+  cell_t pointer_cell = data_pop(ctx);
 
   if (pointer_cell.type != CELL_POINTER) {
-    metal_error("@ : not a pointer");
-    metal_push(ctx, pointer_cell);
+    error("@ : not a pointer");
+    data_push(ctx, pointer_cell);
     return;
   }
 
   if (!pointer_cell.payload.pointer) {
-    metal_error("@ : null pointer");
-    metal_push(ctx, pointer_cell);
+    error("@ : null pointer");
+    data_push(ctx, pointer_cell);
     return;
   }
 
   // Push a copy of the pointed-to cell
   cell_t value = *pointer_cell.payload.pointer;
   metal_retain(&value);  // We're making a copy, so retain it
-  metal_push(ctx, value);
+  data_push(ctx, value);
 
   metal_release(&pointer_cell);
 }
@@ -639,24 +644,24 @@ static void native_fetch(context_t* ctx) {
 // ! - Store value at pointer
 static void native_store(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
-    metal_error("! : insufficient stack (need pointer and value)");
+    error("! : insufficient stack (need pointer and value)");
     return;
   }
 
-  cell_t value = metal_pop(ctx);
-  cell_t pointer_cell = metal_pop(ctx);
+  cell_t value = data_pop(ctx);
+  cell_t pointer_cell = data_pop(ctx);
 
   if (pointer_cell.type != CELL_POINTER) {
-    metal_error("! : not a pointer");
-    metal_push(ctx, pointer_cell);
-    metal_push(ctx, value);
+    error("! : not a pointer");
+    data_push(ctx, pointer_cell);
+    data_push(ctx, value);
     return;
   }
 
   if (!pointer_cell.payload.pointer) {
-    metal_error("! : null pointer");
-    metal_push(ctx, pointer_cell);
-    metal_push(ctx, value);
+    error("! : null pointer");
+    data_push(ctx, pointer_cell);
+    data_push(ctx, value);
     return;
   }
 
@@ -672,7 +677,7 @@ static void native_store(context_t* ctx) {
 // Dictionary management
 void add_native_word(const char* name, native_func_t func, const char* help) {
   if (dict_size >= MAX_DICT_ENTRIES) {
-    metal_error("Dictionary full");
+    error("Dictionary full");
     return;
   }
 
@@ -777,7 +782,7 @@ metal_result_t metal_interpret(const char* input) {
     // Try to parse as number
     cell_t num;
     if (try_parse_number(token, &num)) {
-      metal_push(&main_context, num);
+      data_push(&main_context, num);
       continue;
     }
 
@@ -787,7 +792,7 @@ metal_result_t metal_interpret(const char* input) {
       if (word->definition.type == CELL_NATIVE) {
         word->definition.payload.native(&main_context);
       } else {
-        metal_error("Non-native words not implemented yet");
+        error("Non-native words not implemented yet");
       }
       continue;
     }
@@ -824,6 +829,11 @@ void init_dictionary(void) {
   // Dictionary introspection
   add_native_word("WORDS", native_words, "( -- ) List all available words");
   add_native_word("HELP", native_help, "( -- ) Show help for all words");
+
+  // Debug words (only when debug support compiled in)
+#ifdef DEBUG_ENABLED
+  add_debug_words();
+#endif
 }
 
 bool platform_get_line(char* buffer, size_t size) {
