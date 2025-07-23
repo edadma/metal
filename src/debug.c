@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "dictionary.h"
-#include "metal.h"  // Need this for context_t and add_native_word
+#include "metal.h"
 
 // Global debug flag
 bool debug_enabled = false;

@@ -3,7 +3,6 @@
 #include "array.h"
 #include "dictionary.h"
 #include "metal.h"
-#include "stack.h"
 #include "util.h"
 
 // Stack manipulation words

@@ -6,10 +6,7 @@
 #include <string.h>
 
 #ifdef METAL_TARGET_PICO
-#include "pico/mutex.h"
 #include "pico/stdlib.h"
-#else
-#include <pthread.h>  // Add this line for pthread functions
 #endif
 
 #include "cell.h"
@@ -18,9 +15,7 @@
 #include "dictionary.h"
 #include "memory.h"
 #include "metal.h"
-#include "stack.h"
 #include "tools.h"
-#include "util.h"
 
 // Global state
 static context_t main_context;

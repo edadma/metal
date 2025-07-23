@@ -1,8 +1,6 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#include <stdbool.h>
-
 #ifdef DEBUG_ENABLED
 // Runtime debug flag
 extern bool debug_enabled;
