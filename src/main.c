@@ -892,7 +892,7 @@ int main(void) {
   init_dictionary();
   char input[256];
   while (1) {
-    printf("\nmetal> ");
+    printf("\nok> ");
     fflush(stdout);
 
     if (!platform_get_line(input, sizeof(input))) {

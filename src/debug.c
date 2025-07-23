@@ -18,8 +18,8 @@ void metal_debug_print(const char* file, int line, const char* fmt, ...) {
   } else {
     filename = file;  // No path separator found
   }
-  rintf("[DEBUG %s:%d] ", filename, line);
-  a_list args;
+  printf("[DEBUG %s:%d] ", filename, line);
+  va_list args;
   va_start(args, fmt);
   vprintf(fmt, args);
   va_end(args);

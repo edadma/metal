@@ -172,4 +172,6 @@ cell_t data_pop(context_t* ctx);
 cell_t data_peek(context_t* ctx, int depth);
 bool is_data_empty(context_t* ctx);
 
+void add_native_word(const char* name, native_func_t func, const char* help);
+
 #endif  // METAL_H
