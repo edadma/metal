@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 // Memory management initialization
-void memory_init(void);
+void init_memory(void);
 
 // Core allocation functions
 void* metal_alloc(size_t size);

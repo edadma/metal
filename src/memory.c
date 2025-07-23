@@ -14,7 +14,7 @@ static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 // Memory management initialization
-void memory_init(void) {
+void init_memory(void) {
 #ifdef METAL_TARGET_PICO
   mutex_init(&memory_mutex);
 #endif

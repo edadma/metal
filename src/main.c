@@ -177,9 +177,9 @@ int main(void) {
   printf("Cell size: %lu\n", sizeof(cell_t));
 
   // Initialize system
-  memory_init();
+  init_memory();
   init_context(&main_context);
-  dictionary_init();  // Initialize dictionary first
+  init_dictionary();  // Initialize dictionary first
   populate_dictionary();
   char input[256];
   while (1) {

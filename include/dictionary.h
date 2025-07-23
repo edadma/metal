@@ -4,7 +4,7 @@
 #include "metal.h"
 
 // Dictionary management
-void dictionary_init(void);
+void init_dictionary(void);
 void dict_add_native_word(const char* name, native_func_t func,
                           const char* help);
 dictionary_entry_t* find_word(const char* name);

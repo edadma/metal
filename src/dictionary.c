@@ -13,7 +13,7 @@ static int dict_size = 0;
 
 // Dictionary management
 
-void dictionary_init(void) {
+void init_dictionary(void) {
   dict_size = 0;
   memset(dictionary, 0, sizeof(dictionary));
   debug("Dictionary initialized");
