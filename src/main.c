@@ -13,9 +13,9 @@
 #include <pthread.h>  // Add this line for pthread functions
 #endif
 
-// Include our header
 #include "debug.h"
 #include "metal.h"
+#include "stack.h"
 
 // Global state
 static context_t main_context;
@@ -247,44 +247,6 @@ cell_t new_nil(void) {
   cell.type = CELL_NIL;
   return cell;
 }
-
-// Stack operations
-void data_push(context_t* ctx, cell_t cell) {
-  if (ctx->data_stack_ptr >= DATA_STACK_SIZE) {
-    error("Data stack overflow");
-    return;
-  }
-
-  debug("Pushing cell type %d to stack (depth: %d)", cell.type,
-        ctx->data_stack_ptr);
-
-  // Retain reference if needed
-  metal_retain(&cell);
-
-  ctx->data_stack[ctx->data_stack_ptr++] = cell;
-}
-
-cell_t data_pop(context_t* ctx) {
-  if (ctx->data_stack_ptr <= 0) {
-    error("Data stack underflow");
-    return new_empty();
-  }
-
-  cell_t cell = ctx->data_stack[--ctx->data_stack_ptr];
-  // Note: caller is responsible for the reference now
-  return cell;
-}
-
-cell_t data_peek(context_t* ctx, int depth) {
-  if (depth >= ctx->data_stack_ptr || depth < 0) {
-    error("Stack index out of range");
-    return new_empty();
-  }
-
-  return ctx->data_stack[ctx->data_stack_ptr - 1 - depth];
-}
-
-bool is_data_empty(context_t* ctx) { return ctx->data_stack_ptr == 0; }
 
 // Context management
 void metal_init_context(context_t* ctx) {

@@ -40,8 +40,9 @@ endif ()
 
 # Common source files
 set(METAL_SOURCES
-        src/main.c
         src/debug.c
+        src/main.c
+        src/stack.c
 )
 
 # Common include directories
