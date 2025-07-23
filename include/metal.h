@@ -43,7 +43,7 @@ typedef enum : uint8_t {
 
 typedef void (*native_func_t)(context_t* context);
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
 #pragma pack(push, 4)
 #endif
 
@@ -82,7 +82,7 @@ typedef struct cell {
   } payload;  // 8 bytes
 } cell_t;
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
 #pragma pack(pop)
 #endif
 

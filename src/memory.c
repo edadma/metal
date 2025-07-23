@@ -5,7 +5,7 @@
 #include "debug.h"
 #include "metal.h"
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
 #include "pico/mutex.h"
 static mutex_t memory_mutex;
 #else
@@ -15,7 +15,7 @@ static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Memory management initialization
 void init_memory(void) {
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   mutex_init(&memory_mutex);
 #endif
   debug("Memory management initialized");
@@ -25,7 +25,7 @@ void init_memory(void) {
 void* metal_alloc(size_t size) {
   debug("Allocating %zu bytes", size);
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   mutex_enter_blocking(&memory_mutex);
 #else
   pthread_mutex_lock(&memory_mutex);
@@ -34,7 +34,7 @@ void* metal_alloc(size_t size) {
   alloc_header_t* header = malloc(sizeof(alloc_header_t) + size);
   if (!header) {
     error("Out of memory");
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
     mutex_exit(&memory_mutex);
 #else
     pthread_mutex_unlock(&memory_mutex);
@@ -43,7 +43,7 @@ void* metal_alloc(size_t size) {
   }
   header->refcount = 1;
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   mutex_exit(&memory_mutex);
 #else
   pthread_mutex_unlock(&memory_mutex);
@@ -53,7 +53,7 @@ void* metal_alloc(size_t size) {
 }
 
 void* metal_realloc(void* ptr, size_t new_size) {
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   mutex_enter_blocking(&memory_mutex);
 #else
   pthread_mutex_lock(&memory_mutex);
@@ -64,7 +64,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
     alloc_header_t* header = malloc(sizeof(alloc_header_t) + new_size);
     if (!header) {
       error("Out of memory");
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
       mutex_exit(&memory_mutex);
 #else
       pthread_mutex_unlock(&memory_mutex);
@@ -72,7 +72,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
       return NULL;
     }
     header->refcount = 1;
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
     mutex_exit(&memory_mutex);
 #else
     pthread_mutex_unlock(&memory_mutex);
@@ -87,7 +87,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
 
   if (!new_header) {
     error("Out of memory");
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
     mutex_exit(&memory_mutex);
 #else
     pthread_mutex_unlock(&memory_mutex);
@@ -95,7 +95,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
     return NULL;
   }
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   mutex_exit(&memory_mutex);
 #else
   pthread_mutex_unlock(&memory_mutex);
@@ -107,7 +107,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
 void metal_free(void* ptr) {
   if (!ptr) return;
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   mutex_enter_blocking(&memory_mutex);
 #else
   pthread_mutex_lock(&memory_mutex);
@@ -117,7 +117,7 @@ void metal_free(void* ptr) {
       (alloc_header_t*)((char*)ptr - sizeof(alloc_header_t));
   free(header);
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   mutex_exit(&memory_mutex);
 #else
   pthread_mutex_unlock(&memory_mutex);

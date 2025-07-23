@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
 #include "pico/stdlib.h"
 #endif
 
@@ -121,7 +121,7 @@ void populate_dictionary(void) {
 }
 
 bool platform_get_line(char* buffer, size_t size) {
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   // Simple character-by-character input for Pico
   size_t pos = 0;
   while (pos < size - 1) {
@@ -154,7 +154,7 @@ bool platform_get_line(char* buffer, size_t size) {
 }
 
 int main(void) {
-#ifdef METAL_TARGET_PICO
+#ifdef TARGET_PICO
   stdio_init_all();
   mutex_init(&memory_mutex);
 
