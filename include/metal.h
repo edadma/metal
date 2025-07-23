@@ -2,7 +2,11 @@
 #define METAL_H
 
 #include <setjmp.h>
+#include <stdbool.h>
 #include <stdint.h>
+
+// Forward declaration for circular dependency
+typedef struct context context_t;
 
 // Cell types
 typedef enum : uint8_t {
@@ -36,11 +40,48 @@ typedef enum : uint8_t {
   CELL_FLAG_TEMPORARY = 1 << 3,   // 0x0008
 } cell_flags_t;
 
+typedef void (*native_func_t)(context_t* context);
+
+// Metal cell - 12 bytes (define this first so context can use it)
+typedef struct {
+  cell_type_t type;    // 8 bits
+  cell_flags_t flags;  // 8 bits
+  uint8_t str_len;     // 8 bits - string length (0-9)
+  uint8_t first_char;  // 8 bits - first character (if len > 0)
+  union {
+    int32_t i32;           // 32-bit integer
+    int64_t i64;           // 64-bit integer
+    double f;              // Double precision float
+    void* ptr;             // Pointer to allocated cell
+    native_func_t native;  // Function pointer
+    struct cell_s* code;   // Code pointer (using struct tag to avoid issues)
+    uint32_t utf32[2];     // 1-2 UTF-32 characters
+    struct {
+      uint8_t r, g, b;
+      uint8_t _pad;  // Align to 4 bytes
+    } rgb;
+    struct {
+      uint32_t timestamp;  // Seconds since Unix epoch (good until 2106)
+      int16_t tz_offset;   // Minutes from UTC
+      uint16_t _reserved;  // 16 bits left for future use
+    } datetime;
+    struct {
+      float lon, lat;
+    } coordinate;
+    struct {
+      float re, im;
+    } complex;
+    struct {
+      int32_t first, second;
+    } int_pair;
+  } payload;  // 8 bytes
+} cell_t;
+
 #define DATA_STACK_SIZE 256
 #define RETURN_STACK_SIZE 256
 
-// Execution context
-typedef struct {
+// Execution context (now cell_t is complete)
+struct context {
   // Stack management
   cell_t data_stack[DATA_STACK_SIZE];
   cell_t return_stack[RETURN_STACK_SIZE];
@@ -58,42 +99,7 @@ typedef struct {
   // Context identification
   const char* name;  // "REPL", "TIMER_IRQ", etc.
   bool is_interrupt_handler;
-
-} context_t;
-
-typedef void (*native_func_t)(context_t* context);
-
-// Metal cell - 12 bytes
-typedef struct cell {
-  cell_type_t type;    // 8 bits
-  cell_flags_t flags;  // 8 bits
-  uint8_t str_len;     // 8 bits - string length (0-9)
-  uint8_t first_char;  // 8 bits - first character (if len > 0)
-  union {
-    int32_t i32;           // 32-bit integer
-    int64_t i64;           // 64-bit integer
-    double f;              // Double precision float
-    void* ptr;             // Pointer to allocated cell
-    native_func_t native;  // Function pointer
-    struct cell* code;     // Code pointer
-    uint32_t utf32[2];     // 1-2 UTF-32 characters
-    struct {
-      uint8_t r, g, b;
-      uint8_t _pad;  // Align to 4 bytes
-    } rgb;
-    struct {
-      uint32_t timestamp;  // Seconds since Unix epoch (good until 2106)
-      int16_t tz_offset;   // Minutes from UTC
-      uint16_t _reserved;  // 16 bits left for future use
-    } datetime;
-    struct {
-      float lon, lat;
-    } coordinate;
-    struct {
-      float re, im;
-    } complex;
-  } payload;  // 8 bytes
-} cell_t;
+};
 
 // Allocated data header (for refcounting)
 typedef struct {
