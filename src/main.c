@@ -383,7 +383,9 @@ void print_cell(const cell_t* cell) {
       break;
     }
     case CELL_POINTER:
-      printf("<pointer:%p>", (void*)cell->payload.pointer);
+      printf("<pointer: ");
+      print_cell(cell->payload.ptr);
+      printf(">");
       break;
     case CELL_EMPTY:
       printf("<empty>");
