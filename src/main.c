@@ -12,9 +12,11 @@
 #include <pthread.h>  // Add this line for pthread functions
 #endif
 
+#include "cell.h"
 #include "core.h"
 #include "debug.h"
 #include "dictionary.h"
+#include "memory.h"
 #include "metal.h"
 #include "stack.h"
 #include "tools.h"
@@ -23,231 +25,8 @@
 // Global state
 static context_t main_context;
 
-#ifdef METAL_TARGET_PICO
-static mutex_t memory_mutex;
-#else
-static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
-// Memory management
-void* metal_alloc(size_t size) {
-  debug("Allocating %zu bytes", size);
-
-#ifdef METAL_TARGET_PICO
-  mutex_enter_blocking(&memory_mutex);
-#else
-  pthread_mutex_lock(&memory_mutex);
-#endif
-
-  alloc_header_t* header = malloc(sizeof(alloc_header_t) + size);
-  if (!header) {
-    error("Out of memory");
-#ifdef METAL_TARGET_PICO
-    mutex_exit(&memory_mutex);
-#else
-    pthread_mutex_unlock(&memory_mutex);
-#endif
-    return NULL;
-  }
-  header->refcount = 1;
-
-#ifdef METAL_TARGET_PICO
-  mutex_exit(&memory_mutex);
-#else
-  pthread_mutex_unlock(&memory_mutex);
-#endif
-
-  return (char*)header + sizeof(alloc_header_t);
-}
-
-void* metal_realloc(void* ptr, size_t new_size) {
-#ifdef METAL_TARGET_PICO
-  mutex_enter_blocking(&memory_mutex);
-#else
-  pthread_mutex_lock(&memory_mutex);
-#endif
-
-  if (!ptr) {
-    // Just allocate new
-    alloc_header_t* header = malloc(sizeof(alloc_header_t) + new_size);
-    if (!header) {
-      error("Out of memory");
-#ifdef METAL_TARGET_PICO
-      mutex_exit(&memory_mutex);
-#else
-      pthread_mutex_unlock(&memory_mutex);
-#endif
-      return NULL;
-    }
-    header->refcount = 1;
-#ifdef METAL_TARGET_PICO
-    mutex_exit(&memory_mutex);
-#else
-    pthread_mutex_unlock(&memory_mutex);
-#endif
-    return (char*)header + sizeof(alloc_header_t);
-  }
-
-  alloc_header_t* old_header =
-      (alloc_header_t*)((char*)ptr - sizeof(alloc_header_t));
-  alloc_header_t* new_header =
-      realloc(old_header, sizeof(alloc_header_t) + new_size);
-
-  if (!new_header) {
-    error("Out of memory");
-#ifdef METAL_TARGET_PICO
-    mutex_exit(&memory_mutex);
-#else
-    pthread_mutex_unlock(&memory_mutex);
-#endif
-    return NULL;
-  }
-
-#ifdef METAL_TARGET_PICO
-  mutex_exit(&memory_mutex);
-#else
-  pthread_mutex_unlock(&memory_mutex);
-#endif
-
-  return (char*)new_header + sizeof(alloc_header_t);
-}
-
-void metal_free(void* ptr) {
-  if (!ptr) return;
-
-#ifdef METAL_TARGET_PICO
-  mutex_enter_blocking(&memory_mutex);
-#else
-  pthread_mutex_lock(&memory_mutex);
-#endif
-
-  alloc_header_t* header =
-      (alloc_header_t*)((char*)ptr - sizeof(alloc_header_t));
-  free(header);
-
-#ifdef METAL_TARGET_PICO
-  mutex_exit(&memory_mutex);
-#else
-  pthread_mutex_unlock(&memory_mutex);
-#endif
-}
-
-// Updated retain/release functions to handle CELL_ARRAY and CELL_POINTER
-void metal_retain(cell_t* cell) {
-  if (!cell || !cell->payload.ptr) return;
-
-  // Only allocated types need refcount management
-  switch (cell->type) {
-    case CELL_STRING:
-    case CELL_OBJECT:
-    case CELL_ARRAY:
-    case CELL_CODE:
-      if (!(cell->flags & CELL_FLAG_WEAK_REF)) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        header->refcount++;
-      }
-      break;
-    case CELL_POINTER:
-      // For pointers, we don't manage the pointed-to memory's refcount
-      // The pointer itself doesn't own the memory
-      break;
-    default:
-      break;
-  }
-}
-
-void metal_release(cell_t* cell) {
-  if (!cell || !cell->payload.ptr) return;
-
-  switch (cell->type) {
-    case CELL_STRING:
-    case CELL_OBJECT:
-    case CELL_CODE:
-      if (!(cell->flags & CELL_FLAG_WEAK_REF)) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        header->refcount--;
-        if (header->refcount == 0) {
-          metal_free(cell->payload.ptr);
-          cell->payload.ptr = NULL;
-        }
-      }
-      break;
-    case CELL_ARRAY:
-      if (!(cell->flags & CELL_FLAG_WEAK_REF)) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        header->refcount--;
-        if (header->refcount == 0) {
-          // Release all elements first
-          array_data_t* data = (array_data_t*)cell->payload.ptr;
-          for (size_t i = 0; i < data->length; i++) {
-            metal_release(&data->elements[i]);
-          }
-          metal_free(cell->payload.ptr);
-          cell->payload.ptr = NULL;
-        }
-      }
-      break;
-    case CELL_POINTER:
-      // Pointers don't own the pointed-to memory
-      break;
-    default:
-      break;
-  }
-}
-
-// Cell creation functions
-cell_t new_int32(int32_t value) {
-  cell_t cell = {0};
-  cell.type = CELL_INT32;
-  cell.payload.i32 = value;
-  return cell;
-}
-
-cell_t new_int64(int64_t value) {
-  cell_t cell = {0};
-  cell.type = CELL_INT64;
-  cell.payload.i64 = value;
-  return cell;
-}
-
-cell_t new_float(double value) {
-  cell_t cell = {0};
-  cell.type = CELL_FLOAT;
-  cell.payload.f = value;
-  return cell;
-}
-
-cell_t new_string(const char* utf8) {
-  cell_t cell = {0};
-  cell.type = CELL_STRING;
-
-  size_t len = strlen(utf8);
-
-  // For now, just allocate all strings. Later we'll optimize for short ones
-  char* allocated = metal_alloc(len + 1);
-  strcpy(allocated, utf8);
-  cell.payload.ptr = allocated;
-
-  return cell;
-}
-
-cell_t new_empty(void) {
-  cell_t cell = {0};
-  cell.type = CELL_EMPTY;
-  return cell;
-}
-
-cell_t new_nil(void) {
-  cell_t cell = {0};
-  cell.type = CELL_NIL;
-  return cell;
-}
-
 // Context management
-void metal_init_context(context_t* ctx) {
+void init_context(context_t* ctx) {
   memset(ctx, 0, sizeof(context_t));
   ctx->name = "main";
 }
@@ -256,14 +35,6 @@ void metal_init_context(context_t* ctx) {
 void error(const char* msg) {
   printf("ERROR: %s\n", msg);
   // For now, just continue. Later we'll use longjmp
-}
-
-// New cell creation function
-cell_t new_pointer(cell_t* target) {
-  cell_t cell = {0};
-  cell.type = CELL_POINTER;
-  cell.payload.pointer = target;
-  return cell;
 }
 
 // Simple tokenizer
@@ -406,7 +177,8 @@ int main(void) {
   printf("Cell size: %lu\n", sizeof(cell_t));
 
   // Initialize system
-  metal_init_context(&main_context);
+  memory_init();
+  init_context(&main_context);
   dict_init();  // Initialize dictionary first
   init_dictionary();
   char input[256];

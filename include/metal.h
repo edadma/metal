@@ -145,7 +145,7 @@ bool metal_input_complete(const char* input);
 void error(const char* msg);
 
 // Context management
-void metal_init_context(context_t* ctx);
+void init_context(context_t* ctx);
 void metal_switch_context(context_t* ctx);
 context_t* metal_current_context(void);
 
