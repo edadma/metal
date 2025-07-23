@@ -47,7 +47,7 @@ typedef void (*native_func_t)(context_t* context);
 #endif
 
 // Metal cell - 12 bytes (define this first so context can use it)
-typedef struct {
+typedef struct cell {
   cell_type_t type;    // 8 bits
   cell_flags_t flags;  // 8 bits
   uint8_t str_len;     // 8 bits - string length (0-9)
@@ -58,7 +58,7 @@ typedef struct {
     double f;              // Double precision float
     void* ptr;             // Pointer to allocated cell
     native_func_t native;  // Function pointer
-    struct cell_s* code;   // Code pointer (using struct tag to avoid issues)
+    struct cell* pointer;  // Code pointer (using struct tag to avoid issues)
     uint32_t utf32[2];     // 1-2 UTF-32 characters
     struct {
       uint8_t r, g, b;
@@ -109,6 +109,13 @@ struct context {
   bool is_interrupt_handler;
 };
 
+// Array data structure
+typedef struct {
+  size_t length;
+  size_t capacity;
+  cell_t elements[];  // Flexible array member
+} array_data_t;
+
 // Allocated data header (for refcounting)
 typedef struct {
   uint32_t refcount;
@@ -149,17 +156,19 @@ cell_t new_empty(void);
 cell_t new_nil(void);
 cell_t new_code(void);
 cell_t new_native(void);
+cell_t new_pointer(cell_t* target);
 
 // Memory management
 void* metal_alloc(size_t size);
+void* metal_realloc(void* ptr, size_t new_size);
 void metal_free(void* ptr);
 void metal_retain(cell_t* cell);
 void metal_release(cell_t* cell);
 
 // Stack operations
-void metal_push(cell_t cell);
-cell_t metal_pop(void);
-cell_t metal_peek(int depth);
-bool metal_stack_empty(void);
+void metal_push(context_t* ctx, cell_t cell);
+cell_t metal_pop(context_t* ctx);
+cell_t metal_peek(context_t* ctx, int depth);
+bool metal_stack_empty(context_t* ctx);
 
 #endif  // METAL_H
