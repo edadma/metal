@@ -78,7 +78,7 @@ bool try_parse_number(const char* token, cell_t* result) {
 }
 
 // Main interpreter
-metal_result_t metal_interpret(const char* input) {
+metal_result_t interpret(const char* input) {
   // Make a copy since strtok modifies the string
   char* input_copy = malloc(strlen(input) + 1);
   strcpy(input_copy, input);
@@ -181,8 +181,10 @@ int main(void) {
   init_context(&main_context);
   init_dictionary();  // Initialize dictionary first
   populate_dictionary();
+
   char input[256];
-  while (1) {
+
+  for (;;) {
     printf("\nok> ");
     fflush(stdout);
 
@@ -190,8 +192,7 @@ int main(void) {
       break;
     }
 
-    // Interpret the input
-    metal_interpret(input);
+    interpret(input);
   }
 
   return 0;

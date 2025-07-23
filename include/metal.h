@@ -140,7 +140,7 @@ typedef enum {
 } metal_result_t;
 
 // Core interpreter functions
-metal_result_t metal_interpret(const char* input);
+metal_result_t interpret(const char* input);
 bool metal_input_complete(const char* input);
 void error(const char* msg);
 
