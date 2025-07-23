@@ -2,13 +2,25 @@ cmake_minimum_required(VERSION 3.13)
 
 # Platform selection
 if (NOT DEFINED TARGET_PLATFORM)
-    set(TARGET_PLATFORM "host")
+    if (WIN32)
+        set(TARGET_PLATFORM "windows")
+    else ()
+        set(TARGET_PLATFORM "host")
+    endif ()
 endif ()
 
 # Pico setup (before project)
 if (TARGET_PLATFORM STREQUAL "pico")
     set(PICO_BOARD pico_w)
     include(pico_sdk_import.cmake)
+endif ()
+
+if (TARGET_PLATFORM STREQUAL "windows")
+    set(CMAKE_SYSTEM_NAME Windows)
+    set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
+    set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+    set(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres)
+    set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc")
 endif ()
 
 # Project
@@ -33,6 +45,8 @@ if (TARGET_PLATFORM STREQUAL "pico")
     file(GLOB PLATFORM_SOURCES "platform/pico/src/*.c")
 elseif (TARGET_PLATFORM STREQUAL "host")
     file(GLOB PLATFORM_SOURCES "platform/host/src/*.c")
+elseif (TARGET_PLATFORM STREQUAL "windows")
+    file(GLOB PLATFORM_SOURCES "platform/windows/src/*.c")
 endif ()
 
 # Create executable
@@ -51,9 +65,12 @@ if (TARGET_PLATFORM STREQUAL "pico")
     pico_enable_stdio_usb(metal 1)
     pico_enable_stdio_uart(metal 0)
     pico_add_extra_outputs(metal)
-else ()
+elseif (TARGET_PLATFORM STREQUAL "host")
     target_compile_definitions(metal PRIVATE TARGET_HOST=1)
     target_link_libraries(metal pthread)
+elseif (TARGET_PLATFORM STREQUAL "windows")
+    target_compile_definitions(metal PRIVATE TARGET_WINDOWS=1)
+    # Windows doesn't need additional libraries for basic console I/O
 endif ()
 
 # Debug option
@@ -62,3 +79,14 @@ option(DEBUG_OPTION "Enable debug output" ON)
 if (DEBUG_OPTION)
     target_compile_definitions(metal PRIVATE DEBUG_ENABLED=1)
 endif ()
+
+# Windows-specific compiler settings
+if (TARGET_PLATFORM STREQUAL "windows")
+    if (MINGW)
+        # Static linking to avoid DLL dependencies when cross-compiling
+        set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc")
+    endif ()
+endif ()
+
+message(STATUS "Building Metal for platform: ${TARGET_PLATFORM}")
+message(STATUS "Debug option: ${DEBUG_OPTION}")
