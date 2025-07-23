@@ -43,6 +43,7 @@ set(METAL_SOURCES
         src/debug.c
         src/main.c
         src/stack.c
+        src/util.c
 )
 
 # Common include directories

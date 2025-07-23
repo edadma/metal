@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "util.h"
 
 // Stack initialization
 void stack_init(context_t* ctx) {
