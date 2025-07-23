@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "util.h"
 
 // Dictionary storage
 #define MAX_DICT_ENTRIES 256
