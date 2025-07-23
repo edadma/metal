@@ -276,31 +276,6 @@ cell_t new_pointer(cell_t* target) {
   return cell;
 }
 
-// Array helper functions
-array_data_t* create_array_data(size_t initial_capacity) {
-  if (initial_capacity == 0) initial_capacity = 1;
-
-  size_t alloc_size =
-      sizeof(array_data_t) + (initial_capacity * sizeof(cell_t));
-  array_data_t* data = metal_alloc(alloc_size);
-  if (!data) return NULL;
-
-  data->length = 0;
-  data->capacity = initial_capacity;
-  return data;
-}
-
-array_data_t* resize_array_data(array_data_t* data, size_t new_capacity) {
-  size_t alloc_size = sizeof(array_data_t) + (new_capacity * sizeof(cell_t));
-  array_data_t* new_data = metal_realloc(data, alloc_size);
-  if (!new_data) return NULL;
-
-  new_data->capacity = new_capacity;
-  return new_data;
-}
-
-// Native word implementations
-
 // WORDS - List all words in the dictionary
 static void native_words([[maybe_unused]] context_t* ctx) {
   printf("Dictionary (%d words):\n", dict_size);
@@ -314,9 +289,6 @@ static void native_words([[maybe_unused]] context_t* ctx) {
     }
   }
 }
-
-// [] - Create empty array (push CELL_NIL)
-static void native_nil(context_t* ctx) { data_push(ctx, new_nil()); }
 
 // Dictionary management
 void add_native_word(const char* name, native_func_t func, const char* help) {
@@ -455,8 +427,6 @@ void init_dictionary(void) {
 
   add_native_word(".S", native_dot_s, "( -- ) Show stack contents");
   add_native_word("BYE", native_bye, "( -- ) Exit Metal");
-  // Array words
-  add_native_word("[]", native_nil, "( -- array ) Create empty array");
   // Dictionary introspection
   add_native_word("WORDS", native_words, "( -- ) List all available words");
   add_native_word("HELP", native_help, "( -- ) Show help for all words");

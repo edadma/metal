@@ -39,13 +39,7 @@ if (BUILD_FOR_PICO)
 endif ()
 
 # Common source files
-set(METAL_SOURCES
-        src/core.c
-        src/debug.c
-        src/main.c
-        src/stack.c
-        src/util.c
-)
+file(GLOB METAL_SOURCES "src/*.c")
 
 # Common include directories
 set(METAL_INCLUDES

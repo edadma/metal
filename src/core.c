@@ -1,5 +1,6 @@
 #include "core.h"
 
+#include "array.h"
 #include "metal.h"
 #include "stack.h"
 #include "util.h"
@@ -90,7 +91,7 @@ static void native_comma(context_t* ctx) {
 
   if (array_cell.type == CELL_NIL) {
     // Convert NIL to ARRAY with first element
-    array_data_t* data = create_nil(1);
+    array_data_t* data = create_array_data(1);
     if (!data) {
       data_push(ctx, array_cell);
       data_push(ctx, element);
