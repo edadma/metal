@@ -1,4 +1,10 @@
+set(METAL_VERSION "0.0.1")
+
 cmake_minimum_required(VERSION 3.13)
+
+# Debug option
+option(DEBUG_OPTION "Enable debug output" ON)
+option(COPY_EXECUTABLES_TO_ROOT "Copy built executables to repository root" ON)
 
 # Platform selection
 if (NOT DEFINED TARGET_PLATFORM)
@@ -65,16 +71,42 @@ if (TARGET_PLATFORM STREQUAL "pico")
     pico_enable_stdio_usb(metal 1)
     pico_enable_stdio_uart(metal 0)
     pico_add_extra_outputs(metal)
+
+    # Copy UF2 to repository root
+    if (COPY_EXECUTABLES_TO_ROOT)
+        add_custom_command(TARGET metal POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${CMAKE_CURRENT_BINARY_DIR}/metal.uf2
+                ${CMAKE_SOURCE_DIR}/metal-v${METAL_VERSION}-pico.uf2
+                COMMENT "Copying UF2 file to repository root"
+        )
+    endif ()
 elseif (TARGET_PLATFORM STREQUAL "host")
     target_compile_definitions(metal PRIVATE TARGET_HOST=1)
     target_link_libraries(metal pthread)
+
+    # Copy Linux executable to repository root
+    if (COPY_EXECUTABLES_TO_ROOT)
+        add_custom_command(TARGET metal POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:metal>
+                ${CMAKE_SOURCE_DIR}/metal-v${METAL_VERSION}-linux
+                COMMENT "Copying Linux executable to repository root"
+        )
+    endif ()
 elseif (TARGET_PLATFORM STREQUAL "windows")
     target_compile_definitions(metal PRIVATE TARGET_WINDOWS=1)
-    # Windows doesn't need additional libraries for basic console I/O
-endif ()
 
-# Debug option
-option(DEBUG_OPTION "Enable debug output" ON)
+    # Copy Windows executable to repository root
+    if (COPY_EXECUTABLES_TO_ROOT)
+        add_custom_command(TARGET metal POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:metal>
+                ${CMAKE_SOURCE_DIR}/metal-v${METAL_VERSION}-windows.exe
+                COMMENT "Copying Windows executable to repository root"
+        )
+    endif ()
+endif ()
 
 if (DEBUG_OPTION)
     target_compile_definitions(metal PRIVATE DEBUG_ENABLED=1)
@@ -88,5 +120,11 @@ if (TARGET_PLATFORM STREQUAL "windows")
     endif ()
 endif ()
 
+target_compile_definitions(metal PRIVATE
+        METAL_VERSION="${METAL_VERSION}"
+)
+
+message(STATUS "Metal version: ${METAL_VERSION}")
 message(STATUS "Building Metal for platform: ${TARGET_PLATFORM}")
+message(STATUS "Copy executables to root: ${COPY_EXECUTABLES_TO_ROOT}")
 message(STATUS "Debug option: ${DEBUG_OPTION}")

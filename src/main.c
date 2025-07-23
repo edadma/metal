@@ -131,11 +131,14 @@ int main(void) {
   }
 
   sleep_ms(500);
-  printf("Metal Language v0.1 - Pico W\n");
-#else
-  printf("Metal Language v0.1 - Host\n");
+#define TARGET "Pico W"
+#elifdef TARGET_HOST
+#define TARGET "Linux"
+#elifdef TARGET_WINDOWS
+#define TARGET "Windows"
 #endif
 
+  printf("Metal Language v" METAL_VERSION " - " TARGET "\n");
   printf("Type 'bye' to exit, '.s' to show stack\n\n");
   printf("Cell size: %lu\n", sizeof(cell_t));
 

@@ -7,10 +7,8 @@
 
 #ifdef TARGET_PICO
 #include "pico/mutex.h"
-static mutex_t memory_mutex;
-#else
+#elifdef TARGET_HOST
 #include <pthread.h>
-static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 // Simple cross-platform mutex wrapper
