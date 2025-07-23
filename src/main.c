@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef METAL_TARGET_PICO
+#include "pico/stdlib.h"
+#endif
+
 // Include our header
 #include "metal.h"
 
@@ -418,26 +422,67 @@ void init_dictionary(void) {
   add_native_word("BYE", native_bye);
 }
 
+bool platform_get_line(char* buffer, size_t size) {
+#ifdef METAL_TARGET_PICO
+  // Simple character-by-character input for Pico
+  size_t pos = 0;
+  while (pos < size - 1) {
+    int c = getchar();
+    if (c == '\r' || c == '\n') {
+      buffer[pos] = '\0';
+      printf("\n");
+      return true;
+    } else if (c == '\b' || c == 127) {  // Backspace
+      if (pos > 0) {
+        pos--;
+        printf("\b \b");
+      }
+    } else if (c >= 32 && c < 127) {  // Printable characters
+      buffer[pos++] = c;
+      putchar(c);
+    }
+  }
+  buffer[size - 1] = '\0';
+  return true;
+#else
+  // Use fgets on host
+  if (fgets(buffer, size, stdin)) {
+    // Remove newline
+    buffer[strcspn(buffer, "\n")] = 0;
+    return true;
+  }
+  return false;
+#endif
+}
+
 int main(void) {
-  printf("Metal Language v0.0.1\n");
+#ifdef METAL_TARGET_PICO
+  stdio_init_all();
+
+  while (!stdio_usb_connected()) {
+    sleep_ms(100);
+  }
+
+  sleep_ms(500);
+  printf("Metal Language v0.1 - Pico W\n");
+#else
+  printf("Metal Language v0.1 - Host\n");
+#endif
+
   printf("Type 'bye' to exit, '.s' to show stack\n\n");
   printf("Cell size: %lu\n", sizeof(cell_t));
 
   // Initialize system
   metal_init_context(&main_context);
   init_dictionary();
-
   char input[256];
   while (1) {
     printf("\nmetal> ");
     fflush(stdout);
 
-    if (!fgets(input, sizeof(input), stdin)) {
+    if (!platform_get_line(input, sizeof(input))) {
       break;
     }
-
-    // Remove newline
-    input[strcspn(input, "\n")] = 0;
 
     // Interpret the input
     metal_interpret(input);

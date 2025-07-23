@@ -42,6 +42,10 @@ typedef enum : uint8_t {
 
 typedef void (*native_func_t)(context_t* context);
 
+#ifdef METAL_TARGET_PICO
+#pragma pack(push, 4)
+#endif
+
 // Metal cell - 12 bytes (define this first so context can use it)
 typedef struct {
   cell_type_t type;    // 8 bits
@@ -76,6 +80,10 @@ typedef struct {
     } int_pair;
   } payload;  // 8 bytes
 } cell_t;
+
+#ifdef METAL_TARGET_PICO
+#pragma pack(pop)
+#endif
 
 #define DATA_STACK_SIZE 256
 #define RETURN_STACK_SIZE 256
