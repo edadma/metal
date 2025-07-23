@@ -15,6 +15,7 @@
 
 #include "debug.h"
 #include "metal.h"
+#include "stack.h"
 #include "util.h"
 
 // Global state
@@ -327,14 +328,7 @@ static void native_print(context_t* ctx) {
   metal_release(&cell);
 }
 
-static void native_dot_s([[maybe_unused]] context_t* ctx) {
-  printf("Stack (%d): ", ctx->data_stack_ptr);
-  for (int i = 0; i < ctx->data_stack_ptr; i++) {
-    if (i > 0) printf(" ");
-    print_cell(&ctx->data_stack[i]);
-  }
-  printf("\n");
-}
+static void native_dot_s(context_t* ctx) { print_data_stack(ctx); }
 
 static void native_bye([[maybe_unused]] context_t* ctx) {
   printf("Goodbye!\n");

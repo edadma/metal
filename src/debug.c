@@ -28,13 +28,13 @@ void metal_debug_print(const char* file, int line, const char* fmt, ...) {
 }
 
 // DEBUG-ON - Enable debug output
-void native_debug_on([[maybe_unused]] context_t* ctx) {
+static void native_debug_on([[maybe_unused]] context_t* ctx) {
   debug_enabled = true;
   printf("Debug output enabled\n");
 }
 
 // DEBUG-OFF - Disable debug output
-void native_debug_off([[maybe_unused]] context_t* ctx) {
+static void native_debug_off([[maybe_unused]] context_t* ctx) {
   debug_enabled = false;
   printf("Debug output disabled\n");
 }
