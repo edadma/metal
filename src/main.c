@@ -421,6 +421,7 @@ void init_dictionary(void) {
 int main(void) {
   printf("Metal Language v0.0.1\n");
   printf("Type 'bye' to exit, '.s' to show stack\n\n");
+  printf("Cell size: %lu\n", sizeof(cell_t));
 
   // Initialize system
   metal_init_context(&main_context);
