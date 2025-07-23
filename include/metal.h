@@ -126,6 +126,7 @@ typedef struct {
 typedef struct {
   char name[32];      // Word name
   cell_t definition;  // Code cell or other definition
+  const char* help;   // Help text (stack effect + description)
 } dict_entry_t;
 
 // Interpreter result codes

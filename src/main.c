@@ -373,10 +373,12 @@ void print_cell(const cell_t* cell) {
     case CELL_ARRAY: {
       array_data_t* data = (array_data_t*)cell->payload.ptr;
       printf("[");
+
       for (size_t i = 0; i < data->length; i++) {
-        if (i > 0) printf(" ");
-        print_cell(&data->elements[i]);  // Recursive call
+        if (i > 0) printf(", ");
+        print_cell(&data->elements[i]);
       }
+
       printf("]");
       break;
     }
@@ -450,6 +452,20 @@ array_data_t* resize_array_data(array_data_t* data, size_t new_capacity) {
 }
 
 // Native word implementations
+
+// WORDS - List all words in the dictionary
+static void native_words([[maybe_unused]] context_t* ctx) {
+  printf("Dictionary (%d words):\n", dict_size);
+
+  int words_per_line = 8;  // Adjust for readability
+  for (int i = 0; i < dict_size; i++) {
+    printf("%-12s", dictionary[i].name);  // Left-aligned, 12 chars wide
+
+    if ((i + 1) % words_per_line == 0 || i == dict_size - 1) {
+      printf("\n");
+    }
+  }
+}
 
 // [] - Create empty array (push CELL_NIL)
 static void native_array_start(context_t* ctx) { metal_push(ctx, new_nil()); }
@@ -652,7 +668,7 @@ static void native_store(context_t* ctx) {
 }
 
 // Dictionary management
-void add_native_word(const char* name, native_func_t func) {
+void add_native_word(const char* name, native_func_t func, const char* help) {
   if (dict_size >= MAX_DICT_ENTRIES) {
     metal_error("Dictionary full");
     return;
@@ -666,7 +682,21 @@ void add_native_word(const char* name, native_func_t func) {
   def.payload.native = func;
 
   dictionary[dict_size].definition = def;
+  dictionary[dict_size].help = help;  // Store help text
   dict_size++;
+}
+
+// HELP - Show help for a word
+static void native_help([[maybe_unused]] context_t* ctx) {
+  // We need to get the next token from input
+  // For now, let's implement a simple version that shows all help
+  printf("Available words with help:\n\n");
+
+  for (int i = 0; i < dict_size; i++) {
+    if (dictionary[i].help) {
+      printf("%-12s %s\n", dictionary[i].name, dictionary[i].help);
+    }
+  }
 }
 
 int stricmp(const char* s1, const char* s2) {
@@ -770,21 +800,28 @@ metal_result_t metal_interpret(const char* input) {
 
 // Initialize built-in words
 void init_dictionary(void) {
-  add_native_word("DUP", native_dup);
-  add_native_word("DROP", native_drop);
-  add_native_word("SWAP", native_swap);
-  add_native_word("+", native_add);
-  add_native_word("PRINT", native_print);
-  add_native_word(".S", native_dot_s);
-  add_native_word("BYE", native_bye);
-
+  add_native_word("DUP", native_dup, "( a -- a a ) Duplicate top of stack");
+  add_native_word("DROP", native_drop, "( a -- ) Remove top of stack");
+  add_native_word("SWAP", native_swap,
+                  "( a b -- b a ) Swap top two stack items");
+  add_native_word("+", native_add, "( a b -- c ) Add two numbers");
+  add_native_word("PRINT", native_print, "( a -- ) Print value to output");
+  add_native_word(".S", native_dot_s, "( -- ) Show stack contents");
+  add_native_word("BYE", native_bye, "( -- ) Exit Metal");
   // Array words
-  add_native_word("[]", native_array_start);
-  add_native_word(",", native_comma);
-  add_native_word("LENGTH", native_length);
-  add_native_word("INDEX", native_index);
-  add_native_word("@", native_fetch);
-  add_native_word("!", native_store);
+  add_native_word("[]", native_array_start, "( -- array ) Create empty array");
+  add_native_word(",", native_comma,
+                  "( array item -- array ) Append item to array");
+  add_native_word("LENGTH", native_length, "( array -- n ) Get array length");
+  add_native_word("INDEX", native_index,
+                  "( array n -- ptr ) Get pointer to array element");
+  add_native_word("@", native_fetch,
+                  "( ptr -- value ) Fetch value from pointer");
+  add_native_word("!", native_store, "( ptr value -- ) Store value at pointer");
+
+  // Dictionary introspection
+  add_native_word("WORDS", native_words, "( -- ) List all available words");
+  add_native_word("HELP", native_help, "( -- ) Show help for all words");
 }
 
 bool platform_get_line(char* buffer, size_t size) {
