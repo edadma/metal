@@ -177,7 +177,7 @@ void metal_error(const char* msg) {
 }
 
 // Native word implementations
-void native_dup(context_t* ctx) {
+static void native_dup(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
     metal_error("DUP: stack underflow");
     return;
@@ -187,7 +187,7 @@ void native_dup(context_t* ctx) {
   metal_push(top);
 }
 
-void native_drop(context_t* ctx) {
+static void native_drop(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
     metal_error("DROP: stack underflow");
     return;
@@ -197,7 +197,7 @@ void native_drop(context_t* ctx) {
   metal_release(&cell);
 }
 
-void native_swap(context_t* ctx) {
+static void native_swap(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
     metal_error("SWAP: insufficient stack");
     return;
@@ -209,7 +209,7 @@ void native_swap(context_t* ctx) {
   metal_push(b);
 }
 
-void native_add(context_t* ctx) {
+static void native_add(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
     metal_error("+ : insufficient stack");
     return;
@@ -231,7 +231,7 @@ void native_add(context_t* ctx) {
   metal_release(&b);
 }
 
-void native_print(context_t* ctx) {
+static void native_print(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
     metal_error("PRINT: stack underflow");
     return;
@@ -260,7 +260,7 @@ void native_print(context_t* ctx) {
   metal_release(&cell);
 }
 
-void native_dot_s([[maybe_unused]] context_t* ctx) {
+static void native_dot_s([[maybe_unused]] context_t* ctx) {
   printf("Stack (%d): ", current_ctx->data_stack_ptr);
   for (int i = 0; i < current_ctx->data_stack_ptr; i++) {
     cell_t* cell = &current_ctx->data_stack[i];
@@ -285,7 +285,7 @@ void native_dot_s([[maybe_unused]] context_t* ctx) {
   printf("\n");
 }
 
-void native_bye([[maybe_unused]] context_t* ctx) {
+static void native_bye([[maybe_unused]] context_t* ctx) {
   printf("Goodbye!\n");
   exit(0);
 }
