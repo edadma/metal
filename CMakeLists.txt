@@ -1,85 +1,59 @@
 cmake_minimum_required(VERSION 3.13)
 
-# Options
-option(DEBUG_OPTION "Enable debug output" ON)
-
-# Check TARGET_PLATFORM variable
+# Platform selection
 if (NOT DEFINED TARGET_PLATFORM)
     set(TARGET_PLATFORM "host")
 endif ()
 
+# Pico setup (before project)
 if (TARGET_PLATFORM STREQUAL "pico")
-    set(BUILD_FOR_PICO ON)
-    message(STATUS "Building for Pico")
-elseif (TARGET_PLATFORM STREQUAL "host")
-    set(BUILD_FOR_PICO OFF)
-    message(STATUS "Building for host (nix)")
-else ()
-    message(FATAL_ERROR "Unknown TARGET_PLATFORM: ${TARGET_PLATFORM}. Use 'host' or 'pico'")
-endif ()
-
-if (BUILD_FOR_PICO)
-    # Pico setup - MUST include pico_sdk_import.cmake BEFORE project()
     set(PICO_BOARD pico_w)
     include(pico_sdk_import.cmake)
 endif ()
 
-# Project declaration
-if (BUILD_FOR_PICO)
-    project(metal C CXX ASM)
-    set(CMAKE_C_STANDARD 11)
-else ()
-    project(metal C)
-    set(CMAKE_C_STANDARD 23)
-endif ()
+# Project
+project(metal C)
+set(CMAKE_C_STANDARD 23)
 
-# Initialize Pico SDK after project declaration
-if (BUILD_FOR_PICO)
+# Initialize Pico SDK
+if (TARGET_PLATFORM STREQUAL "pico")
     pico_sdk_init()
 endif ()
 
-# Common source files
-file(GLOB METAL_SOURCES "src/*.c")
+# Core Metal sources (always included)
+file(GLOB CORE_SOURCES "src/*.c")
 
-# Common include directories
-set(METAL_INCLUDES
+# Platform-specific sources
+if (TARGET_PLATFORM STREQUAL "pico")
+    file(GLOB PLATFORM_SOURCES "platform/pico/src/*.c")
+elseif (TARGET_PLATFORM STREQUAL "host")
+    file(GLOB PLATFORM_SOURCES "platform/host/src/*.c")
+endif ()
+
+# Create executable
+add_executable(metal ${CORE_SOURCES} ${PLATFORM_SOURCES})
+
+# Include directories
+target_include_directories(metal PRIVATE
         include
+        platform/${TARGET_PLATFORM}/include
 )
 
-if (BUILD_FOR_PICO)
-    # Pico executable
-    add_executable(metal ${METAL_SOURCES})
-
-    target_include_directories(metal PRIVATE ${METAL_INCLUDES})
-
-    # Pico-specific settings
+# Platform-specific settings
+if (TARGET_PLATFORM STREQUAL "pico")
+    target_compile_definitions(metal PRIVATE TARGET_PICO=1)
+    target_link_libraries(metal pico_stdlib hardware_gpio hardware_rtc)
     pico_enable_stdio_usb(metal 1)
     pico_enable_stdio_uart(metal 0)
-
-    target_link_libraries(metal
-            pico_stdlib
-            hardware_gpio
-            hardware_rtc
-    )
-
     pico_add_extra_outputs(metal)
-
-    target_compile_definitions(metal PRIVATE METAL_TARGET_PICO=1)
-
 else ()
-    # Host executable
-    add_executable(metal ${METAL_SOURCES})
-
-    target_include_directories(metal PRIVATE ${METAL_INCLUDES})
-
-    # Host-specific settings
-    target_compile_options(metal PRIVATE -Wall -Wextra)
-
-    # Link pthread on host
+    target_compile_definitions(metal PRIVATE TARGET_HOST=1)
     target_link_libraries(metal pthread)
 endif ()
 
 # Debug option
+option(DEBUG_OPTION "Enable debug output" ON)
+
 if (DEBUG_OPTION)
     target_compile_definitions(metal PRIVATE DEBUG_ENABLED=1)
 endif ()
