@@ -10,6 +10,7 @@ void stack_init(context_t* ctx);
 void data_push(context_t* ctx, cell_t cell);
 cell_t data_pop(context_t* ctx);
 cell_t data_peek(context_t* ctx, int depth);
+int data_depth(context_t* ctx);
 bool is_data_empty(context_t* ctx);
 
 // Return stack operations

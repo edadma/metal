@@ -54,6 +54,8 @@ cell_t data_peek(context_t* ctx, int depth) {
   return ctx->data_stack[ctx->data_stack_ptr - 1 - depth];
 }
 
+int data_depth(context_t* ctx) { return ctx->data_stack_ptr; }
+
 bool is_data_empty(context_t* ctx) { return ctx->data_stack_ptr == 0; }
 
 // Return stack operations

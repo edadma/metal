@@ -15,6 +15,7 @@
 #include "dictionary.h"
 #include "memory.h"
 #include "metal.h"
+#include "repl.h"
 #include "stack.h"
 #include "tools.h"
 
@@ -121,39 +122,6 @@ void populate_dictionary(void) {
 #endif
 }
 
-bool platform_get_line(char* buffer, size_t size) {
-#ifdef TARGET_PICO
-  // Simple character-by-character input for Pico
-  size_t pos = 0;
-  while (pos < size - 1) {
-    int c = getchar();
-    if (c == '\r' || c == '\n') {
-      buffer[pos] = '\0';
-      printf("\n");
-      return true;
-    } else if (c == '\b' || c == 127) {  // Backspace
-      if (pos > 0) {
-        pos--;
-        printf("\b \b");
-      }
-    } else if (c >= 32 && c < 127) {  // Printable characters
-      buffer[pos++] = c;
-      putchar(c);
-    }
-  }
-  buffer[size - 1] = '\0';
-  return true;
-#else
-  // Use fgets on host
-  if (fgets(buffer, size, stdin)) {
-    // Remove newline
-    buffer[strcspn(buffer, "\n")] = 0;
-    return true;
-  }
-  return false;
-#endif
-}
-
 int main(void) {
 #ifdef TARGET_PICO
   stdio_init_all();
@@ -176,19 +144,6 @@ int main(void) {
   init_context(&main_context);
   init_dictionary();  // Initialize dictionary first
   populate_dictionary();
-
-  char input[256];
-
-  for (;;) {
-    printf("\nok> ");
-    fflush(stdout);
-
-    if (!platform_get_line(input, sizeof(input))) {
-      break;
-    }
-
-    interpret(input);
-  }
-
+  repl(&main_context);
   return 0;
 }
