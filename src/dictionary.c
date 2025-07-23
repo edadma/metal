@@ -19,8 +19,7 @@ void init_dictionary(void) {
   debug("Dictionary initialized");
 }
 
-void dict_add_native_word(const char* name, native_func_t func,
-                          const char* help) {
+void add_native_word(const char* name, native_func_t func, const char* help) {
   if (dict_size >= MAX_DICT_ENTRIES) {
     error("Dictionary full");
     return;

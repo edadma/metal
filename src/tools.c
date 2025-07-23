@@ -53,13 +53,12 @@ static void native_help([[maybe_unused]] context_t* ctx) {
 // Register all tool words
 void add_tools_words(void) {
   // Stack introspection
-  dict_add_native_word(".S", native_dot_s, "( -- ) Show stack contents");
+  add_native_word(".S", native_dot_s, "( -- ) Show stack contents");
 
   // System control
-  dict_add_native_word("BYE", native_bye, "( -- ) Exit Metal");
+  add_native_word("BYE", native_bye, "( -- ) Exit Metal");
 
   // Meta commands
-  dict_add_native_word("WORDS", native_words,
-                       "( -- ) List all available words");
-  dict_add_native_word("HELP", native_help, "( -- ) Show help for all words");
+  add_native_word("WORDS", native_words, "( -- ) List all available words");
+  add_native_word("HELP", native_help, "( -- ) Show help for all words");
 }

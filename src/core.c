@@ -275,27 +275,27 @@ static void native_store(context_t* ctx) {
 // Register all core words
 void add_core_words(void) {
   // Stack manipulation
-  dict_add_native_word("DUP", native_dup,
+  add_native_word("DUP", native_dup,
                        "( a -- a a ) Duplicate top of stack");
-  dict_add_native_word("DROP", native_drop, "( a -- ) Remove top of stack");
-  dict_add_native_word("SWAP", native_swap,
+  add_native_word("DROP", native_drop, "( a -- ) Remove top of stack");
+  add_native_word("SWAP", native_swap,
                        "( a b -- b a ) Swap top two stack items");
   // Arithmetic
-  dict_add_native_word("+", native_add, "( a b -- c ) Add two numbers");
+  add_native_word("+", native_add, "( a b -- c ) Add two numbers");
 
   // I/O
-  dict_add_native_word("PRINT", native_print, "( a -- ) Print value to output");
+  add_native_word("PRINT", native_print, "( a -- ) Print value to output");
 
   // Array operations
-  dict_add_native_word("[]", native_nil, "( -- array ) Create empty array");
-  dict_add_native_word(",", native_comma,
+  add_native_word("[]", native_nil, "( -- array ) Create empty array");
+  add_native_word(",", native_comma,
                        "( array item -- array ) Append item to array");
-  dict_add_native_word("LENGTH", native_length,
+  add_native_word("LENGTH", native_length,
                        "( array -- n ) Get array length");
-  dict_add_native_word("INDEX", native_index,
+  add_native_word("INDEX", native_index,
                        "( array n -- ptr ) Get pointer to array element");
-  dict_add_native_word("@", native_fetch,
+  add_native_word("@", native_fetch,
                        "( ptr -- value ) Fetch value from pointer");
-  dict_add_native_word("!", native_store,
+  add_native_word("!", native_store,
                        "( ptr value -- ) Store value at pointer");
 }

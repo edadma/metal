@@ -42,9 +42,9 @@ static void native_debug_off([[maybe_unused]] context_t* ctx) {
 
 // Add debug words to dictionary
 void add_debug_words(void) {
-  dict_add_native_word("DEBUG-ON", native_debug_on,
+  add_native_word("DEBUG-ON", native_debug_on,
                        "( -- ) Enable debug output");
-  dict_add_native_word("DEBUG-OFF", native_debug_off,
+  add_native_word("DEBUG-OFF", native_debug_off,
                        "( -- ) Disable debug output");
 }
 
