@@ -132,7 +132,7 @@ int main(void) {
 
   sleep_ms(500);
 #define TARGET "Pico W"
-#elifdef TARGET_HOST
+#elifdef TARGET_LINUX
 #define TARGET "Linux"
 #elifdef TARGET_WINDOWS
 #define TARGET "Windows"

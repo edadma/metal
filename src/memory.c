@@ -7,7 +7,7 @@
 
 #ifdef TARGET_PICO
 #include "pico/mutex.h"
-#elifdef TARGET_HOST
+#elifdef TARGET_LINUX
 #include <pthread.h>
 #endif
 
@@ -21,7 +21,7 @@ static mutex_t memory_mutex;
 #define LOCK_MEMORY() mutex_enter_blocking(&memory_mutex)
 #define UNLOCK_MEMORY() mutex_exit(&memory_mutex)
 #define INIT_MEMORY_MUTEX() mutex_init(&memory_mutex)
-#else  // TARGET_HOST
+#else  // TARGET_LINUX
 static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK_MEMORY() pthread_mutex_lock(&memory_mutex)
 #define UNLOCK_MEMORY() pthread_mutex_unlock(&memory_mutex)
