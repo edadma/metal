@@ -1,6 +1,9 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#include <stddef.h>
+
+#include "cell.h"
 #include "metal.h"
 
 // Array data management

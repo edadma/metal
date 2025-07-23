@@ -4,6 +4,7 @@
 
 #include "debug.h"
 #include "memory.h"
+#include "metal.h"
 
 // Cell creation functions (fundamental immediate types)
 
@@ -62,6 +63,18 @@ cell_t new_pointer(cell_t* target) {
   cell_t cell = {0};
   cell.type = CELL_POINTER;
   cell.payload.pointer = target;
+  return cell;
+}
+
+cell_t new_null(void) {
+  cell_t cell = {0};
+  cell.type = CELL_NULL;
+  return cell;
+}
+
+cell_t new_undefined(void) {
+  cell_t cell = {0};
+  cell.type = CELL_UNDEFINED;
   return cell;
 }
 

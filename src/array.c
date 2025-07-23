@@ -1,6 +1,10 @@
 #include "array.h"
 
+#include <stddef.h>
+
+#include "cell.h"
 #include "debug.h"
+#include "memory.h"
 
 // Array data management functions
 

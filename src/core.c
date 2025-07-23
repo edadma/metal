@@ -3,6 +3,7 @@
 #include "array.h"
 #include "dictionary.h"
 #include "metal.h"
+#include "stack.h"
 #include "util.h"
 
 // Stack manipulation words
@@ -275,11 +276,10 @@ static void native_store(context_t* ctx) {
 // Register all core words
 void add_core_words(void) {
   // Stack manipulation
-  add_native_word("DUP", native_dup,
-                       "( a -- a a ) Duplicate top of stack");
+  add_native_word("DUP", native_dup, "( a -- a a ) Duplicate top of stack");
   add_native_word("DROP", native_drop, "( a -- ) Remove top of stack");
   add_native_word("SWAP", native_swap,
-                       "( a b -- b a ) Swap top two stack items");
+                  "( a b -- b a ) Swap top two stack items");
   // Arithmetic
   add_native_word("+", native_add, "( a b -- c ) Add two numbers");
 
@@ -289,13 +289,11 @@ void add_core_words(void) {
   // Array operations
   add_native_word("[]", native_nil, "( -- array ) Create empty array");
   add_native_word(",", native_comma,
-                       "( array item -- array ) Append item to array");
-  add_native_word("LENGTH", native_length,
-                       "( array -- n ) Get array length");
+                  "( array item -- array ) Append item to array");
+  add_native_word("LENGTH", native_length, "( array -- n ) Get array length");
   add_native_word("INDEX", native_index,
-                       "( array n -- ptr ) Get pointer to array element");
+                  "( array n -- ptr ) Get pointer to array element");
   add_native_word("@", native_fetch,
-                       "( ptr -- value ) Fetch value from pointer");
-  add_native_word("!", native_store,
-                       "( ptr value -- ) Store value at pointer");
+                  "( ptr -- value ) Fetch value from pointer");
+  add_native_word("!", native_store, "( ptr value -- ) Store value at pointer");
 }

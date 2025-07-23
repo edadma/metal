@@ -12,7 +12,12 @@ if (TARGET_PLATFORM STREQUAL "pico")
 endif ()
 
 # Project
-project(metal C)
+if (TARGET_PLATFORM STREQUAL "pico")
+    project(metal C CXX ASM)
+else ()
+    project(metal C)
+endif ()
+
 set(CMAKE_C_STANDARD 23)
 
 # Initialize Pico SDK

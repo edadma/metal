@@ -15,6 +15,7 @@
 #include "dictionary.h"
 #include "memory.h"
 #include "metal.h"
+#include "stack.h"
 #include "tools.h"
 
 // Global state
@@ -156,7 +157,6 @@ bool platform_get_line(char* buffer, size_t size) {
 int main(void) {
 #ifdef TARGET_PICO
   stdio_init_all();
-  mutex_init(&memory_mutex);
 
   while (!stdio_usb_connected()) {
     sleep_ms(100);
