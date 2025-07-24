@@ -39,6 +39,17 @@ void error(const char* fmt, ...) {
   vsnprintf(error_buffer, sizeof(error_buffer), fmt, args);
   va_end(args);
 
+  // Clear stacks before jumping (releases all references)
+  while (!is_data_empty(&main_context)) {
+    cell_t cell = data_pop(&main_context);
+    metal_release(&cell);
+  }
+
+  while (!is_return_empty(&main_context)) {
+    cell_t cell = return_pop(&main_context);
+    metal_release(&cell);
+  }
+
   main_context.error_msg = error_buffer;
   longjmp(main_context.error_jmp, 1);
 }

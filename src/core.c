@@ -40,6 +40,10 @@ static void native_swap(context_t* ctx) {
   cell_t b = data_pop(ctx);
   data_push(ctx, a);
   data_push(ctx, b);
+
+  // Release the references we got from data_pop
+  metal_release(&a);
+  metal_release(&b);
 }
 
 // Arithmetic words
