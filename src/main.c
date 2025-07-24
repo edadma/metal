@@ -31,8 +31,8 @@ void init_context(context_t* ctx) {
 
 // Error handling
 void error(const char* msg) {
-  printf("ERROR: %s\n", msg);
-  // For now, just continue. Later we'll use longjmp
+  main_context.error_msg = msg;
+  longjmp(main_context.error_jmp, 1);  // Jump back to interpret()
 }
 
 // Simple tokenizer
@@ -77,6 +77,18 @@ bool try_parse_number(const char* token, cell_t* result) {
 
 // Main interpreter
 metal_result_t interpret(const char* input) {
+  // Set up exception handling
+  if (setjmp(main_context.error_jmp) != 0) {
+    // We jumped here due to an error
+    printf("ERROR: %s\n", main_context.error_msg);
+
+    // Clear parsing state
+    main_context.input_pos = NULL;
+    main_context.input_start = NULL;
+
+    return METAL_ERROR;
+  }
+
   // Set up parsing state in context
   main_context.input_start = input;
   main_context.input_pos = input;
