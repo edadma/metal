@@ -71,7 +71,7 @@ typedef enum {
 // Core interpreter functions
 metal_result_t interpret(const char* input);
 bool metal_input_complete(const char* input);
-void error(const char* msg);
+void error(const char* fmt, ...);
 
 // Context management
 void init_context(context_t* ctx);

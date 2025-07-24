@@ -5,6 +5,7 @@
 
 #include "dictionary.h"
 #include "metal.h"
+#include "parser.h"
 #include "stack.h"
 
 // External references to dictionary (defined in main.c)
@@ -38,15 +39,37 @@ static void native_words([[maybe_unused]] context_t* ctx) {
   }
 }
 
-static void native_help([[maybe_unused]] context_t* ctx) {
-  // We need to get the next token from input
-  // For now, let's implement a simple version that shows all help
+static void show_all_help(void) {
   printf("Available words with help:\n\n");
 
   for (int i = 0; i < get_dictionary_size(); i++) {
     dictionary_entry_t* entry = get_dictionary_entry(i);
-
     printf("%-12s %s\n", entry->name, entry->help);
+  }
+}
+
+static void native_help(context_t* ctx) {
+  if (!ctx->input_pos) {
+    // Not in parsing context, show all words
+    show_all_help();
+    return;
+  }
+  // Try to get next word
+  char word_buffer[256];
+  token_type_t token_type =
+      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+
+  if (token_type == TOKEN_WORD) {
+    // Show help for specific word
+    dictionary_entry_t* entry = find_word(word_buffer);
+    if (entry) {
+      printf("%-12s %s\n", entry->name, entry->help);
+    } else {
+      printf("Word '%s' not found\n", word_buffer);
+    }
+  } else {
+    // No argument or invalid token, show all words
+    show_all_help();
   }
 }
 

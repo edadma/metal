@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <setjmp.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,9 +31,16 @@ void init_context(context_t* ctx) {
 }
 
 // Error handling
-void error(const char* msg) {
-  main_context.error_msg = msg;
-  longjmp(main_context.error_jmp, 1);  // Jump back to interpret()
+void error(const char* fmt, ...) {
+  static char error_buffer[256];  // Static buffer for formatted message
+
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(error_buffer, sizeof(error_buffer), fmt, args);
+  va_end(args);
+
+  main_context.error_msg = error_buffer;
+  longjmp(main_context.error_jmp, 1);
 }
 
 // Number parsing
@@ -113,7 +121,7 @@ metal_result_t interpret(const char* input) {
       }
 
       // Unknown word
-      printf("Unknown word: %s\n", word);
+      error("Unknown word: %s\n", word);
     }
   }
 
