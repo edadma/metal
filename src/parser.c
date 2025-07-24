@@ -1,0 +1,102 @@
+#include "parser.h"
+
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "debug.h"
+#include "memory.h"
+
+void skip_whitespace(const char** input_pos) {
+  while (**input_pos) {
+    // Skip normal whitespace
+    if (isspace(**input_pos)) {
+      (*input_pos)++;
+      continue;
+    }
+    // Handle // line comments
+    if (**input_pos == '/' && *(*input_pos + 1) == '/') {
+      // Skip to end of line
+      while (**input_pos && **input_pos != '\n') {
+        (*input_pos)++;
+      }
+      // Continue to skip the newline and any following whitespace
+      continue;
+    }
+    // Not whitespace or comment, stop skipping
+    break;
+  }
+}
+
+bool parse_next_word(const char** input_pos, char* buffer, size_t buffer_size) {
+  skip_whitespace(input_pos);
+  if (!**input_pos) {
+    return false;  // No more input
+  }
+  const char* start = *input_pos;
+  const char* end = start;
+  // Parse until whitespace or end of input
+  while (*end && !isspace(*end)) {
+    // Stop at // comment start
+    if (*end == '/' && *(end + 1) == '/') {
+      break;
+    }
+    end++;
+  }
+  size_t length = end - start;
+  if (length >= buffer_size) {
+    debug("Word too long: %.*s", (int)length, start);
+    return false;  // Word too long
+  }
+  strncpy(buffer, start, length);
+  buffer[length] = '\0';
+  *input_pos = end;
+  debug("Parsed word: '%s'", buffer);
+  return true;
+}
+
+bool has_more_input(const char* input_pos) {
+  skip_whitespace(&input_pos);
+  return *input_pos != '\0';
+}
+
+char* parse_until_char(context_t* ctx, char delimiter) {
+  if (!ctx->input_pos) {
+    debug("parse_until_char: not in parsing context");
+    return NULL;
+  }
+  const char* start = ctx->input_pos;
+  const char* end = start;
+  // Find delimiter
+  while (*end && *end != delimiter) {
+    end++;
+  }
+  if (*end != delimiter) {
+    debug("parse_until_char: delimiter '%c' not found", delimiter);
+    return NULL;
+  }
+  // Copy content
+  size_t length = end - start;
+  char* result = metal_alloc(length + 1);
+  if (!result) {
+    debug("parse_until_char: allocation failed");
+    return NULL;
+  }
+  strncpy(result, start, length);
+  result[length] = '\0';
+
+  // Advance context past delimiter
+  ctx->input_pos = end + 1;
+
+  debug("parse_until_char: parsed '%s'", result);
+  return result;
+}
+
+void skip_to_end_of_line(const char** input_pos) {
+  while (**input_pos && **input_pos != '\n') {
+    (*input_pos)++;
+  }
+  if (**input_pos == '\n') {
+    (*input_pos)++;
+  }
+}

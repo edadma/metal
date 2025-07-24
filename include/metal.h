@@ -33,6 +33,10 @@ struct context {
   // Context identification
   const char* name;  // "REPL", "TIMER_IRQ", etc.
   bool is_interrupt_handler;
+
+  // Parsing state (for words that need to parse ahead)
+  const char* input_start;  // Start of input (for bounds checking/errors)
+  const char* input_pos;    // Current position in input being parsed
 };
 
 // Array data structure

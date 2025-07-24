@@ -2,7 +2,9 @@
 
 #include "array.h"
 #include "dictionary.h"
+#include "memory.h"
 #include "metal.h"
+#include "parser.h"
 #include "stack.h"
 #include "util.h"
 
@@ -273,6 +275,17 @@ static void native_store(context_t* ctx) {
   metal_release(&value);  // We retained it above
 }
 
+// Comment word
+static void native_paren_comment(context_t* ctx) {
+  char* comment = parse_until_char(ctx, ')');
+  if (!comment) {
+    error("( : missing closing )");
+    return;
+  }
+  // It's a comment, so just discard it
+  metal_free(comment);
+}
+
 // Register all core words
 void add_core_words(void) {
   // Stack manipulation
@@ -296,4 +309,7 @@ void add_core_words(void) {
   add_native_word("@", native_fetch,
                   "( ptr -- value ) Fetch value from pointer");
   add_native_word("!", native_store, "( ptr value -- ) Store value at pointer");
+
+  add_native_word("(", native_paren_comment,
+                  "( comment -- ) Parenthesis comment until )");
 }

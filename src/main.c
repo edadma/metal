@@ -15,6 +15,7 @@
 #include "dictionary.h"
 #include "memory.h"
 #include "metal.h"
+#include "parser.h"
 #include "repl.h"
 #include "stack.h"
 #include "tools.h"
@@ -76,41 +77,40 @@ bool try_parse_number(const char* token, cell_t* result) {
 
 // Main interpreter
 metal_result_t interpret(const char* input) {
-  // Make a copy since strtok modifies the string
-  char* input_copy = malloc(strlen(input) + 1);
-  strcpy(input_copy, input);
-
-  tokenize(input_copy);
-
-  for (int i = 0; i < token_count; i++) {
-    char* token = tokens[i];
-
+  // Set up parsing state in context
+  main_context.input_start = input;
+  main_context.input_pos = input;
+  char word_buffer[256];
+  // Parse and execute words one at a time
+  while (parse_next_word(&main_context.input_pos, word_buffer,
+                         sizeof(word_buffer))) {
+    char* word = word_buffer;
     // Try to parse as number
     cell_t num;
-    if (try_parse_number(token, &num)) {
+    if (try_parse_number(word, &num)) {
       data_push(&main_context, num);
       continue;
     }
-
     // Try to find in dictionary
-    dictionary_entry_t* word = find_word(token);
-    if (word) {
-      if (word->definition.type == CELL_NATIVE) {
-        word->definition.payload.native(&main_context);
+    dictionary_entry_t* dict_word = find_word(word);
+    if (dict_word) {
+      if (dict_word->definition.type == CELL_NATIVE) {
+        dict_word->definition.payload.native(&main_context);
       } else {
         error("Non-native words not implemented yet");
       }
       continue;
     }
-
     // Unknown word
-    printf("Unknown word: %s\n", token);
+    printf("Unknown word: %s\n", word);
   }
 
-  free(input_copy);
+  // Clear parsing state
+  main_context.input_pos = NULL;
+  main_context.input_start = NULL;
+
   return METAL_OK;
 }
-
 // Initialize built-in words
 void populate_dictionary(void) {
   add_core_words();   // Core language features
