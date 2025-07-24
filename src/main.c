@@ -40,16 +40,6 @@ void error(const char* msg) {
 static char* tokens[MAX_TOKENS];
 static int token_count = 0;
 
-void tokenize(char* input) {
-  token_count = 0;
-  char* token = strtok(input, " \t\n\r");
-
-  while (token && token_count < MAX_TOKENS) {
-    tokens[token_count++] = token;
-    token = strtok(NULL, " \t\n\r");
-  }
-}
-
 // Number parsing
 bool try_parse_number(const char* token, cell_t* result) {
   char* endptr;
