@@ -101,44 +101,37 @@ static bool parse_string_literal(const char** input_pos, char* buffer,
 token_type_t parse_next_token(const char** input_pos, char* buffer,
                               size_t buffer_size) {
   skip_whitespace(input_pos);
-
   if (!**input_pos) {
-    return false;  // No more input
+    return TOKEN_EOF;
   }
-
   // Check for string literal
   if (**input_pos == '"') {
     if (parse_string_literal(input_pos, buffer, buffer_size)) {
       return TOKEN_STRING;
+    } else {
+      // String parsing failed - this should probably be an error
+      return TOKEN_EOF;
     }
-
-    error("error parsing string literal");
   }
-
+  // Parse regular word
   const char* start = *input_pos;
   const char* end = start;
-
-  // Parse until whitespace or end of input
+  // Parse until whitespace, quote, or end of input
   while (*end && !isspace(*end) && *end != '"') {
     // Stop at // comment start
     if (*end == '/' && *(end + 1) == '/') {
       break;
     }
-
     end++;
   }
-
   size_t length = end - start;
-
   if (length >= buffer_size) {
     debug("Word too long: %.*s", (int)length, start);
-    return TOKEN_EOF;  // Word too long
+    return TOKEN_EOF;
   }
-
   if (length == 0) {
     return TOKEN_EOF;
   }
-
   strncpy(buffer, start, length);
   buffer[length] = '\0';
   *input_pos = end;
@@ -146,39 +139,28 @@ token_type_t parse_next_token(const char** input_pos, char* buffer,
   return TOKEN_WORD;
 }
 
-bool has_more_input(const char* input_pos) {
-  skip_whitespace(&input_pos);
-  return *input_pos != '\0';
-}
-
 char* parse_until_char(context_t* ctx, char delimiter) {
   if (!ctx->input_pos) {
     debug("parse_until_char: not in parsing context");
     return NULL;
   }
-
   const char* start = ctx->input_pos;
   const char* end = start;
-
   // Find delimiter
   while (*end && *end != delimiter) {
     end++;
   }
-
   if (*end != delimiter) {
     debug("parse_until_char: delimiter '%c' not found", delimiter);
     return NULL;
   }
-
   // Copy content
   size_t length = end - start;
-  char* result = metal_alloc(length + 1);
-
+  char* result = malloc(length + 1);
   if (!result) {
     debug("parse_until_char: allocation failed");
     return NULL;
   }
-
   strncpy(result, start, length);
   result[length] = '\0';
 
@@ -187,6 +169,11 @@ char* parse_until_char(context_t* ctx, char delimiter) {
 
   debug("parse_until_char: parsed '%s'", result);
   return result;
+}
+
+bool has_more_input(const char* input_pos) {
+  skip_whitespace(&input_pos);
+  return *input_pos != '\0';
 }
 
 void skip_to_end_of_line(const char** input_pos) {
