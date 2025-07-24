@@ -3,8 +3,12 @@
 
 #include "metal.h"
 
+// Token types for lexical analysis
+typedef enum { TOKEN_WORD, TOKEN_STRING, TOKEN_EOF } token_type_t;
+
 // Core parsing functions
-bool parse_next_word(const char** input_pos, char* buffer, size_t buffer_size);
+token_type_t parse_next_token(const char** input_pos, char* buffer,
+                              size_t buffer_size);
 void skip_whitespace(const char** input_pos);
 bool has_more_input(const char* input_pos);
 

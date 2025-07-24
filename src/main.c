@@ -35,17 +35,13 @@ void error(const char* msg) {
   longjmp(main_context.error_jmp, 1);  // Jump back to interpret()
 }
 
-// Simple tokenizer
-#define MAX_TOKENS 64
-static char* tokens[MAX_TOKENS];
-static int token_count = 0;
-
 // Number parsing
 bool try_parse_number(const char* token, cell_t* result) {
   char* endptr;
 
   // Try integer first
-  long long val = strtoll(token, &endptr, 10);
+  const long long val = strtoll(token, &endptr, 10);
+
   if (*endptr == '\0') {
     if (val >= INT32_MIN && val <= INT32_MAX) {
       *result = new_int32((int32_t)val);
@@ -56,7 +52,8 @@ bool try_parse_number(const char* token, cell_t* result) {
   }
 
   // Try float
-  double fval = strtod(token, &endptr);
+  const double fval = strtod(token, &endptr);
+
   if (*endptr == '\0') {
     *result = new_float(fval);
     return true;
@@ -73,8 +70,8 @@ metal_result_t interpret(const char* input) {
     printf("ERROR: %s\n", main_context.error_msg);
 
     // Clear parsing state
-    main_context.input_pos = NULL;
-    main_context.input_start = NULL;
+    main_context.input_pos = nullptr;
+    main_context.input_start = nullptr;
 
     return METAL_ERROR;
   }
@@ -82,37 +79,51 @@ metal_result_t interpret(const char* input) {
   // Set up parsing state in context
   main_context.input_start = input;
   main_context.input_pos = input;
-  char word_buffer[256];
-  // Parse and execute words one at a time
-  while (parse_next_word(&main_context.input_pos, word_buffer,
-                         sizeof(word_buffer))) {
-    char* word = word_buffer;
-    // Try to parse as number
-    cell_t num;
-    if (try_parse_number(word, &num)) {
-      data_push(&main_context, num);
-      continue;
-    }
-    // Try to find in dictionary
-    dictionary_entry_t* dict_word = find_word(word);
-    if (dict_word) {
-      if (dict_word->definition.type == CELL_NATIVE) {
-        dict_word->definition.payload.native(&main_context);
-      } else {
-        error("Non-native words not implemented yet");
+
+  char token_buffer[256];
+  token_type_t token_type;
+
+  // Parse and execute tokens one at a time
+  while ((token_type = parse_next_token(&main_context.input_pos, token_buffer,
+                                        sizeof(token_buffer))) != TOKEN_EOF) {
+    if (token_type == TOKEN_STRING) {
+      // String literal - push to stack
+      data_push(&main_context, new_string(token_buffer));
+
+    } else if (token_type == TOKEN_WORD) {
+      char* word = token_buffer;
+
+      // Try to parse as number
+      cell_t num;
+      if (try_parse_number(word, &num)) {
+        data_push(&main_context, num);
+        continue;
       }
-      continue;
+
+      // Try to find in dictionary
+      const dictionary_entry_t* dict_word = find_word(word);
+
+      if (dict_word) {
+        if (dict_word->definition.type == CELL_NATIVE) {
+          dict_word->definition.payload.native(&main_context);
+        } else {
+          error("Non-native words not implemented yet");
+        }
+        continue;
+      }
+
+      // Unknown word
+      printf("Unknown word: %s\n", word);
     }
-    // Unknown word
-    printf("Unknown word: %s\n", word);
   }
 
-  // Clear parsing state
-  main_context.input_pos = NULL;
-  main_context.input_start = NULL;
+  // Clear parsing state on success
+  main_context.input_pos = nullptr;
+  main_context.input_start = nullptr;
 
   return METAL_OK;
 }
+
 // Initialize built-in words
 void populate_dictionary(void) {
   add_core_words();   // Core language features
