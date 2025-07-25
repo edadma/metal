@@ -19,32 +19,36 @@ void init_dictionary(void) {
   debug("Dictionary initialized");
 }
 
-void add_native_word(const char* name, native_func_t func, const char* help) {
-  if (dict_size >= MAX_DICT_ENTRIES) {
-    error("Dictionary full");
-    return;
-  }
+void add_cell(const char* name, cell_t def, const char* help) {
+  check_dictionary();
 
   strncpy(dictionary[dict_size].name, name, 31);
   dictionary[dict_size].name[31] = '\0';
 
-  cell_t def = {0};
-  def.type = CELL_NATIVE;
-  def.payload.native = func;
-
   dictionary[dict_size].definition = def;
   dictionary[dict_size].help = help;
 
-  debug("Added word '%s' to dictionary at index %d", name, dict_size);
+  debug("Added '%s' to dictionary at index %d", name, dict_size);
   dict_size++;
 }
-void add_native_word_immediate(const char* name, native_func_t func,
-                               const char* help) {
+
+void add_native_word(const char* name, native_func_t func, const char* help) {
+  cell_t def = {0};
+  def.type = CELL_NATIVE;
+  def.payload.native = func;
+  add_cell(name, def, help);
+}
+
+void check_dictionary(void) {
   if (dict_size >= MAX_DICT_ENTRIES) {
     error("Dictionary full");
     return;
   }
+}
 
+void add_native_word_immediate(const char* name, native_func_t func,
+                               const char* help) {
+  check_dictionary();
   strncpy(dictionary[dict_size].name, name, 31);
   dictionary[dict_size].name[31] = '\0';
 

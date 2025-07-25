@@ -13,8 +13,8 @@
 
 // Global compilation state
 bool compilation_mode = false;
-static cell_array_t* compiling_definition = NULL;
-static char compiling_word_name[32];
+cell_array_t* compiling_definition = NULL;
+char compiling_word_name[32];
 
 // Stack manipulation words
 
@@ -326,6 +326,7 @@ static void native_def(context_t* ctx) {
   debug("Started compiling word '%s'", compiling_word_name);
 }
 
+// Better approach for native_end() - don't use NULL function
 static void native_end(context_t* ctx) {
   if (!compilation_mode) {
     error("END: not in compilation mode");
@@ -358,23 +359,21 @@ static void native_end(context_t* ctx) {
   // Create the code cell
   cell_t code_cell = new_code(compiling_definition);
 
-  // Add to dictionary
-  add_native_word(compiling_word_name, NULL, "User-defined word");
+  // Add directly to dictionary with the code cell (don't use add_native_word)
+  check_dictionary();
 
-  // Replace the native function with our code cell in the dictionary
-  dictionary_entry_t* new_entry = find_word(compiling_word_name);
-  if (new_entry) {
-    metal_release(&new_entry->definition);  // Release the NULL native function
-    new_entry->definition = code_cell;
-    metal_retain(&code_cell);
-  }
+  strncpy(dictionary[dict_size].name, compiling_word_name, 31);
+  dictionary[dict_size].name[31] = '\0';
+  dictionary[dict_size].definition = code_cell;
+  dictionary[dict_size].help = "User-defined word";
+  dict_size++;
 
   // Reset compilation state
   compilation_mode = false;
   compiling_definition = NULL;  // Now owned by the dictionary
   compiling_word_name[0] = '\0';
 
-  debug("Finished compiling word");
+  debug("Finished compiling word '%s'", dictionary[dict_size - 1].name);
 }
 
 static void native_exit(context_t* ctx) {

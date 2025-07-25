@@ -48,7 +48,7 @@ typedef void (*native_func_t)(context_t* context);
 #pragma pack(push, 4)
 #endif
 
-// Metal cell - 12 bytes (define this first so context can use it)
+// Metal cell
 typedef struct cell {
   cell_type_t type;    // 8 bits
   cell_flags_t flags;  // 8 bits

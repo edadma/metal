@@ -32,15 +32,30 @@ void init_context(context_t* ctx) {
 }
 
 // Error handling
+// Update main.c error() function to handle compilation cleanup
 void error(const char* fmt, ...) {
-  static char error_buffer[256];  // Static buffer for formatted message
+  static char error_buffer[256];
 
   va_list args;
   va_start(args, fmt);
   vsnprintf(error_buffer, sizeof(error_buffer), fmt, args);
   va_end(args);
 
-  // Clear stacks before jumping (releases all references)
+  // Clean up compilation state if error occurred during compilation
+  if (compilation_mode) {
+    compilation_mode = false;
+    if (compiling_definition) {
+      // Release all cells in the definition
+      for (size_t i = 0; i < compiling_definition->length; i++) {
+        metal_release(&compiling_definition->elements[i]);
+      }
+      metal_free(compiling_definition);
+      compiling_definition = NULL;
+    }
+    compiling_word_name[0] = '\0';
+  }
+
+  // Clear stacks before jumping
   while (!is_data_empty(&main_context)) {
     cell_t cell = data_pop(&main_context);
     metal_release(&cell);
