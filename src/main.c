@@ -10,6 +10,7 @@
 #include "pico/stdlib.h"
 #endif
 
+#include "array.h"
 #include "cell.h"
 #include "core.h"
 #include "debug.h"
@@ -88,9 +89,23 @@ metal_result_t interpret(const char* input) {
     // We jumped here due to an error
     printf("ERROR: %s\n", main_context.error_msg);
 
+    // Clean up compilation state if error occurred during compilation
+    if (compilation_mode) {
+      compilation_mode = false;
+      if (compiling_definition) {
+        // Release all cells in the definition
+        for (size_t i = 0; i < compiling_definition->length; i++) {
+          metal_release(&compiling_definition->elements[i]);
+        }
+        metal_free(compiling_definition);
+        compiling_definition = NULL;
+      }
+      compiling_word_name[0] = '\0';
+    }
+
     // Clear parsing state
-    main_context.input_pos = nullptr;
-    main_context.input_start = nullptr;
+    main_context.input_pos = NULL;
+    main_context.input_start = NULL;
 
     return METAL_ERROR;
   }
@@ -106,16 +121,26 @@ metal_result_t interpret(const char* input) {
   while ((token_type = parse_next_token(&main_context.input_pos, token_buffer,
                                         sizeof(token_buffer))) != TOKEN_EOF) {
     if (token_type == TOKEN_STRING) {
-      // String literal - push to stack
-      data_push(&main_context, new_string(token_buffer));
+      // String literal
+      cell_t string_cell = new_string(token_buffer);
+
+      if (compilation_mode) {
+        compile_cell(string_cell);
+      } else {
+        data_push(&main_context, string_cell);
+      }
 
     } else if (token_type == TOKEN_WORD) {
       char* word = token_buffer;
 
-      // Try to parse as number
+      // Try to parse as number first
       cell_t num;
       if (try_parse_number(word, &num)) {
-        data_push(&main_context, num);
+        if (compilation_mode) {
+          compile_cell(num);
+        } else {
+          data_push(&main_context, num);
+        }
         continue;
       }
 
@@ -123,24 +148,71 @@ metal_result_t interpret(const char* input) {
       const dictionary_entry_t* dict_word = find_word(word);
 
       if (dict_word) {
-        if (dict_word->definition.type == CELL_NATIVE) {
-          dict_word->definition.payload.native(&main_context);
+        // Check if word is immediate (executes even during compilation)
+        bool is_immediate =
+            (dict_word->definition.flags & CELL_FLAG_IMMEDIATE) != 0;
+
+        if (compilation_mode && !is_immediate) {
+          // Compile the word reference
+          compile_cell(dict_word->definition);
         } else {
-          error("Non-native words not implemented yet");
+          // Execute the word (either interpretation mode or immediate word)
+          if (dict_word->definition.type == CELL_NATIVE) {
+            dict_word->definition.payload.native(&main_context);
+          } else if (dict_word->definition.type == CELL_CODE) {
+            execute_code(&main_context,
+                         (array_data_t*)dict_word->definition.payload.ptr);
+          } else {
+            error("Unknown word type: %d", dict_word->definition.type);
+          }
         }
         continue;
       }
 
       // Unknown word
-      error("Unknown word: %s\n", word);
+      error("Unknown word: %s", word);
     }
   }
 
   // Clear parsing state on success
-  main_context.input_pos = nullptr;
-  main_context.input_start = nullptr;
+  main_context.input_pos = NULL;
+  main_context.input_start = NULL;
 
   return METAL_OK;
+}
+
+void execute_code(context_t* ctx, array_data_t* code) {
+  for (size_t i = 0; i < code->length; i++) {
+    cell_t* cell = &code->elements[i];
+    switch (cell->type) {
+      case CELL_NATIVE: {
+        // Execute native function
+        cell->payload.native(ctx);
+        break;
+      }
+
+      case CELL_CODE: {
+        // Recursive call to execute nested code
+        execute_code(ctx, (array_data_t*)cell->payload.ptr);
+        break;
+      }
+
+        // All other cell types push themselves onto the stack
+      case CELL_INT32:
+      case CELL_INT64:
+      case CELL_FLOAT:
+      case CELL_STRING:
+      case CELL_ARRAY:
+      case CELL_NIL:
+      case CELL_EMPTY:
+      default: {
+        cell_t copy = *cell;
+        metal_retain(&copy);
+        data_push(ctx, copy);
+        break;
+      }
+    }
+  }
 }
 
 // Initialize built-in words

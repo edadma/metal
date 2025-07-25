@@ -6,6 +6,8 @@
 // Dictionary management
 void init_dictionary(void);
 void add_native_word(const char* name, native_func_t func, const char* help);
+void add_native_word_immediate(const char* name, native_func_t func,
+                               const char* help);
 dictionary_entry_t* find_word(const char* name);
 
 // Dictionary introspection (for tools)

@@ -38,6 +38,27 @@ void add_native_word(const char* name, native_func_t func, const char* help) {
   debug("Added word '%s' to dictionary at index %d", name, dict_size);
   dict_size++;
 }
+void add_native_word_immediate(const char* name, native_func_t func,
+                               const char* help) {
+  if (dict_size >= MAX_DICT_ENTRIES) {
+    error("Dictionary full");
+    return;
+  }
+
+  strncpy(dictionary[dict_size].name, name, 31);
+  dictionary[dict_size].name[31] = '\0';
+
+  cell_t def = {0};
+  def.type = CELL_NATIVE;
+  def.flags = CELL_FLAG_IMMEDIATE;  // Mark as immediate
+  def.payload.native = func;
+
+  dictionary[dict_size].definition = def;
+  dictionary[dict_size].help = help;
+
+  debug("Added immediate word '%s' to dictionary at index %d", name, dict_size);
+  dict_size++;
+}
 
 dictionary_entry_t* find_word(const char* name) {
   for (int i = dict_size - 1; i >= 0; i--) {

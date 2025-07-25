@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "metal.h"
+
 // Forward declaration for circular dependency
 typedef struct context context_t;
 
@@ -38,6 +40,7 @@ typedef enum : uint8_t {
   CELL_FLAG_IMMUTABLE = 1 << 1,   // 0x0002
   CELL_FLAG_WEAK_REF = 1 << 2,    // 0x0004
   CELL_FLAG_TEMPORARY = 1 << 3,   // 0x0008
+  CELL_FLAG_IMMEDIATE = 1 << 4,
 } cell_flags_t;
 
 typedef void (*native_func_t)(context_t* context);
@@ -91,6 +94,7 @@ cell_t new_nil(void);
 cell_t new_pointer(cell_t* target);
 cell_t new_null(void);
 cell_t new_undefined(void);
+cell_t new_code(array_data_t* code_data);
 
 // Cell lifecycle management
 void metal_retain(cell_t* cell);

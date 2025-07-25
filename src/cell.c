@@ -78,6 +78,13 @@ cell_t new_undefined(void) {
   return cell;
 }
 
+cell_t new_code(array_data_t* code_data) {
+  cell_t cell = {0};
+  cell.type = CELL_CODE;
+  cell.payload.ptr = code_data;
+  return cell;
+}
+
 // Cell lifecycle management
 
 void metal_retain(cell_t* cell) {

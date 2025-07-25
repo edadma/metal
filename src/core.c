@@ -1,12 +1,20 @@
 #include "core.h"
 
+#include <string.h>
+
 #include "array.h"
+#include "debug.h"
 #include "dictionary.h"
 #include "memory.h"
 #include "metal.h"
 #include "parser.h"
 #include "stack.h"
 #include "util.h"
+
+// Global compilation state
+static bool compilation_mode = false;
+static array_data_t* compiling_definition = NULL;
+static char compiling_word_name[32];
 
 // Stack manipulation words
 
@@ -290,6 +298,107 @@ static void native_paren_comment(context_t* ctx) {
   metal_free(comment);
 }
 
+static void native_def(context_t* ctx) {
+  if (compilation_mode) {
+    error("DEF: already in compilation mode");
+    return;
+  }
+
+  // Parse next word as the definition name
+  char word_buffer[32];
+  token_type_t token_type =
+      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+  if (token_type != TOKEN_WORD) {
+    error("DEF: expected word name");
+    return;
+  }
+
+  // Initialize compilation
+  compiling_definition = create_array_data(8);  // Start with small capacity
+  if (!compiling_definition) {
+    error("DEF: allocation failed");
+    return;
+  }
+
+  strncpy(compiling_word_name, word_buffer, sizeof(compiling_word_name) - 1);
+  compiling_word_name[sizeof(compiling_word_name) - 1] = '\0';
+  compilation_mode = true;
+  debug("Started compiling word '%s'", compiling_word_name);
+}
+
+static void native_end(context_t* ctx) {
+  if (!compilation_mode) {
+    error("END: not in compilation mode");
+    return;
+  }
+
+  // Add EXIT to the end of the definition
+  dictionary_entry_t* exit_word = find_word("EXIT");
+  if (!exit_word) {
+    error("END: EXIT word not found");
+    return;
+  }
+
+  // Add EXIT as the last instruction
+  if (compiling_definition->length >= compiling_definition->capacity) {
+    compiling_definition = resize_array_data(
+        compiling_definition, compiling_definition->capacity * 2);
+    if (!compiling_definition) {
+      error("END: failed to resize definition");
+      compilation_mode = false;
+      return;
+    }
+  }
+
+  compiling_definition->elements[compiling_definition->length] =
+      exit_word->definition;
+  compiling_definition->length++;
+  metal_retain(&exit_word->definition);
+
+  // Create the code cell
+  cell_t code_cell = new_code(compiling_definition);
+
+  // Add to dictionary
+  add_native_word(compiling_word_name, NULL, "User-defined word");
+
+  // Replace the native function with our code cell in the dictionary
+  dictionary_entry_t* new_entry = find_word(compiling_word_name);
+  if (new_entry) {
+    metal_release(&new_entry->definition);  // Release the NULL native function
+    new_entry->definition = code_cell;
+    metal_retain(&code_cell);
+  }
+
+  // Reset compilation state
+  compilation_mode = false;
+  compiling_definition = NULL;  // Now owned by the dictionary
+  compiling_word_name[0] = '\0';
+
+  debug("Finished compiling word");
+}
+
+static void native_exit(context_t* ctx) {
+  // EXIT is a runtime word that stops execution
+  // Its presence in code signals the interpreter to stop
+  // The actual stopping is handled by the code execution engine
+  debug("EXIT executed");
+}
+
+void compile_cell(cell_t cell) {
+  if (compiling_definition->length >= compiling_definition->capacity) {
+    compiling_definition = resize_array_data(
+        compiling_definition, compiling_definition->capacity * 2);
+    if (!compiling_definition) {
+      error("Compilation: failed to resize definition");
+      return;
+    }
+  }
+
+  compiling_definition->elements[compiling_definition->length] = cell;
+  compiling_definition->length++;
+  metal_retain(&cell);
+}
+
 // Register all core words
 void add_core_words(void) {
   // Stack manipulation
@@ -316,4 +425,8 @@ void add_core_words(void) {
 
   add_native_word("(", native_paren_comment,
                   "( comment -- ) Parenthesis comment until )");
+  add_native_word_immediate("DEF", native_def,
+                            "( -- ) <name> Start word definition");
+  add_native_word_immediate("END", native_end, "( -- ) End word definition");
+  add_native_word("EXIT", native_exit, "( -- ) Exit from word definition");
 }

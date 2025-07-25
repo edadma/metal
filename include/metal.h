@@ -15,7 +15,7 @@
 #define RETURN_STACK_SIZE 256
 
 // Execution context (now cell_t is complete)
-struct context {
+typedef struct context {
   // Stack management
   cell_t data_stack[DATA_STACK_SIZE];
   cell_t return_stack[RETURN_STACK_SIZE];
@@ -37,7 +37,7 @@ struct context {
   // Parsing state (for words that need to parse ahead)
   const char* input_start;  // Start of input (for bounds checking/errors)
   const char* input_pos;    // Current position in input being parsed
-};
+} context_t;
 
 // Array data structure
 typedef struct {
