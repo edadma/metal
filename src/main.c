@@ -20,6 +20,7 @@
 #include "parser.h"
 #include "repl.h"
 #include "stack.h"
+#include "test.h"
 #include "tools.h"
 
 // Global state
@@ -238,6 +239,12 @@ void populate_dictionary(void) {
   // Debug words (only when debug support compiled in)
 #ifdef DEBUG_ENABLED
   add_debug_words();  // Debug commands
+#endif
+
+  // Test words (only when test support compiled in)
+#ifdef TEST_ENABLED
+  add_test_words();  // Test commands
+  init_tests();      // Register example tests
 #endif
 }
 

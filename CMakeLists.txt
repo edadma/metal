@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 
 # Debug option
 option(DEBUG_OPTION "Enable debug output" ON)
+option(TEST_OPTION "Enable unit testing system" ON)
 option(COPY_EXECUTABLES_TO_ROOT "Copy built executables to repository root" ON)
 
 # Platform selection
@@ -112,6 +113,10 @@ if (DEBUG_OPTION)
     target_compile_definitions(metal PRIVATE DEBUG_ENABLED=1)
 endif ()
 
+if (TEST_OPTION)
+    target_compile_definitions(metal PRIVATE TEST_ENABLED=1)
+endif ()
+
 # Windows-specific compiler settings
 if (TARGET_PLATFORM STREQUAL "windows")
     if (MINGW)
@@ -128,3 +133,4 @@ message(STATUS "Metal version: ${METAL_VERSION}")
 message(STATUS "Building Metal for platform: ${TARGET_PLATFORM}")
 message(STATUS "Copy executables to root: ${COPY_EXECUTABLES_TO_ROOT}")
 message(STATUS "Debug option: ${DEBUG_OPTION}")
+message(STATUS "Test option: ${TEST_OPTION}")
