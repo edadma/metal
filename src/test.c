@@ -244,16 +244,6 @@ void reset_test_stats(context_t* ctx) {
   test_count = 0;
   test_passed = 0;
   test_failed = 0;
-
-  // Clear context stacks
-  while (!is_data_empty(ctx)) {
-    cell_t cell = data_pop(ctx);
-    metal_release(&cell);
-  }
-  while (!is_return_empty(ctx)) {
-    cell_t cell = return_pop(ctx);
-    metal_release(&cell);
-  }
 }
 
 void run_all_tests(context_t* ctx) {
