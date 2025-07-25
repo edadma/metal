@@ -359,21 +359,14 @@ static void native_end(context_t* ctx) {
   // Create the code cell
   cell_t code_cell = new_code(compiling_definition);
 
-  // Add directly to dictionary with the code cell (don't use add_native_word)
-  check_dictionary();
-
-  strncpy(dictionary[dict_size].name, compiling_word_name, 31);
-  dictionary[dict_size].name[31] = '\0';
-  dictionary[dict_size].definition = code_cell;
-  dictionary[dict_size].help = "User-defined word";
-  dict_size++;
+  add_cell(compiling_word_name, code_cell, "User-defined word");
 
   // Reset compilation state
   compilation_mode = false;
   compiling_definition = NULL;  // Now owned by the dictionary
   compiling_word_name[0] = '\0';
 
-  debug("Finished compiling word '%s'", dictionary[dict_size - 1].name);
+  debug("Finished compiling word '%s'", compiling_word_name);
 }
 
 static void native_exit(context_t* ctx) {
