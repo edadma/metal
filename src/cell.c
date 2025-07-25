@@ -140,7 +140,7 @@ void metal_release(cell_t* cell) {
         debug("Released array cell, refcount now %d", header->refcount);
         if (header->refcount == 0) {
           // Release all elements first
-          array_data_t* data = (array_data_t*)cell->payload.ptr;
+          cell_array_t* data = (cell_array_t*)cell->payload.ptr;
           for (size_t i = 0; i < data->length; i++) {
             metal_release(&data->elements[i]);
           }

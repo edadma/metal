@@ -44,7 +44,7 @@ typedef struct {
   size_t length;
   size_t capacity;
   cell_t elements[];  // Flexible array member
-} array_data_t;
+} cell_array_t;
 
 // Allocated data header (for refcounting)
 typedef struct {

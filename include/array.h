@@ -7,8 +7,8 @@
 #include "metal.h"
 
 // Array data management
-array_data_t* create_array_data(size_t initial_capacity);
-array_data_t* resize_array_data(array_data_t* data, size_t new_capacity);
+cell_array_t* create_array_data(size_t initial_capacity);
+cell_array_t* resize_array_data(cell_array_t* data, size_t new_capacity);
 
 // Cell creation for arrays
 cell_t new_array(size_t initial_capacity);

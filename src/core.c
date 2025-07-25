@@ -98,7 +98,7 @@ static void native_comma(context_t* ctx) {
 
   if (array_cell.type == CELL_NIL) {
     // Convert NIL to ARRAY with first element
-    array_data_t* data = create_array_data(1);
+    cell_array_t* data = create_array_data(1);
     if (!data) {
       data_push(ctx, array_cell);
       data_push(ctx, element);
@@ -119,7 +119,7 @@ static void native_comma(context_t* ctx) {
     metal_release(&array_cell);
 
   } else if (array_cell.type == CELL_ARRAY) {
-    array_data_t* data = (array_data_t*)array_cell.payload.ptr;
+    cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
 
     // Check if we need to resize
     if (data->length >= data->capacity) {
@@ -161,7 +161,7 @@ static void native_length(context_t* ctx) {
   if (array_cell.type == CELL_NIL) {
     data_push(ctx, new_int32(0));
   } else if (array_cell.type == CELL_ARRAY) {
-    array_data_t* data = (array_data_t*)array_cell.payload.ptr;
+    cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
     data_push(ctx, new_int32((int32_t)data->length));
   } else {
     error("LENGTH: not an array");
@@ -202,7 +202,7 @@ static void native_index(context_t* ctx) {
     return;
   }
 
-  array_data_t* data = (array_data_t*)array_cell.payload.ptr;
+  cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
 
   if (index < 0 || index >= (int32_t)data->length) {
     error("INDEX: index out of bounds");

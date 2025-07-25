@@ -26,7 +26,7 @@ void print_cell(const cell_t* cell) {
       printf("[]");
       break;
     case CELL_ARRAY: {
-      const array_data_t* data = (array_data_t*)cell->payload.ptr;
+      const cell_array_t* data = (cell_array_t*)cell->payload.ptr;
 
       printf("[");
 
