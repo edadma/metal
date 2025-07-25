@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "debug.h"
 #include "dictionary.h"
 #include "stack.h"
 #include "util.h"
@@ -247,22 +248,45 @@ void reset_test_stats(context_t* ctx) {
 }
 
 void run_all_tests(context_t* ctx) {
+  debug("run_all_tests: Starting with context %p", (void*)ctx);
   printf("\n=== Running Metal Unit Tests ===\n");
+  debug("run_all_tests: About to call reset_test_stats");
   reset_test_stats(ctx);
+  debug("run_all_tests: reset_test_stats completed");
+
+  debug("run_all_tests: About to iterate through %d tests",
+        registered_test_count);
 
   for (int i = 0; i < registered_test_count; i++) {
+    debug("run_all_tests: Starting test %d: %s", i, test_registry[i].name);
     printf("\n--- Test: %s ---\n", test_registry[i].name);
+    debug("run_all_tests: Setting current_test_context to %p", (void*)ctx);
 
     // Set current context for test functions to use
     current_test_context = ctx;
+
+    debug("run_all_tests: About to call test function %p",
+          (void*)test_registry[i].func);
     test_registry[i].func();
+    debug("run_all_tests: Test function completed");
+
+    debug("run_all_tests: About to clear stack, current depth: %d",
+          data_depth(ctx));
 
     // Clear context stack after each test function
+    int cleared_count = 0;
     while (!is_data_empty(ctx)) {
       cell_t cell = data_pop(ctx);
       metal_release(&cell);
+      debug("run_all_tests: Cleared cell %d from stack", cleared_count);
     }
+    debug("run_all_tests: Cleared %d cells from stack", cleared_count);
   }
+
+  debug("run_all_tests: All tests completed, clearing current_test_context");
+  current_test_context = NULL;
+
+  debug("run_all_tests: About to print results");
 
   printf("\n=== Test Results ===\n");
   printf("Total tests: %d\n", test_count);
@@ -274,10 +298,16 @@ void run_all_tests(context_t* ctx) {
   } else {
     printf("%d tests FAILED! ✗\n", test_failed);
   }
+
+  debug("run_all_tests: About to return");
 }
 
 // TEST word - run all registered tests
-static void native_test(context_t* ctx) { run_all_tests(ctx); }
+static void native_test(context_t* ctx) {
+  debug("native_test: Starting TEST word execution");
+  run_all_tests(ctx);
+  debug("native_test: run_all_tests completed, about to return");
+}
 
 // Add test words to dictionary
 void add_test_words(void) {
