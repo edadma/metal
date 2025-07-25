@@ -39,13 +39,6 @@ typedef struct context {
   const char* input_pos;    // Current position in input being parsed
 } context_t;
 
-// Array data structure
-typedef struct {
-  size_t length;
-  size_t capacity;
-  cell_t elements[];  // Flexible array member
-} cell_array_t;
-
 // Allocated data header (for refcounting)
 typedef struct {
   uint32_t refcount;

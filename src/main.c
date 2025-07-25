@@ -82,6 +82,40 @@ bool try_parse_number(const char* token, cell_t* result) {
   return false;
 }
 
+void execute_code(context_t* ctx, cell_array_t* code) {
+  for (size_t i = 0; i < code->length; i++) {
+    cell_t* cell = &code->elements[i];
+    switch (cell->type) {
+      case CELL_NATIVE: {
+        // Execute native function
+        cell->payload.native(ctx);
+        break;
+      }
+
+      case CELL_CODE: {
+        // Recursive call to execute nested code
+        execute_code(ctx, cell->payload.ptr);
+        break;
+      }
+
+        // All other cell types push themselves onto the stack
+      case CELL_INT32:
+      case CELL_INT64:
+      case CELL_FLOAT:
+      case CELL_STRING:
+      case CELL_ARRAY:
+      case CELL_NIL:
+      case CELL_EMPTY:
+      default: {
+        cell_t copy = *cell;
+        metal_retain(&copy);
+        data_push(ctx, copy);
+        break;
+      }
+    }
+  }
+}
+
 // Main interpreter
 metal_result_t interpret(const char* input) {
   // Set up exception handling
@@ -90,18 +124,18 @@ metal_result_t interpret(const char* input) {
     printf("ERROR: %s\n", main_context.error_msg);
 
     // Clean up compilation state if error occurred during compilation
-    if (compilation_mode) {
-      compilation_mode = false;
-      if (compiling_definition) {
-        // Release all cells in the definition
-        for (size_t i = 0; i < compiling_definition->length; i++) {
-          metal_release(&compiling_definition->elements[i]);
-        }
-        metal_free(compiling_definition);
-        compiling_definition = NULL;
-      }
-      compiling_word_name[0] = '\0';
-    }
+    // if (compilation_mode) {
+    //   compilation_mode = false;
+    //   if (compiling_definition) {
+    //     // Release all cells in the definition
+    //     for (size_t i = 0; i < compiling_definition->length; i++) {
+    //       metal_release(&compiling_definition->elements[i]);
+    //     }
+    //     metal_free(compiling_definition);
+    //     compiling_definition = NULL;
+    //   }
+    //   compiling_word_name[0] = '\0';
+    // }
 
     // Clear parsing state
     main_context.input_pos = NULL;
@@ -161,7 +195,7 @@ metal_result_t interpret(const char* input) {
             dict_word->definition.payload.native(&main_context);
           } else if (dict_word->definition.type == CELL_CODE) {
             execute_code(&main_context,
-                         (array_data_t*)dict_word->definition.payload.ptr);
+                         (cell_array_t*)dict_word->definition.payload.ptr);
           } else {
             error("Unknown word type: %d", dict_word->definition.type);
           }
@@ -179,40 +213,6 @@ metal_result_t interpret(const char* input) {
   main_context.input_start = NULL;
 
   return METAL_OK;
-}
-
-void execute_code(context_t* ctx, array_data_t* code) {
-  for (size_t i = 0; i < code->length; i++) {
-    cell_t* cell = &code->elements[i];
-    switch (cell->type) {
-      case CELL_NATIVE: {
-        // Execute native function
-        cell->payload.native(ctx);
-        break;
-      }
-
-      case CELL_CODE: {
-        // Recursive call to execute nested code
-        execute_code(ctx, (array_data_t*)cell->payload.ptr);
-        break;
-      }
-
-        // All other cell types push themselves onto the stack
-      case CELL_INT32:
-      case CELL_INT64:
-      case CELL_FLOAT:
-      case CELL_STRING:
-      case CELL_ARRAY:
-      case CELL_NIL:
-      case CELL_EMPTY:
-      default: {
-        cell_t copy = *cell;
-        metal_retain(&copy);
-        data_push(ctx, copy);
-        break;
-      }
-    }
-  }
 }
 
 // Initialize built-in words

@@ -12,8 +12,8 @@
 #include "util.h"
 
 // Global compilation state
-static bool compilation_mode = false;
-static array_data_t* compiling_definition = NULL;
+bool compilation_mode = false;
+static cell_array_t* compiling_definition = NULL;
 static char compiling_word_name[32];
 
 // Stack manipulation words

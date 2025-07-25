@@ -1,9 +1,8 @@
 #ifndef CELL_H
 #define CELL_H
 
+#include <stddef.h>
 #include <stdint.h>
-
-#include "metal.h"
 
 // Forward declaration for circular dependency
 typedef struct context context_t;
@@ -84,6 +83,13 @@ typedef struct cell {
   } payload;  // 8 bytes
 } cell_t;
 
+// Array data structure
+typedef struct {
+  size_t length;
+  size_t capacity;
+  cell_t elements[];  // Flexible array member
+} cell_array_t;
+
 // Cell creation functions (fundamental immediate types)
 cell_t new_int32(int32_t value);
 cell_t new_int64(int64_t value);
@@ -94,7 +100,7 @@ cell_t new_nil(void);
 cell_t new_pointer(cell_t* target);
 cell_t new_null(void);
 cell_t new_undefined(void);
-cell_t new_code(array_data_t* code_data);
+cell_t new_code(cell_array_t* code_data);
 
 // Cell lifecycle management
 void metal_retain(cell_t* cell);
