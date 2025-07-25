@@ -22,10 +22,6 @@ static struct {
 } test_registry[MAX_TESTS];
 static int registered_test_count = 0;
 
-// Test context for Metal language testing
-static context_t test_context;
-static bool test_context_initialized = false;
-
 // Helper to get filename from path
 static const char* get_filename(const char* path) {
   const char* filename = strrchr(path, '/');
@@ -117,29 +113,18 @@ void test_string_equal(const char* file, int line, const char* expr,
 }
 
 // Metal language testing functions
-context_t* get_test_context(void) {
-  if (!test_context_initialized) {
-    init_context(&test_context);
-    test_context.name = "test";
-    test_context_initialized = true;
-  }
-  return &test_context;
-}
+context_t* current_test_context = NULL;
 
 void test_interpret(const char* file, int line, const char* code) {
   test_count++;
-  context_t* ctx = get_test_context();
-
-  // Clear any previous error state
-  ctx->error_msg = NULL;
 
   metal_result_t result = interpret(code);
   if (result == METAL_OK) {
     printf("PASS: %s:%d - interpret(\"%s\")\n", get_filename(file), line, code);
     test_passed++;
   } else {
-    printf("FAIL: %s:%d - interpret(\"%s\") failed: %s\n", get_filename(file),
-           line, code, ctx->error_msg ? ctx->error_msg : "unknown error");
+    printf("FAIL: %s:%d - interpret(\"%s\") failed\n", get_filename(file), line,
+           code);
     test_failed++;
   }
 }
@@ -147,7 +132,7 @@ void test_interpret(const char* file, int line, const char* code) {
 void test_stack_depth(const char* file, int line, const char* expr,
                       int expected) {
   test_count++;
-  context_t* ctx = get_test_context();
+  context_t* ctx = current_test_context;
   int actual = data_depth(ctx);
 
   if (actual == expected) {
@@ -162,7 +147,7 @@ void test_stack_depth(const char* file, int line, const char* expr,
 void test_stack_top_int(const char* file, int line, const char* expr,
                         int expected) {
   test_count++;
-  context_t* ctx = get_test_context();
+  context_t* ctx = current_test_context;
 
   if (is_data_empty(ctx)) {
     printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
@@ -188,7 +173,7 @@ void test_stack_top_int(const char* file, int line, const char* expr,
 // void test_stack_top_float(const char* file, int line, const char* expr,
 //                           double expected) {
 //   test_count++;
-//   context_t* ctx = get_test_context();
+//   context_t* ctx = current_test_context;
 //
 //   if (is_data_empty(ctx)) {
 //     printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
@@ -216,7 +201,7 @@ void test_stack_top_int(const char* file, int line, const char* expr,
 void test_stack_top_string(const char* file, int line, const char* expr,
                            const char* expected) {
   test_count++;
-  context_t* ctx = get_test_context();
+  context_t* ctx = current_test_context;
 
   if (is_data_empty(ctx)) {
     printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
@@ -255,32 +240,38 @@ void register_test(const char* name, void (*test_func)(void)) {
   registered_test_count++;
 }
 
-void reset_test_stats(void) {
+void reset_test_stats(context_t* ctx) {
   test_count = 0;
   test_passed = 0;
   test_failed = 0;
 
-  // Clear test context stacks
-  if (test_context_initialized) {
-    context_t* ctx = get_test_context();
+  // Clear context stacks
+  while (!is_data_empty(ctx)) {
+    cell_t cell = data_pop(ctx);
+    metal_release(&cell);
+  }
+  while (!is_return_empty(ctx)) {
+    cell_t cell = return_pop(ctx);
+    metal_release(&cell);
+  }
+}
+
+void run_all_tests(context_t* ctx) {
+  printf("\n=== Running Metal Unit Tests ===\n");
+  reset_test_stats(ctx);
+
+  for (int i = 0; i < registered_test_count; i++) {
+    printf("\n--- Test: %s ---\n", test_registry[i].name);
+
+    // Set current context for test functions to use
+    current_test_context = ctx;
+    test_registry[i].func();
+
+    // Clear context stack after each test function
     while (!is_data_empty(ctx)) {
       cell_t cell = data_pop(ctx);
       metal_release(&cell);
     }
-    while (!is_return_empty(ctx)) {
-      cell_t cell = return_pop(ctx);
-      metal_release(&cell);
-    }
-  }
-}
-
-void run_all_tests(void) {
-  printf("\n=== Running Metal Unit Tests ===\n");
-  reset_test_stats();
-
-  for (int i = 0; i < registered_test_count; i++) {
-    printf("\n--- Test: %s ---\n", test_registry[i].name);
-    test_registry[i].func();
   }
 
   printf("\n=== Test Results ===\n");
@@ -296,10 +287,7 @@ void run_all_tests(void) {
 }
 
 // TEST word - run all registered tests
-static void native_test(context_t* ctx) {
-  (void)ctx;  // Unused parameter
-  run_all_tests();
-}
+static void native_test(context_t* ctx) { run_all_tests(ctx); }
 
 // Add test words to dictionary
 void add_test_words(void) {
@@ -311,6 +299,7 @@ TEST_FUNCTION(basic_arithmetic) {
   TEST_INTERPRET("5 3 +");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_INT(8);
+
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
@@ -319,8 +308,10 @@ TEST_FUNCTION(string_operations) {
   TEST_INTERPRET("\"hello\" \"world\"");
   TEST_STACK_DEPTH(2);
   TEST_STACK_TOP_STRING("world");
+
   TEST_INTERPRET("DROP");
   TEST_STACK_TOP_STRING("hello");
+
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }

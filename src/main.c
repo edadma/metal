@@ -24,7 +24,7 @@
 #include "tools.h"
 
 // Global state
-static context_t main_context;
+context_t main_context;
 
 // Context management
 void init_context(context_t* ctx) {

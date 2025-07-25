@@ -68,8 +68,8 @@ void test_stack_top_string(const char* file, int line, const char* expr,
 
 // Test management
 void register_test(const char* name, void (*test_func)(void));
-void run_all_tests(void);
-void reset_test_stats(void);
+void run_all_tests(context_t*);
+void reset_test_stats(context_t*);
 context_t* get_test_context(void);
 
 // Add test words to dictionary
