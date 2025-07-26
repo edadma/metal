@@ -1172,6 +1172,215 @@ static void native_repeat(context_t* ctx) {
   release(begin_cell);
 }
 
+// (DO) ( limit start -- ) Runtime: setup loop parameters
+static void native_do_runtime(context_t* ctx) {
+  require(ctx, 2, "(DO)");
+
+  cell_t start = data_pop_cell(ctx);
+  cell_t limit = data_pop_cell(ctx);
+
+  if (start.type != CELL_INT32 || limit.type != CELL_INT32) {
+    error(ctx, "(DO): loop parameters must be integers");
+  }
+
+  // Push limit then index to return stack
+  return_push(ctx, limit);
+  return_push(ctx, start);
+
+  debug("DO: limit=%d start=%d", limit.payload.i32, start.payload.i32);
+}
+
+// (LOOP) ( -- ) Runtime: increment by 1 and test boundary
+static void native_loop_runtime(context_t* ctx) {
+  if (ctx->return_stack_ptr < 2) {
+    error(ctx, "(LOOP): return stack underflow");
+  }
+
+  // Get current index and limit
+  cell_t* index_cell = &ctx->return_stack[ctx->return_stack_ptr - 1];
+  cell_t* limit_cell = &ctx->return_stack[ctx->return_stack_ptr - 2];
+
+  int32_t old_index = index_cell->payload.i32;
+  int32_t limit = limit_cell->payload.i32;
+  int32_t new_index = old_index + 1;
+
+  debug("LOOP: old_index=%d new_index=%d limit=%d", old_index, new_index,
+        limit);
+
+  if (new_index >= limit) {
+    // Exit loop - clean up return stack and skip the branch
+    release(&ctx->return_stack[ctx->return_stack_ptr - 1]);
+    release(&ctx->return_stack[ctx->return_stack_ptr - 2]);
+    ctx->return_stack_ptr -= 2;
+    debug("LOOP: exiting, skipping branch");
+    // Skip over the branch instruction
+    ctx->ip++;
+  } else {
+    // Continue loop - update index and execute the branch
+    index_cell->payload.i32 = new_index;
+    debug("LOOP: continuing, executing branch");
+    // Let the branch instruction execute normally
+  }
+}
+
+// (+LOOP) ( n -- ) Runtime: increment by n and test boundary crossing
+static void native_plus_loop_runtime(context_t* ctx) {
+  require(ctx, 1, "(+LOOP)");
+
+  if (ctx->return_stack_ptr < 2) {
+    error(ctx, "(+LOOP): return stack underflow");
+  }
+
+  cell_t increment = data_pop_cell(ctx);
+  if (increment.type != CELL_INT32) {
+    error(ctx, "(+LOOP): increment must be integer");
+  }
+
+  // Get current index and limit
+  cell_t* index_cell = &ctx->return_stack[ctx->return_stack_ptr - 1];
+  cell_t* limit_cell = &ctx->return_stack[ctx->return_stack_ptr - 2];
+
+  int32_t old_index = index_cell->payload.i32;
+  int32_t limit = limit_cell->payload.i32;
+  int32_t n = increment.payload.i32;
+  int32_t new_index = old_index + n;
+
+  debug("+LOOP: old_index=%d increment=%d new_index=%d limit=%d", old_index, n,
+        new_index, limit);
+
+  // ANS Forth boundary crossing logic
+  bool terminate;
+  if (n >= 0) {
+    terminate = (old_index < limit && new_index >= limit);
+  } else {
+    terminate = (old_index >= limit && new_index < limit);
+  }
+
+  if (terminate) {
+    // Exit loop - clean up return stack and skip the branch
+    release(&ctx->return_stack[ctx->return_stack_ptr - 1]);
+    release(&ctx->return_stack[ctx->return_stack_ptr - 2]);
+    ctx->return_stack_ptr -= 2;
+    debug("+LOOP: exiting, skipping branch");
+    // Skip over the branch instruction
+    ctx->ip++;
+  } else {
+    // Continue loop - update index and execute the branch
+    index_cell->payload.i32 = new_index;
+    debug("+LOOP: continuing, executing branch");
+    // Let the branch instruction execute normally
+  }
+
+  release(&increment);
+}
+
+// DO ( limit start -- ) Compile loop setup
+static void native_do(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "DO: only valid during compilation");
+  }
+  // Compile call to (DO) runtime helper
+  dictionary_entry_t* do_runtime = find_word("(DO)");
+  if (!do_runtime) {
+    error(ctx, "DO: (DO) runtime word not found");
+  }
+  compile_cell(ctx, do_runtime->definition);
+  // Push current location for LOOP/+LOOP to branch back to
+  return_push(ctx, new_int32(compiling_definition->length));
+}
+
+// LOOP ( -- ) Compile loop increment and branch
+static void native_loop(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "LOOP: only valid during compilation");
+  }
+  if (is_return_empty(ctx)) {
+    error(ctx, "LOOP: no matching DO");
+  }
+
+  // Compile call to (LOOP) runtime helper
+  dictionary_entry_t* loop_runtime = find_word("(LOOP)");
+  if (!loop_runtime) {
+    error(ctx, "LOOP: (LOOP) runtime word not found");
+  }
+  compile_cell(ctx, loop_runtime->definition);
+
+  // Compile branch offset back to after DO
+  cell_t* do_location_cell = return_pop(ctx);
+  int do_location = do_location_cell->payload.i32;
+  int offset = do_location - (compiling_definition->length + 1);
+
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH;
+  branch_cell.payload.i32 = offset;
+  compile_cell(ctx, branch_cell);
+
+  release(do_location_cell);
+}
+
+// +LOOP ( n -- ) Compile loop increment by n and branch
+static void native_plus_loop(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "+LOOP: only valid during compilation");
+  }
+
+  if (is_return_empty(ctx)) {
+    error(ctx, "+LOOP: no matching DO");
+  }
+
+  // Compile call to (+LOOP) runtime helper
+  dictionary_entry_t* plus_loop_runtime = find_word("(+LOOP)");
+  if (!plus_loop_runtime) {
+    error(ctx, "+LOOP: (+LOOP) runtime word not found");
+  }
+  compile_cell(ctx, plus_loop_runtime->definition);
+
+  // Compile branch offset back to after DO
+  cell_t* do_location_cell = return_pop(ctx);
+  int do_location = do_location_cell->payload.i32;
+  int offset = do_location - (compiling_definition->length + 1);
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH;
+  branch_cell.payload.i32 = offset;
+  compile_cell(ctx, branch_cell);
+
+  release(do_location_cell);
+}
+
+// I ( -- index ) Get current loop index
+static void native_i(context_t* ctx) {
+  if (ctx->return_stack_ptr < 1) {
+    error(ctx, "I: no active loop");
+  }
+  // Index is on top of return stack
+  cell_t index = ctx->return_stack[ctx->return_stack_ptr - 1];
+  data_push(ctx, index);
+}
+
+// J ( -- outer_index ) Get outer loop index
+static void native_j(context_t* ctx) {
+  if (ctx->return_stack_ptr < 3) {
+    error(ctx, "J: no nested loop");
+  }
+
+  // Outer index is at depth 2: [..., outer_limit, outer_index, inner_limit,
+  // inner_index]
+  cell_t outer_index = ctx->return_stack[ctx->return_stack_ptr - 3];
+  data_push(ctx, outer_index);
+}
+
+// UNLOOP ( -- ) Remove loop parameters from return stack
+static void native_unloop(context_t* ctx) {
+  if (ctx->return_stack_ptr < 2) {
+    error(ctx, "UNLOOP: no active loop");
+  }
+
+  // Remove limit and index from return stack
+  release(&ctx->return_stack[ctx->return_stack_ptr - 1]);
+  release(&ctx->return_stack[ctx->return_stack_ptr - 2]);
+  ctx->return_stack_ptr -= 2;
+}
+
 // Helper function to add a compiled word definition from source
 static void add_definition(const char* name, const char* source,
                            const char* help) {
@@ -1331,6 +1540,23 @@ void add_core_words(void) {
                             "( flag -- ) Continue loop if flag is true");
   add_native_word_immediate("REPEAT", native_repeat,
                             "( -- ) Jump back to BEGIN");
+
+  // DO/LOOP constructs
+  add_native_word("(DO)", native_do_runtime,
+                  "( limit start -- ) Runtime: setup loop");
+  add_native_word("(LOOP)", native_loop_runtime,
+                  "( -- ) Runtime: increment and test");
+  add_native_word("(+LOOP)", native_plus_loop_runtime,
+                  "( n -- ) Runtime: increment by n");
+  add_native_word_immediate("DO", native_do,
+                            "( limit start -- ) Begin counted loop");
+  add_native_word_immediate("LOOP", native_loop,
+                            "( -- ) End loop, increment by 1");
+  add_native_word_immediate("+LOOP", native_plus_loop,
+                            "( n -- ) End loop, increment by n");
+  add_native_word("I", native_i, "( -- index ) Current loop index");
+  add_native_word("J", native_j, "( -- outer_index ) Outer loop index");
+  add_native_word("UNLOOP", native_unloop, "( -- ) Remove loop parameters");
 
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
   add_definition("2DUP", "OVER OVER",
