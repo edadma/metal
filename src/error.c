@@ -29,7 +29,7 @@ NORETURN void error(context_t* ctx, const char* fmt, ...) {
     if (compiling_definition) {
       // Release all cells in the definition
       for (size_t i = 0; i < compiling_definition->length; i++) {
-        metal_release(&compiling_definition->elements[i]);
+        release(&compiling_definition->elements[i]);
       }
       metal_free(compiling_definition);
       compiling_definition = NULL;
@@ -40,13 +40,13 @@ NORETURN void error(context_t* ctx, const char* fmt, ...) {
   // Clear data stack
   while (ctx->data_stack_ptr > 0) {
     ctx->data_stack_ptr--;
-    metal_release(&ctx->data_stack[ctx->data_stack_ptr]);
+    release(&ctx->data_stack[ctx->data_stack_ptr]);
   }
 
   // Clear return stack
   while (ctx->return_stack_ptr > 0) {
     ctx->return_stack_ptr--;
-    metal_release(&ctx->return_stack[ctx->return_stack_ptr]);
+    release(&ctx->return_stack[ctx->return_stack_ptr]);
   }
 
   // Clear parsing state

@@ -22,7 +22,7 @@ void data_push(context_t* ctx, cell_t cell) {
   data_push_no_retain(ctx, cell);
 
   // Retain reference if needed
-  metal_retain(&cell);
+  retain(&cell);
 }
 
 void data_push_no_retain(context_t* ctx, cell_t cell) {
@@ -46,7 +46,7 @@ void data_push_ptr(context_t* ctx, cell_t* cell) {
   data_push_ptr_no_retain(ctx, cell);
 
   // Retain reference if needed
-  metal_retain(cell);
+  retain(cell);
 }
 
 void require(context_t* ctx, int n, const char* op) {
@@ -97,7 +97,7 @@ void return_push(context_t* ctx, cell_t cell) {
         ctx->return_stack_ptr);
 
   // Retain reference if needed
-  metal_retain(&cell);
+  retain(&cell);
 
   ctx->return_stack[ctx->return_stack_ptr++] = cell;
 }

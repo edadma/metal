@@ -277,7 +277,7 @@ void run_all_tests(void) {
     int cleared_count = 0;
     while (!is_data_empty(&test_context)) {
       cell_t cell = data_pop_cell(&test_context);
-      metal_release(&cell);
+      release(&cell);
       debug("run_all_tests: Cleared cell %d from stack", cleared_count);
     }
     debug("run_all_tests: Cleared %d cells from stack", cleared_count);

@@ -34,7 +34,7 @@ static void native_drop(context_t* ctx) {
   }
 
   cell_t* cell = data_pop(ctx);
-  metal_release(cell);
+  release(cell);
 }
 
 static void native_swap(context_t* ctx) {
@@ -63,9 +63,151 @@ static void native_add(context_t* ctx) {
   } else {
     error(ctx, "+ : type mismatch");
   }
+}
 
-  // metal_release(a);
-  // metal_release(b);
+static void native_subtract(context_t* ctx) {
+  require(ctx, 2, "-");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_peek(ctx, 0);
+
+  if (a->type == CELL_INT32 && b->type == CELL_INT32) {
+    // TODO: Check for overflow
+    a->payload.i32 -= b->payload.i32;
+  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    a->payload.f64 -= b->payload.f64;
+  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    // TODO: Check for overflow
+    a->payload.i64 -= b->payload.i64;
+  } else {
+    error(ctx, "- : type mismatch");
+  }
+}
+
+static void native_multiply(context_t* ctx) {
+  require(ctx, 2, "*");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_peek(ctx, 0);
+
+  if (a->type == CELL_INT32 && b->type == CELL_INT32) {
+    // TODO: Check for overflow
+    a->payload.i32 *= b->payload.i32;
+  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    a->payload.f64 *= b->payload.f64;
+  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    // TODO: Check for overflow
+    a->payload.i64 *= b->payload.i64;
+  } else {
+    error(ctx, "* : type mismatch");
+  }
+}
+
+static void native_divide(context_t* ctx) {
+  require(ctx, 2, "/");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_peek(ctx, 0);
+
+  if (a->type == CELL_INT32 && b->type == CELL_INT32) {
+    if (b->payload.i32 == 0) {
+      error(ctx, "/ : division by zero");
+    }
+    a->payload.i32 /= b->payload.i32;
+  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    if (b->payload.f64 == 0.0) {
+      error(ctx, "/ : division by zero");
+    }
+    a->payload.f64 /= b->payload.f64;
+  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    if (b->payload.i64 == 0) {
+      error(ctx, "/ : division by zero");
+    }
+    a->payload.i64 /= b->payload.i64;
+  } else {
+    error(ctx, "/ : type mismatch");
+  }
+}
+
+static void native_modulo(context_t* ctx) {
+  require(ctx, 2, "%");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_peek(ctx, 0);
+
+  if (a->type == CELL_INT32 && b->type == CELL_INT32) {
+    if (b->payload.i32 == 0) {
+      error(ctx, "% : division by zero");
+    }
+    a->payload.i32 %= b->payload.i32;
+  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    if (b->payload.i64 == 0) {
+      error(ctx, "% : division by zero");
+    }
+    a->payload.i64 %= b->payload.i64;
+  } else {
+    error(ctx, "% : only works on integer types");
+  }
+}
+
+// Type conversion words
+
+static void native_to_int32(context_t* ctx) {
+  require(ctx, 1, "INT32");
+
+  cell_t* a = data_peek(ctx, 0);
+
+  if (a->type == CELL_INT32) {
+    // Already INT32, no conversion needed
+    return;
+  } else if (a->type == CELL_INT64) {
+    // TODO: Check for overflow during conversion
+    a->payload.i32 = (int32_t)a->payload.i64;
+    a->type = CELL_INT32;
+  } else if (a->type == CELL_FLOAT) {
+    a->payload.i32 = (int32_t)a->payload.f64;
+    a->type = CELL_INT32;
+  } else {
+    error(ctx, "INT32 : cannot convert type to integer");
+  }
+}
+
+static void native_to_int64(context_t* ctx) {
+  require(ctx, 1, "INT64");
+
+  cell_t* a = data_peek(ctx, 0);
+
+  if (a->type == CELL_INT64) {
+    // Already INT64, no conversion needed
+    return;
+  } else if (a->type == CELL_INT32) {
+    a->payload.i64 = (int64_t)a->payload.i32;
+    a->type = CELL_INT64;
+  } else if (a->type == CELL_FLOAT) {
+    a->payload.i64 = (int64_t)a->payload.f64;
+    a->type = CELL_INT64;
+  } else {
+    error(ctx, "INT64 : cannot convert type to integer");
+  }
+}
+
+static void native_to_float(context_t* ctx) {
+  require(ctx, 1, "FLOAT");
+
+  cell_t* a = data_peek(ctx, 0);
+
+  if (a->type == CELL_FLOAT) {
+    // Already FLOAT, no conversion needed
+    return;
+  } else if (a->type == CELL_INT32) {
+    a->payload.f64 = (double)a->payload.i32;
+    a->type = CELL_FLOAT;
+  } else if (a->type == CELL_INT64) {
+    a->payload.f64 = (double)a->payload.i64;
+    a->type = CELL_FLOAT;
+  } else {
+    error(ctx, "FLOAT : cannot convert type to float");
+  }
 }
 
 // I/O words
@@ -75,7 +217,7 @@ static void native_print(context_t* ctx) {
 
   cell_t* cell = data_pop(ctx);
   print_cell(cell);
-  metal_release(cell);
+  release(cell);
 }
 
 // Array words
@@ -97,7 +239,7 @@ static void native_comma(context_t* ctx) {
     // Add the element
     data->elements[0] = element;
     data->length = 1;
-    metal_retain(&element);  // Array now owns this reference
+    retain(&element);  // Array now owns this reference
 
     // Create new array cell
     cell_t new_array = {0};
@@ -105,7 +247,7 @@ static void native_comma(context_t* ctx) {
     new_array.payload.ptr = data;
 
     data_push(ctx, new_array);
-    metal_release(&array_cell);
+    release(&array_cell);
   } else if (array_cell.type == CELL_ARRAY) {
     cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
 
@@ -124,7 +266,7 @@ static void native_comma(context_t* ctx) {
     // Add the element
     data->elements[data->length] = element;
     data->length++;
-    metal_retain(&element);  // Array now owns this reference
+    retain(&element);  // Array now owns this reference
 
     data_push(ctx, array_cell);
   } else {
@@ -134,7 +276,7 @@ static void native_comma(context_t* ctx) {
     return;
   }
 
-  metal_release(&element);  // We retained it above, so release our reference
+  release(&element);  // We retained it above, so release our reference
 }
 
 static void native_length(context_t* ctx) {
@@ -156,7 +298,7 @@ static void native_length(context_t* ctx) {
     return;
   }
 
-  metal_release(&array_cell);
+  release(&array_cell);
 }
 
 static void native_index(context_t* ctx) {
@@ -202,8 +344,8 @@ static void native_index(context_t* ctx) {
   cell_t pointer = new_pointer(&data->elements[index]);
   data_push(ctx, pointer);
 
-  metal_release(&array_cell);
-  metal_release(&index_cell);
+  release(&array_cell);
+  release(&index_cell);
 }
 
 static void native_fetch(context_t* ctx) {
@@ -224,10 +366,10 @@ static void native_fetch(context_t* ctx) {
 
   // Push a copy of the pointed-to cell
   cell_t value = *pointer_cell.payload.pointer;
-  metal_retain(&value);  // We're making a copy, so retain it
+  retain(&value);  // We're making a copy, so retain it
   data_push(ctx, value);
 
-  metal_release(&pointer_cell);
+  release(&pointer_cell);
 }
 
 static void native_store(context_t* ctx) {
@@ -248,12 +390,12 @@ static void native_store(context_t* ctx) {
   }
 
   // Release the old value and store the new one
-  metal_release(pointer_cell.payload.pointer);
+  release(pointer_cell.payload.pointer);
   *pointer_cell.payload.pointer = value;
-  metal_retain(&value);  // The pointed-to location now owns this reference
+  retain(&value);  // The pointed-to location now owns this reference
 
-  metal_release(&pointer_cell);
-  metal_release(&value);  // We retained it above
+  release(&pointer_cell);
+  release(&value);  // We retained it above
 }
 
 // Comment word
@@ -316,7 +458,7 @@ static void native_end(context_t* ctx) {
   compiling_definition->elements[compiling_definition->length] =
       exit_word->definition;
   compiling_definition->length++;
-  metal_retain(&exit_word->definition);
+  retain(&exit_word->definition);
 
   // Create the code cell
   cell_t code_cell = new_code(compiling_definition);
@@ -345,6 +487,17 @@ void add_core_words(void) {
                   "( a b -- b a ) Swap top two stack items");
   // Arithmetic
   add_native_word("+", native_add, "( a b -- c ) Add two numbers");
+  add_native_word("-", native_subtract, "( a b -- c ) Subtract two numbers");
+  add_native_word("*", native_multiply, "( a b -- c ) Multiply two numbers");
+  add_native_word("/", native_divide, "( a b -- c ) Divide two numbers");
+  add_native_word("%", native_modulo, "( a b -- c ) Modulo of two integers");
+
+  // Type conversions
+  add_native_word("INT32", native_to_int32,
+                  "( a -- int32 ) Convert to 32-bit integer");
+  add_native_word("INT64", native_to_int64,
+                  "( a -- int64 ) Convert to 64-bit integer");
+  add_native_word("FLOAT", native_to_float, "( a -- float ) Convert to float");
 
   // I/O
   add_native_word("PRINT", native_print, "( a -- ) Print value to output");

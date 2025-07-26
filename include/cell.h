@@ -113,7 +113,7 @@ cell_t new_undefined(void);
 cell_t new_code(cell_array_t* code_data);
 
 // Cell lifecycle management
-void metal_retain(cell_t* cell);
-void metal_release(cell_t* cell);
+void retain(cell_t* cell);
+void release(cell_t* cell);
 
 #endif  // CELL_H

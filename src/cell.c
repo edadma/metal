@@ -87,7 +87,7 @@ cell_t new_code(cell_array_t* code_data) {
 
 // Cell lifecycle management
 
-void metal_retain(cell_t* cell) {
+void retain(cell_t* cell) {
   if (!cell || !cell->payload.ptr) return;
 
   // Only allocated types need refcount management
@@ -120,7 +120,7 @@ void metal_retain(cell_t* cell) {
   }
 }
 
-void metal_release(cell_t* cell) {
+void release(cell_t* cell) {
   if (!cell || !cell->payload.ptr) return;
 
   switch (cell->type) {
@@ -149,7 +149,7 @@ void metal_release(cell_t* cell) {
           // Release all elements first
           cell_array_t* data = (cell_array_t*)cell->payload.ptr;
           for (size_t i = 0; i < data->length; i++) {
-            metal_release(&data->elements[i]);
+            release(&data->elements[i]);
           }
           metal_free(cell->payload.ptr);
           cell->payload.ptr = NULL;

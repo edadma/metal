@@ -68,7 +68,7 @@ void execute_code(context_t* ctx, cell_array_t* code) {
       case CELL_EMPTY:
       default: {
         cell_t copy = *cell;
-        metal_retain(&copy);
+        retain(&copy);
         data_push(ctx, copy);
         break;
       }
@@ -180,5 +180,5 @@ void compile_cell(context_t* ctx, cell_t cell) {
 
   compiling_definition->elements[compiling_definition->length] = cell;
   compiling_definition->length++;
-  metal_retain(&cell);
+  retain(&cell);
 }
