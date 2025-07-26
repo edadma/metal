@@ -7,47 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "array.h"
 #include "context.h"
 #include "core.h"
 #include "dictionary.h"
 #include "memory.h"
 #include "parser.h"
 #include "stack.h"
-
-// Error handling
-void error(const char* fmt, ...) {
-  static char error_buffer[256];
-
-  va_list args;
-  va_start(args, fmt);
-  vsnprintf(error_buffer, sizeof(error_buffer), fmt, args);
-  va_end(args);
-
-  // Clean up compilation state if error occurred during compilation
-  if (compilation_mode) {
-    compilation_mode = false;
-    if (compiling_definition) {
-      // Release all cells in the definition
-      for (size_t i = 0; i < compiling_definition->length; i++) {
-        metal_release(&compiling_definition->elements[i]);
-      }
-      metal_free(compiling_definition);
-      compiling_definition = NULL;
-    }
-    compiling_word_name[0] = '\0';
-  }
-
-  // Clear stacks before jumping - but need to know which context we're in
-  // For now, we'll assume the context passed to interpret() handles this
-  // This function will need the context parameter eventually
-
-  // Note: This needs to be updated to accept context parameter
-  // error_buffer gets stored in the context that's passed to interpret()
-  // For now, we'll use a simple approach - caller handles context cleanup
-
-  printf("ERROR: %s\n", error_buffer);
-  // This will need to be refactored to longjmp to the correct context
-}
 
 // Number parsing
 bool try_parse_number(const char* token, cell_t* result) {
@@ -200,4 +166,19 @@ metal_result_t interpret(context_t* ctx, const char* input) {
   ctx->input_start = NULL;
 
   return METAL_OK;
+}
+
+void compile_cell(cell_t cell) {
+  if (compiling_definition->length >= compiling_definition->capacity) {
+    compiling_definition = resize_array_data(
+        compiling_definition, compiling_definition->capacity * 2);
+    if (!compiling_definition) {
+      error(&main_context, "Compilation: failed to resize definition");
+      return;
+    }
+  }
+
+  compiling_definition->elements[compiling_definition->length] = cell;
+  compiling_definition->length++;
+  metal_retain(&cell);
 }

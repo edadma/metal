@@ -14,9 +14,6 @@
 #include "test.h"
 #include "tools.h"
 
-// Global state
-context_t main_context;
-
 // Initialize built-in words
 void populate_dictionary(void) {
   add_core_words();   // Core language features

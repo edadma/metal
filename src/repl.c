@@ -6,6 +6,7 @@
 
 #include "context.h"
 #include "dictionary.h"
+#include "interpreter.h"
 #include "line_editor.h"
 #include "stack.h"
 

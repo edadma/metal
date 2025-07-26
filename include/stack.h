@@ -1,6 +1,7 @@
 #ifndef STACK_H
 #define STACK_H
 
+#include "context.h"
 #include "metal.h"
 
 // Stack initialization

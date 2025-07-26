@@ -5,6 +5,7 @@
 
 #include "context.h"
 #include "debug.h"
+#include "error.h"
 #include "util.h"
 
 // Stack initialization
@@ -19,7 +20,7 @@ void stack_init(context_t* ctx) {
 // Data stack operations
 void data_push(context_t* ctx, cell_t cell) {
   if (ctx->data_stack_ptr >= DATA_STACK_SIZE) {
-    error("Data stack overflow");
+    error(ctx, "Data stack overflow");
     return;
   }
 
@@ -34,7 +35,7 @@ void data_push(context_t* ctx, cell_t cell) {
 
 cell_t data_pop(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
-    error("Data stack underflow");
+    error(ctx, "Data stack underflow");
     return new_empty();
   }
 
@@ -48,7 +49,7 @@ cell_t data_pop(context_t* ctx) {
 
 cell_t data_peek(context_t* ctx, int depth) {
   if (depth >= ctx->data_stack_ptr || depth < 0) {
-    error("Data stack index out of range");
+    error(ctx, "Data stack index out of range");
     return new_empty();
   }
 
@@ -62,7 +63,7 @@ bool is_data_empty(context_t* ctx) { return ctx->data_stack_ptr == 0; }
 // Return stack operations
 void return_push(context_t* ctx, cell_t cell) {
   if (ctx->return_stack_ptr >= RETURN_STACK_SIZE) {
-    error("Return stack overflow");
+    error(ctx, "Return stack overflow");
     return;
   }
 
@@ -77,7 +78,7 @@ void return_push(context_t* ctx, cell_t cell) {
 
 cell_t return_pop(context_t* ctx) {
   if (ctx->return_stack_ptr <= 0) {
-    error("Return stack underflow");
+    error(ctx, "Return stack underflow");
     return new_empty();
   }
 
@@ -91,7 +92,7 @@ cell_t return_pop(context_t* ctx) {
 
 cell_t return_peek(context_t* ctx, int depth) {
   if (depth >= ctx->return_stack_ptr || depth < 0) {
-    error("Return stack index out of range");
+    error(ctx, "Return stack index out of range");
     return new_empty();
   }
 

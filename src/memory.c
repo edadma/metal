@@ -2,8 +2,9 @@
 
 #include <stdlib.h>
 
+#include "cell.h"
 #include "debug.h"
-#include "metal.h"
+#include "interpreter.h"
 
 #ifdef TARGET_PICO
 #include "pico/mutex.h"
@@ -39,7 +40,7 @@ void* metal_alloc(size_t size) {
   alloc_header_t* header = malloc(sizeof(alloc_header_t) + size);
 
   if (!header) {
-    error("Out of memory");
+    error(ctx, "Out of memory");
     UNLOCK_MEMORY();
     return NULL;
   }
@@ -56,7 +57,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
     // Just allocate new
     alloc_header_t* header = malloc(sizeof(alloc_header_t) + new_size);
     if (!header) {
-      error("Out of memory");
+      error(ctx, "Out of memory");
       UNLOCK_MEMORY();
       return NULL;
     }
@@ -72,7 +73,7 @@ void* metal_realloc(void* ptr, size_t new_size) {
       realloc(old_header, sizeof(alloc_header_t) + new_size);
 
   if (!new_header) {
-    error("Out of memory");
+    error(ctx, "Out of memory");
     UNLOCK_MEMORY();
     return NULL;
   }

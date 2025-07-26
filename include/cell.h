@@ -44,6 +44,12 @@ typedef enum : uint8_t {
 
 typedef void (*native_func_t)(context_t* context);
 
+// Allocated data header (for refcounting)
+typedef struct {
+  uint32_t refcount;
+  // Actual data follows
+} alloc_header_t;
+
 #ifdef TARGET_PICO
 #pragma pack(push, 4)
 #endif
@@ -82,6 +88,10 @@ typedef struct cell {
     } int_pair;
   } payload;  // 8 bytes
 } cell_t;
+
+#ifdef TARGET_PICO
+#pragma pack(pop)
+#endif
 
 // Array data structure
 typedef struct {

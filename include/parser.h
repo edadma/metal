@@ -1,6 +1,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <stddef.h>
+
+#include "context.h"
 #include "metal.h"
 
 // Token types for lexical analysis

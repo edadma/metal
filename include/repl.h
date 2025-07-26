@@ -1,6 +1,7 @@
 #ifndef REPL_H
 #define REPL_H
 
+#include "context.h"
 #include "metal.h"
 
 // Main REPL system

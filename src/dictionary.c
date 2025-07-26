@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "error.h"
 #include "util.h"
 
 // Dictionary storage
@@ -41,7 +42,7 @@ void add_native_word(const char* name, native_func_t func, const char* help) {
 
 void check_dictionary(void) {
   if (dict_size >= MAX_DICT_ENTRIES) {
-    error("Dictionary full");
+    error(&main_context, "Dictionary full");
   }
 }
 

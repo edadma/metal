@@ -1,7 +1,13 @@
 #ifndef DICTIONARY_H
 #define DICTIONARY_H
 
-#include "metal.h"
+#include "cell.h"
+
+typedef struct {
+  char name[32];      // Word name
+  cell_t definition;  // Code cell or other definition
+  const char* help;   // Help text (stack effect + description)
+} dictionary_entry_t;
 
 // Dictionary management
 void init_dictionary(void);

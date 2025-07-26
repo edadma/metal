@@ -34,6 +34,8 @@ typedef struct context {
   const char* input_pos;    // Current position in input being parsed
 } context_t;
 
+extern context_t main_context;
+
 // Context management
 void init_context(context_t* ctx, const char* name);
 
