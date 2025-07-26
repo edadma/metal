@@ -360,12 +360,12 @@ static void native_fetch(context_t* ctx) {
     error(ctx, "@ : not a pointer");
   }
 
-  if (!pointer_cell.payload.pointer) {
+  if (!pointer_cell.payload.cell_ptr) {
     error(ctx, "@ : null pointer");
   }
 
   // Push a copy of the pointed-to cell
-  cell_t value = *pointer_cell.payload.pointer;
+  cell_t value = *pointer_cell.payload.cell_ptr;
   retain(&value);  // We're making a copy, so retain it
   data_push(ctx, value);
 
@@ -385,13 +385,13 @@ static void native_store(context_t* ctx) {
     error(ctx, "! : not a pointer");
   }
 
-  if (!pointer_cell.payload.pointer) {
+  if (!pointer_cell.payload.cell_ptr) {
     error(ctx, "! : null pointer");
   }
 
   // Release the old value and store the new one
-  release(pointer_cell.payload.pointer);
-  *pointer_cell.payload.pointer = value;
+  release(pointer_cell.payload.cell_ptr);
+  *pointer_cell.payload.cell_ptr = value;
   retain(&value);  // The pointed-to location now owns this reference
 
   release(&pointer_cell);
@@ -474,7 +474,16 @@ static void native_end(context_t* ctx) {
 }
 
 static void native_exit(context_t* ctx) {
-  // todo: finish EXIT
+  if (is_return_empty(ctx)) {
+    cell_t* ret = return_pop(ctx);
+
+    if (ret->type != CELL_RETURN)
+      error(ctx, "Invalid return value");
+    else
+      ctx->ip = ret->payload.cell_ptr;
+  } else
+    ctx->ip = NULL;
+
   debug("EXIT executed");
 }
 

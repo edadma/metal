@@ -18,7 +18,7 @@ typedef struct context {
   int return_stack_ptr;
 
   // Instruction pointer (for threaded code)
-  cell_t** ip;
+  cell_t* ip;
 
   // Error handling
   jmp_buf error_jmp;  // For longjmp on errors

@@ -22,6 +22,7 @@ typedef enum : uint8_t {
   CELL_CODE,
   CELL_NATIVE,
   CELL_POINTER,
+  CELL_RETURN,
   CELL_EMPTY,
   CELL_NIL,
   CELL_DATETIME,
@@ -66,15 +67,15 @@ typedef struct cell {
   uint8_t str_len;     // 8 bits - string length (0-9)
   uint8_t first_char;  // 8 bits - first character (if len > 0)
   union {
-    int32_t i32;           // 32-bit integer
-    int64_t i64;           // 64-bit integer
-    double f64;            // Double precision float
-    void* ptr;             // Pointer to allocated memory
-    cell_array_t* array;   // Pointer to a cell array
-    char* utf8_ptr;        // Pointer to UTF-8 string
-    native_func_t native;  // Function pointer
-    struct cell* pointer;  // Code pointer (using struct tag to avoid issues)
-    uint32_t utf32[2];     // 1-2 UTF-32 characters
+    int32_t i32;            // 32-bit integer
+    int64_t i64;            // 64-bit integer
+    double f64;             // Double precision float
+    void* ptr;              // Pointer to allocated memory
+    cell_array_t* array;    // Pointer to a cell array
+    char* utf8_ptr;         // Pointer to UTF-8 string
+    native_func_t native;   // Function pointer
+    struct cell* cell_ptr;  // Code pointer (using struct tag to avoid issues)
+    uint32_t utf32[2];      // 1-2 UTF-32 characters
     struct {
       uint8_t r, g, b;
     } rgb;
@@ -115,6 +116,7 @@ cell_t new_string(context_t* ctx, const char* utf8);
 cell_t new_empty(void);
 cell_t new_nil(void);
 cell_t new_pointer(cell_t* target);
+cell_t new_return(cell_t* target);
 cell_t new_null(void);
 cell_t new_undefined(void);
 cell_t new_code(cell_array_t* code_data);

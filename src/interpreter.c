@@ -42,9 +42,12 @@ bool try_parse_number(const char* token, cell_t* result) {
   return false;
 }
 
-void execute_code(context_t* ctx, cell_array_t* code) {
-  for (size_t i = 0; i < code->length; i++) {
-    cell_t* cell = &code->elements[i];
+void execute_code(context_t* ctx) {
+  while (ctx->ip) {
+    cell_t* cell = ctx->ip;
+
+    ctx->ip++;
+
     switch (cell->type) {
       case CELL_NATIVE: {
         // Execute native function
@@ -53,8 +56,8 @@ void execute_code(context_t* ctx, cell_array_t* code) {
       }
 
       case CELL_CODE: {
-        // Recursive call to execute nested code
-        execute_code(ctx, cell->payload.array);
+        return_push(ctx, new_return(ctx->ip));
+        ctx->ip = cell->payload.array->elements;
         break;
       }
 
@@ -142,7 +145,8 @@ metal_result_t interpret(context_t* ctx, const char* input) {
           if (dict_word->definition.type == CELL_NATIVE) {
             dict_word->definition.payload.native(ctx);
           } else if (dict_word->definition.type == CELL_CODE) {
-            execute_code(ctx, dict_word->definition.payload.array);
+            ctx->ip = dict_word->definition.payload.array->elements;
+            execute_code(ctx);
           } else {
             // Store error in context and longjmp
             static char error_buf[256];

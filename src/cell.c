@@ -62,7 +62,14 @@ cell_t new_nil(void) {
 cell_t new_pointer(cell_t* target) {
   cell_t cell = {0};
   cell.type = CELL_POINTER;
-  cell.payload.pointer = target;
+  cell.payload.cell_ptr = target;
+  return cell;
+}
+
+cell_t new_return(cell_t* target) {
+  cell_t cell = {0};
+  cell.type = CELL_RETURN;
+  cell.payload.cell_ptr = target;
   return cell;
 }
 

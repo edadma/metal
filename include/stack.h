@@ -22,7 +22,8 @@ bool is_data_empty(context_t* ctx);
 
 // Return stack operations
 void return_push(context_t* ctx, cell_t cell);
-cell_t return_pop(context_t* ctx);
+cell_t* return_pop(context_t* ctx);
+cell_t return_pop_cell(context_t* ctx);
 cell_t return_peek(context_t* ctx, int depth);
 bool is_return_empty(context_t* ctx);
 

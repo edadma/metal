@@ -102,7 +102,21 @@ void return_push(context_t* ctx, cell_t cell) {
   ctx->return_stack[ctx->return_stack_ptr++] = cell;
 }
 
-cell_t return_pop(context_t* ctx) {
+cell_t* return_pop(context_t* ctx) {
+  if (ctx->return_stack_ptr <= 0) {
+    error(ctx, "Return stack underflow");
+  }
+
+  cell_t* cell = &ctx->return_stack[--ctx->return_stack_ptr];
+
+  debug("Popped cell type %d from return stack (depth now: %d)", cell->type,
+        ctx->return_stack_ptr);
+
+  // Note: caller is responsible for the reference now
+  return cell;
+}
+
+cell_t return_pop_cell(context_t* ctx) {
   if (ctx->return_stack_ptr <= 0) {
     error(ctx, "Return stack underflow");
     return new_empty();
