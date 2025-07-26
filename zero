@@ -1,0 +1,1 @@
+cmake -DTARGET_PLATFORM=zero ..

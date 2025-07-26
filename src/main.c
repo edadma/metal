@@ -49,7 +49,7 @@ int main(void) {
 
   printf("Metal Language v" METAL_VERSION " - " TARGET "\n");
   printf("Type 'bye' to exit, '.s' to show stack\n\n");
-  printf("Cell size: %lu\n", sizeof(cell_t));
+  printf("Cell size: %u\n", (uint32_t)sizeof(cell_t));
 
   // Initialize system
   init_memory();

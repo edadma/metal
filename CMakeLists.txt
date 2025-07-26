@@ -30,6 +30,13 @@ if (TARGET_PLATFORM STREQUAL "windows")
     set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc")
 endif ()
 
+if (TARGET_PLATFORM STREQUAL "zero")
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
+    set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
+    set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc")
+endif ()
+
 # Project
 if (TARGET_PLATFORM STREQUAL "pico")
     project(metal C CXX ASM)
@@ -54,6 +61,8 @@ elseif (TARGET_PLATFORM STREQUAL "linux")
     file(GLOB PLATFORM_SOURCES "platform/linux/src/*.c")
 elseif (TARGET_PLATFORM STREQUAL "windows")
     file(GLOB PLATFORM_SOURCES "platform/windows/src/*.c")
+elseif (TARGET_PLATFORM STREQUAL "zero")
+    file(GLOB PLATFORM_SOURCES "platform/linux/src/*.c")  # Reuse Linux sources
 endif ()
 
 # Create executable
@@ -64,6 +73,14 @@ target_include_directories(metal PRIVATE
         include
         platform/${TARGET_PLATFORM}/include
 )
+
+# Handle zero target include directory (use linux)
+if (TARGET_PLATFORM STREQUAL "zero")
+    target_include_directories(metal PRIVATE
+            include
+            platform/linux/include
+    )
+endif ()
 
 # Platform-specific settings
 if (TARGET_PLATFORM STREQUAL "pico")
@@ -105,6 +122,19 @@ elseif (TARGET_PLATFORM STREQUAL "windows")
                 $<TARGET_FILE:metal>
                 ${CMAKE_SOURCE_DIR}/metal-v${METAL_VERSION}-windows.exe
                 COMMENT "Copying Windows executable to repository root"
+        )
+    endif ()
+elseif (TARGET_PLATFORM STREQUAL "zero")
+    target_compile_definitions(metal PRIVATE TARGET_LINUX=1)  # Use Linux target defines
+    target_link_libraries(metal pthread)
+
+    # Copy Pi Zero executable to repository root
+    if (COPY_EXECUTABLES_TO_ROOT)
+        add_custom_command(TARGET metal POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:metal>
+                ${CMAKE_SOURCE_DIR}/metal-v${METAL_VERSION}-zero
+                COMMENT "Copying Pi Zero executable to repository root"
         )
     endif ()
 endif ()

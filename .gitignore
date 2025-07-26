@@ -23,3 +23,4 @@ CMakeUserPresets.json
 build-pico/
 build/
 build-windows/
+build-zero/
