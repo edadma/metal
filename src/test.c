@@ -554,8 +554,8 @@ TEST_FUNCTION(begin_until_stack_cleanup) {
 // Test mixing BEGIN/AGAIN and BEGIN/UNTIL patterns
 TEST_FUNCTION(mixed_begin_patterns) {
   TEST_INTERPRET(
-      "DEF mixed-test 0 BEGIN 1 + DUP 3 = IF 10 BEGIN 1 - DUP 5 <= UNTIL EXIT "
-      "THEN DUP 10 >= UNTIL END");
+      "DEF mixed-test 0 BEGIN 1 + DUP DUP 3 = IF DROP DROP 10 BEGIN 1 - DUP 5 "
+      "<= UNTIL EXIT THEN 10 >= UNTIL END");
   TEST_INTERPRET("mixed-test");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_INT(5);
