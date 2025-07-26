@@ -4,6 +4,7 @@
 
 #include "cell.h"
 #include "debug.h"
+#include "error.h"
 #include "interpreter.h"
 
 #ifdef TARGET_PICO
@@ -33,7 +34,7 @@ static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 void init_memory(void) { INIT_MEMORY_MUTEX(); }
 
 // Core allocation functions
-void* metal_alloc(size_t size) {
+void* metal_alloc(context_t* ctx, size_t size) {
   debug("Allocating %zu bytes", size);
 
   LOCK_MEMORY();
@@ -50,7 +51,7 @@ void* metal_alloc(size_t size) {
   return (char*)header + sizeof(alloc_header_t);
 }
 
-void* metal_realloc(void* ptr, size_t new_size) {
+void* metal_realloc(context_t* ctx, void* ptr, size_t new_size) {
   LOCK_MEMORY();
 
   if (!ptr) {

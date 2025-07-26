@@ -1,7 +1,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include "metal.h"
+#include "cell.h"
+#include "compat.h"
 
 // Cell printing utility
 void print_cell(const cell_t* cell);

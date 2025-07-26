@@ -8,12 +8,12 @@
 
 // Array data management functions
 
-cell_array_t* create_array_data(size_t initial_capacity) {
+cell_array_t* create_array_data(context_t* ctx, size_t initial_capacity) {
   if (initial_capacity == 0) initial_capacity = 1;
 
   size_t alloc_size =
       sizeof(cell_array_t) + (initial_capacity * sizeof(cell_t));
-  cell_array_t* data = metal_alloc(alloc_size);
+  cell_array_t* data = metal_alloc(ctx, alloc_size);
   if (!data) {
     debug("Failed to allocate array data for capacity %zu", initial_capacity);
     return NULL;
@@ -25,10 +25,11 @@ cell_array_t* create_array_data(size_t initial_capacity) {
   return data;
 }
 
-cell_array_t* resize_array_data(cell_array_t* data, size_t new_capacity) {
+cell_array_t* resize_array_data(context_t* ctx, cell_array_t* data,
+                                size_t new_capacity) {
   if (!data) return NULL;
   size_t alloc_size = sizeof(cell_array_t) + (new_capacity * sizeof(cell_t));
-  cell_array_t* new_data = metal_realloc(data, alloc_size);
+  cell_array_t* new_data = metal_realloc(ctx, data, alloc_size);
   if (!new_data) {
     debug("Failed to resize array data from %zu to %zu", data->capacity,
           new_capacity);
@@ -43,17 +44,17 @@ cell_array_t* resize_array_data(cell_array_t* data, size_t new_capacity) {
 
 // Cell creation for arrays
 
-cell_t new_array(size_t initial_capacity) {
-  cell_t cell = {0};
-  cell.type = CELL_ARRAY;
-
-  cell_array_t* data = create_array_data(initial_capacity);
-  if (!data) {
-    // Return NIL on allocation failure
-    cell.type = CELL_NIL;
-    return cell;
-  }
-
-  cell.payload.ptr = data;
-  return cell;
-}
+// cell_t new_array(size_t initial_capacity) {
+//   cell_t cell = {0};
+//   cell.type = CELL_ARRAY;
+//
+//   cell_array_t* data = create_array_data(initial_capacity);
+//   if (!data) {
+//     // Return NIL on allocation failure
+//     cell.type = CELL_NIL;
+//     return cell;
+//   }
+//
+//   cell.payload.ptr = data;
+//   return cell;
+//}

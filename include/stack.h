@@ -1,8 +1,8 @@
 #ifndef STACK_H
 #define STACK_H
 
+#include "compat.h"
 #include "context.h"
-#include "metal.h"
 
 // Stack initialization
 void stack_init(context_t* ctx);

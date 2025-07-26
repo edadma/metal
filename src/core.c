@@ -107,7 +107,7 @@ static void native_comma(context_t* ctx) {
 
   if (array_cell.type == CELL_NIL) {
     // Convert NIL to ARRAY with first element
-    cell_array_t* data = create_array_data(1);
+    cell_array_t* data = create_array_data(ctx, 1);
     if (!data) {
       data_push(ctx, array_cell);
       data_push(ctx, element);
@@ -131,7 +131,7 @@ static void native_comma(context_t* ctx) {
 
     // Check if we need to resize
     if (data->length >= data->capacity) {
-      data = resize_array_data(data, data->capacity + 1);
+      data = resize_array_data(ctx, data, data->capacity + 1);
       if (!data) {
         data_push(ctx, array_cell);
         data_push(ctx, element);
@@ -313,7 +313,8 @@ static void native_def(context_t* ctx) {
   }
 
   // Initialize compilation
-  compiling_definition = create_array_data(8);  // Start with small capacity
+  compiling_definition =
+      create_array_data(ctx, 8);  // Start with small capacity
   if (!compiling_definition) {
     error(ctx, "DEF: allocation failed");
     return;
@@ -342,7 +343,7 @@ static void native_end(context_t* ctx) {
   // Add EXIT as the last instruction
   if (compiling_definition->length >= compiling_definition->capacity) {
     compiling_definition = resize_array_data(
-        compiling_definition, compiling_definition->capacity * 2);
+        ctx, compiling_definition, compiling_definition->capacity * 2);
     if (!compiling_definition) {
       error(ctx, "END: failed to resize definition");
       compilation_mode = false;

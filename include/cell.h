@@ -104,7 +104,7 @@ typedef struct {
 cell_t new_int32(int32_t value);
 cell_t new_int64(int64_t value);
 cell_t new_float(double value);
-cell_t new_string(const char* utf8);
+cell_t new_string(context_t* ctx, const char* utf8);
 cell_t new_empty(void);
 cell_t new_nil(void);
 cell_t new_pointer(cell_t* target);

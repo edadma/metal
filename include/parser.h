@@ -3,8 +3,8 @@
 
 #include <stddef.h>
 
+#include "compat.h"
 #include "context.h"
-#include "metal.h"
 
 // Token types for lexical analysis
 typedef enum { TOKEN_WORD, TOKEN_STRING, TOKEN_EOF } token_type_t;

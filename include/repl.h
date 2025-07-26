@@ -1,8 +1,8 @@
 #ifndef REPL_H
 #define REPL_H
 
+#include "compat.h"
 #include "context.h"
-#include "metal.h"
 
 // Main REPL system
 void repl(context_t* ctx);

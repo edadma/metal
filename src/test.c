@@ -8,6 +8,7 @@
 #include "context.h"
 #include "debug.h"
 #include "dictionary.h"
+#include "interpreter.h"
 #include "stack.h"
 #include "util.h"
 

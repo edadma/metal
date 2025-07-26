@@ -11,7 +11,7 @@
 #include "context.h"
 #include "core.h"
 #include "dictionary.h"
-#include "memory.h"
+#include "error.h"
 #include "parser.h"
 #include "stack.h"
 
@@ -102,10 +102,10 @@ metal_result_t interpret(context_t* ctx, const char* input) {
                                         sizeof(token_buffer))) != TOKEN_EOF) {
     if (token_type == TOKEN_STRING) {
       // String literal
-      cell_t string_cell = new_string(token_buffer);
+      cell_t string_cell = new_string(ctx, token_buffer);
 
       if (compilation_mode) {
-        compile_cell(string_cell);
+        compile_cell(ctx, string_cell);
       } else {
         data_push(ctx, string_cell);
       }
@@ -117,7 +117,7 @@ metal_result_t interpret(context_t* ctx, const char* input) {
       cell_t num;
       if (try_parse_number(word, &num)) {
         if (compilation_mode) {
-          compile_cell(num);
+          compile_cell(ctx, num);
         } else {
           data_push(ctx, num);
         }
@@ -134,7 +134,7 @@ metal_result_t interpret(context_t* ctx, const char* input) {
 
         if (compilation_mode && !is_immediate) {
           // Compile the word reference
-          compile_cell(dict_word->definition);
+          compile_cell(ctx, dict_word->definition);
         } else {
           // Execute the word (either interpretation mode or immediate word)
           if (dict_word->definition.type == CELL_NATIVE) {
@@ -168,10 +168,10 @@ metal_result_t interpret(context_t* ctx, const char* input) {
   return METAL_OK;
 }
 
-void compile_cell(cell_t cell) {
+void compile_cell(context_t* ctx, cell_t cell) {
   if (compiling_definition->length >= compiling_definition->capacity) {
     compiling_definition = resize_array_data(
-        compiling_definition, compiling_definition->capacity * 2);
+        ctx, compiling_definition, compiling_definition->capacity * 2);
     if (!compiling_definition) {
       error(&main_context, "Compilation: failed to resize definition");
       return;

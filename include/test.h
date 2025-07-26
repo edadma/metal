@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "metal.h"
+#include "context.h"
 
 #ifdef TEST_ENABLED
 

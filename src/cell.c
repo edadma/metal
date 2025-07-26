@@ -2,9 +2,9 @@
 
 #include <string.h>
 
+#include "compat.h"
 #include "debug.h"
 #include "memory.h"
-#include "metal.h"
 
 // Cell creation functions (fundamental immediate types)
 
@@ -29,14 +29,14 @@ cell_t new_float(double value) {
   return cell;
 }
 
-cell_t new_string(const char* utf8) {
+cell_t new_string(context_t* ctx, const char* utf8) {
   cell_t cell = {0};
   cell.type = CELL_STRING;
 
   size_t len = strlen(utf8);
 
   // For now, just allocate all strings. Later we'll optimize for short ones
-  char* allocated = metal_alloc(len + 1);
+  char* allocated = metal_alloc(ctx, len + 1);
   if (!allocated) {
     // Return empty on allocation failure
     return new_empty();
