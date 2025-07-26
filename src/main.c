@@ -1,26 +1,16 @@
-#include <ctype.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #ifdef TARGET_PICO
 #include "pico/stdlib.h"
 #endif
 
-#include "array.h"
 #include "cell.h"
 #include "core.h"
 #include "debug.h"
 #include "dictionary.h"
 #include "memory.h"
 #include "metal.h"
-#include "parser.h"
 #include "repl.h"
-#include "stack.h"
-#include "test.h"
 #include "tools.h"
 
 // Global state
@@ -66,7 +56,7 @@ int main(void) {
   // Initialize system
   init_memory();
   init_context(&main_context, "main");
-  init_dictionary();  // Initialize dictionary first
+  init_dictionary();
   populate_dictionary();
   repl(&main_context);
   return 0;
