@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "context.h"
 #include "debug.h"
 #include "dictionary.h"
 #include "stack.h"

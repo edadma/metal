@@ -4,7 +4,6 @@
 #include <stddef.h>
 
 #include "cell.h"
-#include "metal.h"
 
 // Array data management
 cell_array_t* create_array_data(size_t initial_capacity);

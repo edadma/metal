@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "context.h"
 #include "core.h"
 #include "dictionary.h"
 #include "memory.h"

@@ -5,11 +5,11 @@
 #endif
 
 #include "cell.h"
+#include "context.h"
 #include "core.h"
 #include "debug.h"
 #include "dictionary.h"
 #include "memory.h"
-#include "metal.h"
 #include "repl.h"
 #include "test.h"
 #include "tools.h"

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "context.h"
 #include "debug.h"
 #include "util.h"
 

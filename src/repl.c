@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "context.h"
 #include "dictionary.h"
 #include "line_editor.h"
-#include "metal.h"
 #include "stack.h"
 
 static char input_line[INPUT_BUFFER_SIZE];

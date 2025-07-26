@@ -3,10 +3,10 @@
 #include <string.h>
 
 #include "array.h"
+#include "context.h"
 #include "debug.h"
 #include "dictionary.h"
 #include "memory.h"
-#include "metal.h"
 #include "parser.h"
 #include "stack.h"
 #include "util.h"
@@ -125,7 +125,6 @@ static void native_comma(context_t* ctx) {
 
     data_push(ctx, new_array);
     metal_release(&array_cell);
-
   } else if (array_cell.type == CELL_ARRAY) {
     cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
 
@@ -147,7 +146,6 @@ static void native_comma(context_t* ctx) {
     metal_retain(&element);  // Array now owns this reference
 
     data_push(ctx, array_cell);
-
   } else {
     error(", : can only append to arrays");
     data_push(ctx, array_cell);

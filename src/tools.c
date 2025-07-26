@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "context.h"
 #include "dictionary.h"
-#include "metal.h"
 #include "parser.h"
 #include "stack.h"
 
