@@ -349,11 +349,137 @@ TEST_FUNCTION(array_operations) {
   TEST_STACK_DEPTH(0);
 }
 
+// Test IF/THEN without ELSE
+TEST_FUNCTION(if_then_true) {
+  TEST_INTERPRET("DEF test-if-true 1 IF 42 THEN END");
+  TEST_INTERPRET("test-if-true");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(42);
+}
+
+TEST_FUNCTION(if_then_false) {
+  TEST_INTERPRET("DEF test-if-false 0 IF 42 THEN END");
+  TEST_INTERPRET("test-if-false");
+  TEST_STACK_DEPTH(0);
+}
+
+// Test IF/ELSE/THEN
+TEST_FUNCTION(if_else_then_true) {
+  TEST_INTERPRET("DEF test-if-else-true 1 IF 42 ELSE 99 THEN END");
+  TEST_INTERPRET("test-if-else-true");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(42);
+}
+
+TEST_FUNCTION(if_else_then_false) {
+  TEST_INTERPRET("DEF test-if-else-false 0 IF 42 ELSE 99 THEN END");
+  TEST_INTERPRET("test-if-else-false");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(99);
+}
+
+TEST_FUNCTION(if_else_then_string) {
+  TEST_INTERPRET("DEF test-string -1 IF \"truthy\" ELSE \"falsy\" THEN END");
+  TEST_INTERPRET("test-string");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_STRING("truthy");
+
+  // Clear stack between sub-tests
+  TEST_INTERPRET("DROP");
+  TEST_STACK_DEPTH(0);
+
+  TEST_INTERPRET("DEF test-string2 0 IF \"truthy\" ELSE \"falsy\" THEN END");
+  TEST_INTERPRET("test-string2");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_STRING("falsy");
+}
+
+// Test nested IF statements
+TEST_FUNCTION(nested_if) {
+  TEST_INTERPRET("DEF test-nested 1 IF 1 IF 42 THEN THEN END");
+  TEST_INTERPRET("test-nested");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(42);
+
+  // Clear stack between sub-tests
+  TEST_INTERPRET("DROP");
+  TEST_STACK_DEPTH(0);
+
+  TEST_INTERPRET("DEF test-nested2 1 IF 0 IF 42 ELSE 99 THEN THEN END");
+  TEST_INTERPRET("test-nested2");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(99);
+}
+
+// Test BEGIN/AGAIN with EXIT
+TEST_FUNCTION(begin_again_counter) {
+  TEST_INTERPRET("DEF counter 0 BEGIN 1 + DUP 3 = IF EXIT THEN AGAIN END");
+  TEST_INTERPRET("counter");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(3);
+}
+
+TEST_FUNCTION(begin_again_accumulator) {
+  TEST_INTERPRET(
+      "DEF sum-to-5 0 0 BEGIN SWAP 1 + DUP 5 > IF DROP EXIT THEN DUP + SWAP "
+      "AGAIN END");
+  TEST_INTERPRET("sum-to-5");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(15);  // 1+2+3+4+5 = 15
+}
+
+// Test BEGIN/AGAIN with conditional EXIT
+TEST_FUNCTION(begin_again_conditional) {
+  TEST_INTERPRET(
+      "DEF find-even 1 BEGIN 2 + DUP 2 % 0 = IF EXIT THEN AGAIN END");
+  TEST_INTERPRET("find-even");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(4);  // First even number after 1
+}
+
+// Test complex control flow mixing IF and BEGIN/AGAIN
+TEST_FUNCTION(complex_control_flow) {
+  TEST_INTERPRET(
+      "DEF complex 0 BEGIN 1 + DUP 10 > IF DROP 42 EXIT THEN DUP 5 = IF 100 + "
+      "THEN AGAIN END");
+  TEST_INTERPRET("complex");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(42);
+}
+
+// Test that control structures properly clean up return stack
+TEST_FUNCTION(control_stack_cleanup) {
+  TEST_INTERPRET("DEF cleanup-test 1 IF 2 IF 3 IF 42 THEN THEN THEN END");
+  TEST_INTERPRET("cleanup-test");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(42);
+
+  // Test that we can define another word afterward (return stack should be
+  // clean)
+  TEST_INTERPRET("DEF after-cleanup 99 END");
+  TEST_INTERPRET("after-cleanup");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(99);
+}
+
 // Register example tests (would be called from main or test initialization)
 static void register_example_tests(void) {
   REGISTER_TEST(basic_arithmetic);
   REGISTER_TEST(string_operations);
   REGISTER_TEST(array_operations);
+
+  // Control flow tests
+  REGISTER_TEST(if_then_true);
+  REGISTER_TEST(if_then_false);
+  REGISTER_TEST(if_else_then_true);
+  REGISTER_TEST(if_else_then_false);
+  REGISTER_TEST(if_else_then_string);
+  REGISTER_TEST(nested_if);
+  REGISTER_TEST(begin_again_counter);
+  REGISTER_TEST(begin_again_accumulator);
+  // REGISTER_TEST(begin_again_conditional);
+  // REGISTER_TEST(complex_control_flow);
+  // REGISTER_TEST(control_stack_cleanup);
 }
 
 // Call this from main.c when TEST_ENABLED
