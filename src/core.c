@@ -244,12 +244,12 @@ static void native_comma(context_t* ctx) {
     // Create new array cell
     cell_t new_array = {0};
     new_array.type = CELL_ARRAY;
-    new_array.payload.ptr = data;
+    new_array.payload.array = data;
 
     data_push(ctx, new_array);
     release(&array_cell);
   } else if (array_cell.type == CELL_ARRAY) {
-    cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
+    cell_array_t* data = array_cell.payload.array;
 
     // Check if we need to resize
     if (data->length >= data->capacity) {
@@ -260,7 +260,7 @@ static void native_comma(context_t* ctx) {
         return;
       }
       // Update the array cell's pointer (realloc might have moved it)
-      array_cell.payload.ptr = data;
+      array_cell.payload.array = data;
     }
 
     // Add the element
@@ -290,7 +290,7 @@ static void native_length(context_t* ctx) {
   if (array_cell.type == CELL_NIL) {
     data_push(ctx, new_int32(0));
   } else if (array_cell.type == CELL_ARRAY) {
-    cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
+    cell_array_t* data = array_cell.payload.array;
     data_push(ctx, new_int32((int32_t)data->length));
   } else {
     error(ctx, "LENGTH: not an array");
@@ -331,7 +331,7 @@ static void native_index(context_t* ctx) {
     return;
   }
 
-  cell_array_t* data = (cell_array_t*)array_cell.payload.ptr;
+  cell_array_t* data = array_cell.payload.array;
 
   if (index < 0 || index >= (int32_t)data->length) {
     error(ctx, "INDEX: index out of bounds");
@@ -502,7 +502,7 @@ static void native_equal(context_t* ctx) {
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
 
-  bool result = cells_equal(a, b);
+  bool result = cells_equal(ctx, a, b);
 
   release(a);
   release(b);
@@ -516,7 +516,7 @@ static void native_not_equal(context_t* ctx) {
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
 
-  bool result = !cells_equal(a, b);
+  bool result = !cells_equal(ctx, a, b);
 
   release(a);
   release(b);

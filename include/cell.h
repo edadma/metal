@@ -69,7 +69,8 @@ typedef struct cell {
     int32_t i32;           // 32-bit integer
     int64_t i64;           // 64-bit integer
     double f64;            // Double precision float
-    cell_array_t* array;   // Pointer to cell array
+    void* ptr;             // Pointer to allocated memory
+    cell_array_t* array;   // Pointer to a cell array
     char* utf8_ptr;        // Pointer to UTF-8 string
     native_func_t native;  // Function pointer
     struct cell* pointer;  // Code pointer (using struct tag to avoid issues)

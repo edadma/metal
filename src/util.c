@@ -132,15 +132,15 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
         if ((a->flags & CELL_FLAG_INTERNED) &&
             (b->flags & CELL_FLAG_INTERNED)) {
           // Both interned - compare pointers
-          if (a->payload.ptr < b->payload.ptr) return -1;
-          if (a->payload.ptr > b->payload.ptr) return 1;
+          if (a->payload.utf8_ptr < b->payload.utf8_ptr) return -1;
+          if (a->payload.utf8_ptr > b->payload.utf8_ptr) return 1;
           return 0;
         }
         // Lexicographic comparison
-        if (!a->payload.ptr && !b->payload.ptr) return 0;
-        if (!a->payload.ptr) return -1;
-        if (!b->payload.ptr) return 1;
-        return strcmp((char*)a->payload.ptr, (char*)b->payload.ptr);
+        if (!a->payload.utf8_ptr && !b->payload.utf8_ptr) return 0;
+        if (!a->payload.utf8_ptr) return -1;
+        if (!b->payload.utf8_ptr) return 1;
+        return strcmp((char*)a->payload.utf8_ptr, (char*)b->payload.utf8_ptr);
       }
 
       default:
@@ -199,9 +199,34 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
 }
 
 // Helper function for equality comparison (works on any types)
-bool cells_equal(cell_t* a, cell_t* b) {
+bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
   if (a->type != b->type) {
     // Different types are only equal if both are numeric and have same value
+    if ((a->type == CELL_INT32 || a->type == CELL_INT64) &&
+        (b->type == CELL_INT32 || b->type == CELL_INT64)) {
+      int64_t a_val, b_val;
+
+      switch (a->type) {
+        case CELL_INT32:
+          a_val = (int64_t)a->payload.i32;
+          break;
+        default:
+          a_val = a->payload.i64;
+          break;
+      }
+
+      switch (b->type) {
+        case CELL_INT32:
+          b_val = (int64_t)b->payload.i32;
+          break;
+        default:
+          b_val = b->payload.i64;
+          break;
+      }
+
+      return a_val == b_val;
+    }
+
     if ((a->type == CELL_INT32 || a->type == CELL_INT64 ||
          a->type == CELL_FLOAT) &&
         (b->type == CELL_INT32 || b->type == CELL_INT64 ||
@@ -215,11 +240,8 @@ bool cells_equal(cell_t* a, cell_t* b) {
         case CELL_INT64:
           a_val = (double)a->payload.i64;
           break;
-        case CELL_FLOAT:
-          a_val = a->payload.f64;
-          break;
         default:
-          a_val = 0;
+          a_val = a->payload.f64;
           break;
       }
 
@@ -230,16 +252,14 @@ bool cells_equal(cell_t* a, cell_t* b) {
         case CELL_INT64:
           b_val = (double)b->payload.i64;
           break;
-        case CELL_FLOAT:
-          b_val = (double)b->payload.f64;
-          break;
         default:
-          b_val = 0;
+          b_val = b->payload.f64;
           break;
       }
 
       return a_val == b_val;
     }
+
     return false;
   }
 
@@ -260,12 +280,13 @@ bool cells_equal(cell_t* a, cell_t* b) {
     case CELL_STRING:
       // Check for interned strings first
       if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
-        return a->payload.ptr == b->payload.ptr;
+        return a->payload.utf8_ptr == b->payload.utf8_ptr;
       }
       // Regular string comparison
-      if (!a->payload.ptr && !b->payload.ptr) return true;
-      if (!a->payload.ptr || !b->payload.ptr) return false;
-      return strcmp((char*)a->payload.ptr, (char*)b->payload.ptr) == 0;
+      if (!a->payload.utf8_ptr && !b->payload.utf8_ptr) return true;
+      if (!a->payload.utf8_ptr || !b->payload.utf8_ptr) return false;
+      return strcmp((char*)a->payload.utf8_ptr, (char*)b->payload.utf8_ptr) ==
+             0;
 
     case CELL_NULL:
     case CELL_UNDEFINED:
@@ -274,7 +295,6 @@ bool cells_equal(cell_t* a, cell_t* b) {
       return true;  // These are singletons
 
     default:
-      // Reference equality for other types
-      return a->payload.ptr == b->payload.ptr;
+      error(ctx, "unknown cell type: %d", a->type);
   }
 }
