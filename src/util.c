@@ -23,7 +23,7 @@ void print_cell(const cell_t* cell) {
       printf("%g", cell->payload.f64);
       break;
     case CELL_STRING:
-      printf("\"%s\"", cell->payload.utf8_ptr);
+      printf("%s", cell->payload.utf8_ptr);
       break;
     case CELL_NIL:
       printf("[]");
