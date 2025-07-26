@@ -561,6 +561,108 @@ TEST_FUNCTION(mixed_begin_patterns) {
   TEST_STACK_TOP_INT(5);
 }
 
+// Test basic BEGIN/WHILE/REPEAT counting
+TEST_FUNCTION(begin_while_repeat_counter) {
+  TEST_INTERPRET("DEF count-while 0 BEGIN DUP 5 < WHILE 1 + REPEAT END");
+  TEST_INTERPRET("count-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(5);
+}
+
+// Test BEGIN/WHILE/REPEAT with immediate false condition
+TEST_FUNCTION(begin_while_repeat_no_loop) {
+  TEST_INTERPRET("DEF no-loop 10 BEGIN DUP 5 < WHILE 1 + REPEAT END");
+  TEST_INTERPRET("no-loop");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(
+      10);  // Should not enter loop body, condition false from start
+}
+
+// Test BEGIN/WHILE/REPEAT with accumulator pattern
+TEST_FUNCTION(begin_while_repeat_accumulator) {
+  TEST_INTERPRET(
+      "DEF sum-while 0 0 BEGIN OVER 10 < WHILE SWAP 1 + SWAP OVER + REPEAT "
+      "SWAP DROP END");
+  TEST_INTERPRET("sum-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(55);  // Sum of 1+2+3+4+5+6+7+8+9+10 = 55
+}
+
+// Test BEGIN/WHILE/REPEAT with power of 2
+TEST_FUNCTION(begin_while_repeat_power) {
+  TEST_INTERPRET("DEF power-while 1 BEGIN DUP 100 < WHILE 2 * REPEAT END");
+  TEST_INTERPRET("power-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(128);  // 1*2*2*2*2*2*2*2 = 128 (first power >= 100)
+}
+
+// Test BEGIN/WHILE/REPEAT with complex condition
+TEST_FUNCTION(begin_while_repeat_complex) {
+  TEST_INTERPRET(
+      "DEF complex-while 2 BEGIN DUP DUP 10 < SWAP 2 % 0 = AND WHILE 2 + "
+      "REPEAT END");
+  TEST_INTERPRET("complex-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(10);  // 2->4->6->8->10 (first even >= 10)
+}
+
+// Test nested control structures
+TEST_FUNCTION(begin_while_repeat_nested) {
+  TEST_INTERPRET(
+      "DEF nested-while 0 BEGIN DUP 3 < WHILE 1 + DUP 2 = IF 10 + THEN REPEAT "
+      "END");
+  TEST_INTERPRET("nested-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(12);  // 0->1->2(+10=12)->exit
+}
+
+// Test BEGIN/WHILE/REPEAT with string building
+TEST_FUNCTION(begin_while_repeat_string) {
+  TEST_INTERPRET(
+      "DEF build-while \"\" BEGIN DUP LENGTH 3 < WHILE \"x\" + REPEAT END");
+  TEST_INTERPRET("build-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_STRING("xxx");
+}
+
+// Test multiple variables with BEGIN/WHILE/REPEAT
+TEST_FUNCTION(begin_while_repeat_multi_var) {
+  TEST_INTERPRET(
+      "DEF multi-while 0 1 BEGIN OVER 20 < WHILE SWAP OVER + SWAP 1 + REPEAT "
+      "DROP END");
+  TEST_INTERPRET("multi-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(21);  // Sum until counter reaches 20+
+}
+
+// Test return stack cleanup
+TEST_FUNCTION(begin_while_repeat_cleanup) {
+  TEST_INTERPRET("DEF cleanup-while 1 BEGIN DUP 8 < WHILE 2 * REPEAT END");
+  TEST_INTERPRET("cleanup-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(8);
+
+  // Clear stack between sub-tests
+  TEST_INTERPRET("DROP");
+  TEST_STACK_DEPTH(0);
+
+  // Test that we can define another word afterward
+  TEST_INTERPRET("DEF after-while 42 END");
+  TEST_INTERPRET("after-while");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(42);
+}
+
+// Test mixing different loop types
+TEST_FUNCTION(mixed_loop_types) {
+  TEST_INTERPRET(
+      "DEF mixed-loops 2 BEGIN 1 + DUP 6 < WHILE DUP 4 = IF DROP 10 BEGIN 1 - "
+      "DUP 5 <= UNTIL THEN REPEAT END");
+  TEST_INTERPRET("mixed-loops");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(6);
+}
+
 // Register example tests (would be called from main or test initialization)
 static void register_example_tests(void) {
   REGISTER_TEST(basic_arithmetic);
@@ -591,6 +693,18 @@ static void register_example_tests(void) {
   REGISTER_TEST(begin_until_string_length);
   REGISTER_TEST(begin_until_stack_cleanup);
   REGISTER_TEST(mixed_begin_patterns);
+
+  // BEGIN/WHILE/REPEAT tests
+  REGISTER_TEST(begin_while_repeat_counter);
+  REGISTER_TEST(begin_while_repeat_no_loop);
+  REGISTER_TEST(begin_while_repeat_accumulator);
+  REGISTER_TEST(begin_while_repeat_power);
+  REGISTER_TEST(begin_while_repeat_complex);
+  REGISTER_TEST(begin_while_repeat_nested);
+  REGISTER_TEST(begin_while_repeat_string);
+  REGISTER_TEST(begin_while_repeat_multi_var);
+  REGISTER_TEST(begin_while_repeat_cleanup);
+  REGISTER_TEST(mixed_loop_types);
 }
 
 // Call this from main.c when TEST_ENABLED
