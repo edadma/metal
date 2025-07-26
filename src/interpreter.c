@@ -54,7 +54,7 @@ void execute_code(context_t* ctx, cell_array_t* code) {
 
       case CELL_CODE: {
         // Recursive call to execute nested code
-        execute_code(ctx, cell->payload.ptr);
+        execute_code(ctx, cell->payload.array);
         break;
       }
 
@@ -142,7 +142,7 @@ metal_result_t interpret(context_t* ctx, const char* input) {
           if (dict_word->definition.type == CELL_NATIVE) {
             dict_word->definition.payload.native(ctx);
           } else if (dict_word->definition.type == CELL_CODE) {
-            execute_code(ctx, (cell_array_t*)dict_word->definition.payload.ptr);
+            execute_code(ctx, dict_word->definition.payload.array);
           } else {
             // Store error in context and longjmp
             static char error_buf[256];

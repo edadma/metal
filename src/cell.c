@@ -42,7 +42,7 @@ cell_t new_string(context_t* ctx, const char* utf8) {
     return new_empty();
   }
   strcpy(allocated, utf8);
-  cell.payload.ptr = allocated;
+  cell.payload.utf8 = allocated;
 
   return cell;
 }

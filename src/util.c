@@ -23,13 +23,13 @@ void print_cell(const cell_t* cell) {
       printf("%g", cell->payload.f64);
       break;
     case CELL_STRING:
-      printf("\"%s\"", (char*)cell->payload.ptr);
+      printf("\"%s\"", cell->payload.utf8_ptr);
       break;
     case CELL_NIL:
       printf("[]");
       break;
     case CELL_ARRAY: {
-      const cell_array_t* data = (cell_array_t*)cell->payload.ptr;
+      const cell_array_t* data = cell->payload.array;
 
       printf("[");
 
@@ -96,8 +96,8 @@ bool is_truthy(cell_t* cell) {
              val == val;  // NaN != NaN, so val == val is false for NaN
 
     case CELL_STRING:
-      if (!cell->payload.ptr) return false;
-      return strlen((char*)cell->payload.ptr) > 0;
+      if (!cell->payload.utf8_ptr) return false;
+      return strlen(cell->payload.utf8_ptr) > 0;
 
       // Everything else is truthy (including CELL_EMPTY, CELL_NIL, arrays,
       // etc.)

@@ -57,6 +57,8 @@ typedef struct {
 #pragma pack(push, 4)
 #endif
 
+typedef struct cell_array cell_array_t;
+
 // Metal cell
 typedef struct cell {
   cell_type_t type;    // 8 bits
@@ -67,13 +69,13 @@ typedef struct cell {
     int32_t i32;           // 32-bit integer
     int64_t i64;           // 64-bit integer
     double f64;            // Double precision float
-    void* ptr;             // Pointer to allocated cell
+    cell_array_t* array;   // Pointer to cell array
+    char* utf8_ptr;        // Pointer to UTF-8 string
     native_func_t native;  // Function pointer
     struct cell* pointer;  // Code pointer (using struct tag to avoid issues)
     uint32_t utf32[2];     // 1-2 UTF-32 characters
     struct {
       uint8_t r, g, b;
-      uint8_t _pad;  // Align to 4 bytes
     } rgb;
     struct {
       uint32_t timestamp;  // Seconds since Unix epoch (good until 2106)
@@ -98,10 +100,10 @@ typedef struct cell {
 #endif
 
 // Array data structure
-typedef struct {
+typedef struct cell_array {
   size_t length;
   size_t capacity;
-  cell_t elements[];  // Flexible array member
+  cell_t elements[];
 } cell_array_t;
 
 // Cell creation functions (fundamental immediate types)
