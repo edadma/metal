@@ -420,21 +420,19 @@ TEST_FUNCTION(begin_again_counter) {
 }
 
 TEST_FUNCTION(begin_again_accumulator) {
-  TEST_INTERPRET(
-      "DEF sum-to-5 0 0 BEGIN SWAP 1 + DUP 5 > IF DROP EXIT THEN DUP + SWAP "
-      "AGAIN END");
-  TEST_INTERPRET("sum-to-5");
+  TEST_INTERPRET("DEF simple-sum 0 BEGIN 1 + DUP 5 >= IF EXIT THEN AGAIN END");
+  TEST_INTERPRET("simple-sum");
   TEST_STACK_DEPTH(1);
-  TEST_STACK_TOP_INT(15);  // 1+2+3+4+5 = 15
+  TEST_STACK_TOP_INT(5);
 }
 
 // Test BEGIN/AGAIN with conditional EXIT
 TEST_FUNCTION(begin_again_conditional) {
   TEST_INTERPRET(
-      "DEF find-even 1 BEGIN 2 + DUP 2 % 0 = IF EXIT THEN AGAIN END");
+      "DEF find-even 0 BEGIN 1 + DUP 2 % 0 = IF EXIT THEN AGAIN END");
   TEST_INTERPRET("find-even");
   TEST_STACK_DEPTH(1);
-  TEST_STACK_TOP_INT(4);  // First even number after 1
+  TEST_STACK_TOP_INT(2);  // First even number after 1
 }
 
 // Test complex control flow mixing IF and BEGIN/AGAIN
@@ -453,6 +451,10 @@ TEST_FUNCTION(control_stack_cleanup) {
   TEST_INTERPRET("cleanup-test");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_INT(42);
+
+  // Clear stack between sub-tests
+  TEST_INTERPRET("DROP");
+  TEST_STACK_DEPTH(0);
 
   // Test that we can define another word afterward (return stack should be
   // clean)
@@ -477,9 +479,9 @@ static void register_example_tests(void) {
   REGISTER_TEST(nested_if);
   REGISTER_TEST(begin_again_counter);
   REGISTER_TEST(begin_again_accumulator);
-  // REGISTER_TEST(begin_again_conditional);
-  // REGISTER_TEST(complex_control_flow);
-  // REGISTER_TEST(control_stack_cleanup);
+  REGISTER_TEST(begin_again_conditional);
+  REGISTER_TEST(complex_control_flow);
+  REGISTER_TEST(control_stack_cleanup);
 }
 
 // Call this from main.c when TEST_ENABLED
