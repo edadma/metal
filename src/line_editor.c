@@ -348,6 +348,9 @@ void enhanced_get_line(char *buffer, size_t max_len) {
     history_add(&command_history, buffer);
   }
 
+  // Reset history view to current line
+  history_reset_view(&command_history);
+
   printf("\n");
   fflush(stdout);
 }
