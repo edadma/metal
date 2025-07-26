@@ -42,6 +42,7 @@ typedef enum : uint8_t {
   CELL_FLAG_WEAK_REF = 1 << 2,    // 0x0004
   CELL_FLAG_TEMPORARY = 1 << 3,   // 0x0008
   CELL_FLAG_IMMEDIATE = 1 << 4,
+  CELL_FLAG_INTERNED = 1 << 5,
 } cell_flags_t;
 
 typedef void (*native_func_t)(context_t* context);

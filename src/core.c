@@ -494,6 +494,128 @@ static void native_undefined_check(context_t* ctx) {
   data_push(ctx, new_boolean(is_undefined));
 }
 
+// Comparison operators
+
+static void native_equal(context_t* ctx) {
+  require(ctx, 2, "=");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+
+  bool result = cells_equal(a, b);
+
+  release(a);
+  release(b);
+
+  data_push(ctx, new_boolean(result));
+}
+
+static void native_not_equal(context_t* ctx) {
+  require(ctx, 2, "!=");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+
+  bool result = !cells_equal(a, b);
+
+  release(a);
+  release(b);
+
+  data_push(ctx, new_boolean(result));
+}
+
+static void native_less_than(context_t* ctx) {
+  require(ctx, 2, "<");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+
+  int cmp = compare_cells(ctx, a, b);
+  bool result = (cmp < 0);
+
+  release(a);
+  release(b);
+
+  data_push(ctx, new_boolean(result));
+}
+
+static void native_greater_than(context_t* ctx) {
+  require(ctx, 2, ">");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+
+  int cmp = compare_cells(ctx, a, b);
+  bool result = (cmp > 0);
+
+  release(a);
+  release(b);
+
+  data_push(ctx, new_boolean(result));
+}
+
+static void native_less_equal(context_t* ctx) {
+  require(ctx, 2, "<=");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+
+  int cmp = compare_cells(ctx, a, b);
+  bool result = (cmp <= 0);
+
+  release(a);
+  release(b);
+
+  data_push(ctx, new_boolean(result));
+}
+
+static void native_greater_equal(context_t* ctx) {
+  require(ctx, 2, ">=");
+
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+
+  int cmp = compare_cells(ctx, a, b);
+  bool result = (cmp >= 0);
+
+  release(a);
+  release(b);
+
+  data_push(ctx, new_boolean(result));
+}
+
+// Logical operators
+
+static void native_and(context_t* ctx) {
+  require(ctx, 2, "AND");
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+  bool result = is_truthy(a) && is_truthy(b);
+  release(a);
+  release(b);
+  data_push(ctx, new_boolean(result));
+}
+
+static void native_or(context_t* ctx) {
+  require(ctx, 2, "OR");
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_pop(ctx);
+  bool result = is_truthy(a) || is_truthy(b);
+  release(a);
+  release(b);
+  data_push(ctx, new_boolean(result));
+}
+
+static void native_not(context_t* ctx) {
+  require(ctx, 1, "NOT");
+  cell_t* a = data_pop(ctx);
+  bool result = !is_truthy(a);
+
+  release(a);
+
+  data_push(ctx, new_boolean(result));
+}
+
 // Register all core words
 void add_core_words(void) {
   // Stack manipulation
@@ -521,6 +643,22 @@ void add_core_words(void) {
   add_native_word("INT64", native_to_int64,
                   "( a -- int64 ) Convert to 64-bit integer");
   add_native_word("FLOAT", native_to_float, "( a -- float ) Convert to float");
+
+  // Comparison operators
+  add_native_word("=", native_equal, "( a b -- bool ) Test equality");
+  add_native_word("!=", native_not_equal, "( a b -- bool ) Test inequality");
+  add_native_word("<", native_less_than, "( a b -- bool ) Test less than");
+  add_native_word(">", native_greater_than,
+                  "( a b -- bool ) Test greater than");
+  add_native_word("<=", native_less_equal,
+                  "( a b -- bool ) Test less than or equal");
+  add_native_word(">=", native_greater_equal,
+                  "( a b -- bool ) Test greater than or equal");
+
+  // Logical operators
+  add_native_word("AND", native_and, "( a b -- bool ) Logical AND");
+  add_native_word("OR", native_or, "( a b -- bool ) Logical OR");
+  add_native_word("NOT", native_not, "( a -- bool ) Logical NOT");
 
   // I/O
   add_native_word("PRINT", native_print, "( a -- ) Print value to output");
