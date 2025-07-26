@@ -663,15 +663,13 @@ static void native_else(context_t* ctx) {
   branch_cell.payload.i32 = 0;  // Placeholder for back-patching
   int else_location = compiling_definition->length;
   compile_cell(ctx, branch_cell);
-  return_push(ctx, new_int32(else_location));
-  // Back-patch the IF's branch to jump here (past the ELSE)
-
+  // Back-patch the IF's branch to jump HERE (to the ELSE clause that follows)
   cell_t* if_cell = return_pop(ctx);
-
   int if_location = if_cell->payload.i32;
   int offset = compiling_definition->length - (if_location + 1);
   compiling_definition->elements[if_location].payload.i32 = offset;
-  release(if_cell);
+  // Push ELSE location for THEN to patch later
+  return_push(ctx, new_int32(else_location));
 }
 
 // THEN ( -- ) Back-patch pending branch to jump here
