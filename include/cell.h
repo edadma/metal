@@ -31,6 +31,8 @@ typedef enum : uint8_t {
   CELL_RGB,
   CELL_NULL,
   CELL_UNDEFINED,
+  CELL_BRANCH,           // Unconditional branch
+  CELL_BRANCH_IF_FALSE,  // Conditional branch: jump if top of stack is falsy
 
   // combined types
   CELL_INT_PAIR,
@@ -114,8 +116,8 @@ typedef struct cell {
 
 // Array data structure
 typedef struct cell_array {
-  size_t length;
-  size_t capacity;
+  int length;
+  int capacity;
   cell_t elements[];
 } cell_array_t;
 

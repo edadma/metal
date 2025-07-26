@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "dictionary.h"
 #include "error.h"
+#include "interpreter.h"
 #include "memory.h"
 #include "parser.h"
 #include "stack.h"
@@ -628,6 +629,69 @@ static void native_not(context_t* ctx) {
 
   data_push(ctx, new_boolean(result));
 }
+
+// Control flow compilation words
+
+// IF ( condition -- ) Compile conditional branch
+static void native_if(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "IF: only valid during compilation");
+  }
+  // Compile BRANCH_IF_FALSE with placeholder offset
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH_IF_FALSE;
+  branch_cell.payload.i32 = 0;  // Placeholder for back-patching
+
+  int branch_location = compiling_definition->length;
+
+  compile_cell(ctx, branch_cell);
+  // Push location onto return stack for back-patching
+  return_push(ctx, new_int32(branch_location));
+}
+
+// ELSE ( -- ) Compile unconditional branch and back-patch IF
+static void native_else(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "ELSE: only valid during compilation");
+  }
+  if (is_return_empty(ctx)) {
+    error(ctx, "ELSE: no matching IF");
+  }
+  // Compile unconditional BRANCH with placeholder
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH;
+  branch_cell.payload.i32 = 0;  // Placeholder for back-patching
+  int else_location = compiling_definition->length;
+  compile_cell(ctx, branch_cell);
+  return_push(ctx, new_int32(else_location));
+  // Back-patch the IF's branch to jump here (past the ELSE)
+
+  cell_t* if_cell = return_pop(ctx);
+
+  int if_location = if_cell->payload.i32;
+  int offset = compiling_definition->length - (if_location + 1);
+  compiling_definition->elements[if_location].payload.i32 = offset;
+  release(if_cell);
+}
+
+// THEN ( -- ) Back-patch pending branch to jump here
+static void native_then(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "THEN: only valid during compilation");
+  }
+
+  if (is_return_empty(ctx)) {
+    error(ctx, "THEN: no matching IF or ELSE");
+  }
+
+  // Back-patch the pending branch
+  cell_t* branch_cell = return_pop(ctx);
+  int branch_location = branch_cell->payload.i32;
+  int offset = compiling_definition->length - (branch_location + 1);
+  compiling_definition->elements[branch_location].payload.i32 = offset;
+  release(branch_cell);
+}
+
 // Helper function to check if cell is a valid integer type for bitwise ops
 static bool is_bitwise_compatible(cell_t* cell) {
   return (cell->type == CELL_INT32 || cell->type == CELL_INT64);
@@ -909,6 +973,118 @@ static void native_logical_right_shift(context_t* ctx) {
   }
 }
 
+// PICK ( xu ... x1 x0 u -- xu ... x1 x0 xu )
+// Copy the u-th item from top of stack (0-indexed)
+static void native_pick(context_t* ctx) {
+  require(ctx, 1, "PICK");
+  cell_t* u_cell = data_pop(ctx);
+  if (u_cell->type != CELL_INT32) {
+    error(ctx, "PICK: index must be integer");
+  }
+  int u = u_cell->payload.i32;
+  release(u_cell);
+  if (u < 0) {
+    error(ctx, "PICK: index cannot be negative");
+  }
+  if (u >= ctx->data_stack_ptr) {
+    error(ctx, "PICK: stack underflow");
+  }
+  // Copy the u-th item (0-indexed from top)
+  cell_t* item = data_peek(ctx, u);
+  data_push_ptr(ctx, item);
+}
+
+// ROLL ( xu xu-1 ... x1 x0 u -- xu-1 ... x1 x0 xu )
+// Move the u-th item to top of stack (0-indexed)
+static void native_roll(context_t* ctx) {
+  require(ctx, 1, "ROLL");
+  cell_t* u_cell = data_pop(ctx);
+  if (u_cell->type != CELL_INT32) {
+    error(ctx, "ROLL: index must be integer");
+  }
+  int u = u_cell->payload.i32;
+  release(u_cell);
+  if (u < 0) {
+    error(ctx, "ROLL: index cannot be negative");
+  }
+  if (u == 0) {
+    return;  // 0 ROLL is no-op
+  }
+  if (u >= ctx->data_stack_ptr) {
+    error(ctx, "ROLL: stack underflow");
+  }
+  // Move the u-th item to top
+  int source_index = ctx->data_stack_ptr - 1 - u;
+  cell_t item = ctx->data_stack[source_index];
+
+  // Shift items down to fill the gap
+  for (int i = source_index; i < ctx->data_stack_ptr - 1; i++) {
+    ctx->data_stack[i] = ctx->data_stack[i + 1];
+  }
+
+  // Put the item on top
+  ctx->data_stack[ctx->data_stack_ptr - 1] = item;
+}
+
+// Helper function to add a compiled word definition from source
+static void add_definition(const char* name, const char* source,
+                           const char* help) {
+  // Save current compilation state
+  bool saved_compilation_mode = compilation_mode;
+  cell_array_t* saved_compiling_definition = compiling_definition;
+  char saved_compiling_word_name[32];
+  strncpy(saved_compiling_word_name, compiling_word_name,
+          sizeof(saved_compiling_word_name));
+  // Set up compilation
+  compilation_mode = true;
+  compiling_definition = create_array_data(&main_context, 8);
+  if (!compiling_definition) {
+    error(&main_context, "add_definition: allocation failed for %s", name);
+  }
+  strncpy(compiling_word_name, name, sizeof(compiling_word_name) - 1);
+  compiling_word_name[sizeof(compiling_word_name) - 1] = '\0';
+  // Compile the source code
+  metal_result_t result = interpret(&main_context, source);
+  if (result != METAL_OK) {
+    // Clean up on error
+    if (compiling_definition) {
+      for (size_t i = 0; i < compiling_definition->length; i++) {
+        release(&compiling_definition->elements[i]);
+      }
+      metal_free(compiling_definition);
+    }
+    error(&main_context, "add_definition: failed to compile %s", name);
+  }
+  // Add EXIT to the end of the definition
+  dictionary_entry_t* exit_word = find_word("EXIT");
+  if (!exit_word) {
+    error(&main_context, "add_definition: EXIT word not found");
+  }
+  if (compiling_definition->length >= compiling_definition->capacity) {
+    compiling_definition =
+        resize_array_data(&main_context, compiling_definition,
+                          compiling_definition->capacity * 2);
+    if (!compiling_definition) {
+      error(&main_context, "add_definition: failed to resize definition for %s",
+            name);
+    }
+  }
+  compiling_definition->elements[compiling_definition->length] =
+      exit_word->definition;
+  compiling_definition->length++;
+  retain(&exit_word->definition);
+
+  // Create the code cell and add to dictionary
+  cell_t code_cell = new_code(compiling_definition);
+  add_cell(name, code_cell, help);
+
+  // Restore compilation state
+  compilation_mode = saved_compilation_mode;
+  compiling_definition = saved_compiling_definition;
+  strncpy(compiling_word_name, saved_compiling_word_name,
+          sizeof(compiling_word_name));
+}
+
 // Register all core words
 void add_core_words(void) {
   // Stack manipulation
@@ -916,6 +1092,11 @@ void add_core_words(void) {
   add_native_word("DROP", native_drop, "( a -- ) Remove top of stack");
   add_native_word("SWAP", native_swap,
                   "( a b -- b a ) Swap top two stack items");
+  add_native_word("PICK", native_pick,
+                  "( xu...x1 x0 u -- xu...x1 x0 xu ) Copy u-th item");
+  add_native_word("ROLL", native_roll,
+                  "( xu...x1 x0 u -- xu-1...x1 x0 xu ) Move u-th item to top");
+
   // Arithmetic
   add_native_word("+", native_add, "( a b -- c ) Add two numbers");
   add_native_word("-", native_subtract, "( a b -- c ) Subtract two numbers");
@@ -981,10 +1162,24 @@ void add_core_words(void) {
                   "( ptr -- value ) Fetch value from pointer");
   add_native_word("!", native_store, "( ptr value -- ) Store value at pointer");
 
+  // Control flow (compilation only)
+  add_native_word_immediate("IF", native_if, "( bool -- ) Begin conditional");
+  add_native_word_immediate("ELSE", native_else, "( -- ) Alternative branch");
+  add_native_word_immediate("THEN", native_then, "( -- ) End conditional");
+
   add_native_word("(", native_paren_comment,
                   "( comment -- ) Parenthesis comment until )");
   add_native_word_immediate("DEF", native_def,
                             "( -- ) <name> Start word definition");
   add_native_word_immediate("END", native_end, "( -- ) End word definition");
   add_native_word("EXIT", native_exit, "( -- ) Exit from word definition");
+
+  add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
+  add_definition("2DUP", "OVER OVER",
+                 "( a b -- a b a b ) Duplicate top two items");
+  add_definition("MIN", "2DUP > IF SWAP THEN DROP",
+                 "( a b -- min ) Return minimum of two numbers");
+  add_definition("MAX", "2DUP < IF SWAP THEN DROP",
+                 "( a b -- max ) Return maximum of two numbers");
+  add_definition("ROT", "2 ROLL", "( a b c -- b c a ) Rotate top three items");
 }

@@ -15,6 +15,7 @@
 #include "error.h"
 #include "parser.h"
 #include "stack.h"
+#include "util.h"
 
 // Number parsing
 bool try_parse_number(const char* token, cell_t* result) {
@@ -51,6 +52,28 @@ void execute_code(context_t* ctx) {
 
     debug("executing cell type: %d", cell->type);
     switch (cell->type) {
+      case CELL_BRANCH_IF_FALSE: {
+        // Conditional branch: jump if top of stack is falsy
+        if (is_data_empty(ctx)) {
+          error(ctx, "BRANCH_IF_FALSE: stack underflow");
+        }
+
+        cell_t* condition = data_pop(ctx);
+
+        if (!is_truthy(condition)) {
+          // Jump: ip += offset
+          ctx->ip += cell->payload.i32;
+        }
+
+        release(condition);
+        break;
+      }
+
+      case CELL_BRANCH: {
+        // Unconditional branch
+        ctx->ip += cell->payload.i32;
+        break;
+      }
       case CELL_NATIVE: {
         // Execute native function
         cell->payload.native(ctx);
