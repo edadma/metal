@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "compat.h"
 #include "context.h"
 #include "dictionary.h"
 #include "parser.h"
