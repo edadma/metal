@@ -10,6 +10,7 @@
 #include "array.h"
 #include "context.h"
 #include "core.h"
+#include "debug.h"
 #include "dictionary.h"
 #include "error.h"
 #include "parser.h"
@@ -48,6 +49,7 @@ void execute_code(context_t* ctx) {
 
     ctx->ip++;
 
+    debug("executing cell type: %d", cell->type);
     switch (cell->type) {
       case CELL_NATIVE: {
         // Execute native function
@@ -145,6 +147,7 @@ metal_result_t interpret(context_t* ctx, const char* input) {
           if (dict_word->definition.type == CELL_NATIVE) {
             dict_word->definition.payload.native(ctx);
           } else if (dict_word->definition.type == CELL_CODE) {
+            debug("executing word: %s", dict_word->name);
             ctx->ip = dict_word->definition.payload.array->elements;
             execute_code(ctx);
           } else {

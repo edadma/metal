@@ -20,6 +20,8 @@ char compiling_word_name[32];
 // Stack manipulation words
 
 static void native_dup(context_t* ctx) {
+  debug("executing DUP");
+
   if (ctx->data_stack_ptr <= 0) {
     error(ctx, "DUP: stack underflow");
   }
@@ -49,6 +51,7 @@ static void native_swap(context_t* ctx) {
 // Arithmetic words
 
 static void native_add(context_t* ctx) {
+  debug("execting +");
   require(ctx, 2, "+");
 
   cell_t* b = data_pop(ctx);
@@ -474,17 +477,18 @@ static void native_end(context_t* ctx) {
 }
 
 static void native_exit(context_t* ctx) {
+  debug("executing EXIT");
   if (is_return_empty(ctx)) {
+    debug("EXIT: no return: set ip = NULL");
+    ctx->ip = NULL;
+  } else {
     cell_t* ret = return_pop(ctx);
 
     if (ret->type != CELL_RETURN)
       error(ctx, "Invalid return value");
     else
       ctx->ip = ret->payload.cell_ptr;
-  } else
-    ctx->ip = NULL;
-
-  debug("EXIT executed");
+  }
 }
 
 static void native_true(context_t* ctx) { data_push(ctx, new_boolean(true)); }
