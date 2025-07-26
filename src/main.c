@@ -27,9 +27,9 @@
 context_t main_context;
 
 // Context management
-void init_context(context_t* ctx) {
+void init_context(context_t* ctx, const char* name) {
   memset(ctx, 0, sizeof(context_t));
-  ctx->name = "main";
+  ctx->name = name;
 }
 
 // Error handling
@@ -133,7 +133,7 @@ void execute_code(context_t* ctx, cell_array_t* code) {
 }
 
 // Main interpreter
-metal_result_t interpret(const char* input) {
+metal_result_t interpret(context_t* ctx, const char* input) {
   // Set up exception handling
   if (setjmp(main_context.error_jmp) != 0) {
     // We jumped here due to an error
@@ -154,21 +154,21 @@ metal_result_t interpret(const char* input) {
     // }
 
     // Clear parsing state
-    main_context.input_pos = NULL;
-    main_context.input_start = NULL;
+    ctx->input_pos = NULL;
+    ctx->input_start = NULL;
 
     return METAL_ERROR;
   }
 
   // Set up parsing state in context
-  main_context.input_start = input;
-  main_context.input_pos = input;
+  ctx->input_start = input;
+  ctx->input_pos = input;
 
   char token_buffer[256];
   token_type_t token_type;
 
   // Parse and execute tokens one at a time
-  while ((token_type = parse_next_token(&main_context.input_pos, token_buffer,
+  while ((token_type = parse_next_token(&ctx->input_pos, token_buffer,
                                         sizeof(token_buffer))) != TOKEN_EOF) {
     if (token_type == TOKEN_STRING) {
       // String literal
@@ -177,7 +177,7 @@ metal_result_t interpret(const char* input) {
       if (compilation_mode) {
         compile_cell(string_cell);
       } else {
-        data_push(&main_context, string_cell);
+        data_push(ctx, string_cell);
       }
 
     } else if (token_type == TOKEN_WORD) {
@@ -189,7 +189,7 @@ metal_result_t interpret(const char* input) {
         if (compilation_mode) {
           compile_cell(num);
         } else {
-          data_push(&main_context, num);
+          data_push(ctx, num);
         }
         continue;
       }
@@ -208,10 +208,9 @@ metal_result_t interpret(const char* input) {
         } else {
           // Execute the word (either interpretation mode or immediate word)
           if (dict_word->definition.type == CELL_NATIVE) {
-            dict_word->definition.payload.native(&main_context);
+            dict_word->definition.payload.native(ctx);
           } else if (dict_word->definition.type == CELL_CODE) {
-            execute_code(&main_context,
-                         (cell_array_t*)dict_word->definition.payload.ptr);
+            execute_code(ctx, dict_word->definition.payload.ptr);
           } else {
             error("Unknown word type: %d", dict_word->definition.type);
           }
@@ -225,8 +224,8 @@ metal_result_t interpret(const char* input) {
   }
 
   // Clear parsing state on success
-  main_context.input_pos = NULL;
-  main_context.input_start = NULL;
+  ctx->input_pos = NULL;
+  ctx->input_start = NULL;
 
   return METAL_OK;
 }
@@ -270,7 +269,7 @@ int main(void) {
 
   // Initialize system
   init_memory();
-  init_context(&main_context);
+  init_context(&main_context, "main");
   init_dictionary();  // Initialize dictionary first
   populate_dictionary();
   repl(&main_context);

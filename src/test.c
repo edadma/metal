@@ -114,13 +114,13 @@ void test_string_equal(const char* file, int line, const char* expr,
 }
 
 // Metal language testing functions
-context_t* current_test_context = NULL;
+context_t test_context;
 
 void test_interpret(const char* file, int line, const char* code) {
   debug("test_interpret: About to interpret: '%s'", code);
   test_count++;
 
-  metal_result_t result = interpret(code);
+  metal_result_t result = interpret(&test_context, code);
   if (result == METAL_OK) {
     printf("PASS: %s:%d - interpret(\"%s\")\n", get_filename(file), line, code);
     test_passed++;
@@ -135,7 +135,7 @@ void test_interpret(const char* file, int line, const char* code) {
 void test_stack_depth(const char* file, int line, const char* expr,
                       int expected) {
   test_count++;
-  context_t* ctx = current_test_context;
+  context_t* ctx = &test_context;
   int actual = data_depth(ctx);
 
   if (actual == expected) {
@@ -150,7 +150,7 @@ void test_stack_depth(const char* file, int line, const char* expr,
 void test_stack_top_int(const char* file, int line, const char* expr,
                         int expected) {
   test_count++;
-  context_t* ctx = current_test_context;
+  context_t* ctx = &test_context;
 
   if (is_data_empty(ctx)) {
     printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
@@ -176,7 +176,7 @@ void test_stack_top_int(const char* file, int line, const char* expr,
 // void test_stack_top_float(const char* file, int line, const char* expr,
 //                           double expected) {
 //   test_count++;
-//   context_t* ctx = current_test_context;
+//   context_t* ctx = &test_context;
 //
 //   if (is_data_empty(ctx)) {
 //     printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
@@ -204,7 +204,7 @@ void test_stack_top_int(const char* file, int line, const char* expr,
 void test_stack_top_string(const char* file, int line, const char* expr,
                            const char* expected) {
   test_count++;
-  context_t* ctx = current_test_context;
+  context_t* ctx = &test_context;
 
   if (is_data_empty(ctx)) {
     printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
@@ -243,18 +243,17 @@ void register_test(const char* name, void (*test_func)(void)) {
   registered_test_count++;
 }
 
-void reset_test_stats(context_t* ctx) {
-  debug("reset_test_stats: Starting with context %p", (void*)ctx);
+void reset_test_stats(void) {
   test_count = 0;
   test_passed = 0;
   test_failed = 0;
 }
 
-void run_all_tests(context_t* ctx) {
-  debug("run_all_tests: Starting with context %p", (void*)ctx);
+void run_all_tests(void) {
   printf("\n=== Running Metal Unit Tests ===\n");
   debug("run_all_tests: About to call reset_test_stats");
-  reset_test_stats(ctx);
+  reset_test_stats();
+  init_context(&test_context, "test");
   debug("run_all_tests: reset_test_stats completed");
 
   debug("run_all_tests: About to iterate through %d tests",
@@ -263,10 +262,6 @@ void run_all_tests(context_t* ctx) {
   for (int i = 0; i < registered_test_count; i++) {
     debug("run_all_tests: Starting test %d: %s", i, test_registry[i].name);
     printf("\n--- Test: %s ---\n", test_registry[i].name);
-    debug("run_all_tests: Setting current_test_context to %p", (void*)ctx);
-
-    // Set current context for test functions to use
-    current_test_context = ctx;
 
     debug("run_all_tests: About to call test function %p",
           (void*)test_registry[i].func);
@@ -274,20 +269,19 @@ void run_all_tests(context_t* ctx) {
     debug("run_all_tests: Test function completed");
 
     debug("run_all_tests: About to clear stack, current depth: %d",
-          data_depth(ctx));
+          data_depth(&test_context));
 
     // Clear context stack after each test function
     int cleared_count = 0;
-    while (!is_data_empty(ctx)) {
-      cell_t cell = data_pop(ctx);
+    while (!is_data_empty(&test_context)) {
+      cell_t cell = data_pop(&test_context);
       metal_release(&cell);
       debug("run_all_tests: Cleared cell %d from stack", cleared_count);
     }
     debug("run_all_tests: Cleared %d cells from stack", cleared_count);
   }
 
-  debug("run_all_tests: All tests completed, clearing current_test_context");
-  current_test_context = NULL;
+  debug("run_all_tests: All tests completed, clearing test_context");
 
   debug("run_all_tests: About to print results");
 
@@ -308,7 +302,7 @@ void run_all_tests(context_t* ctx) {
 // TEST word - run all registered tests
 static void native_test(context_t* ctx) {
   debug("native_test: Starting TEST word execution");
-  run_all_tests(ctx);
+  run_all_tests();
   debug("native_test: run_all_tests completed, about to return");
 }
 

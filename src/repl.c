@@ -47,7 +47,7 @@ void repl(context_t* ctx) {
     }
 
     // Interpret the input
-    metal_result_t result = interpret(input_line);
+    metal_result_t result = interpret(ctx, input_line);
 
     // Handle any errors (Metal's simple error handling)
     if (result != METAL_OK) {

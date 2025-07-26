@@ -62,12 +62,12 @@ typedef enum {
 } metal_result_t;
 
 // Core interpreter functions
-metal_result_t interpret(const char* input);
+metal_result_t interpret(context_t* ctx, const char* input);
 bool metal_input_complete(const char* input);
 void error(const char* fmt, ...);
 
 // Context management
-void init_context(context_t* ctx);
+void init_context(context_t* ctx, const char* name);
 void metal_switch_context(context_t* ctx);
 
 #endif  // METAL_H
