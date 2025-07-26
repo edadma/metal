@@ -2,6 +2,9 @@
 #define DEBUG_H
 
 #ifdef DEBUG_ENABLED
+
+#include <stdbool.h>
+
 // Runtime debug flag
 extern bool debug_enabled;
 #define debug(fmt, ...)                                          \

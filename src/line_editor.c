@@ -1,5 +1,6 @@
 #include "line_editor.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 

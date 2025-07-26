@@ -2,7 +2,7 @@
 #define METAL_H
 
 #include <setjmp.h>
-#include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "cell.h"
@@ -69,5 +69,12 @@ void error(const char* fmt, ...);
 // Context management
 void init_context(context_t* ctx, const char* name);
 void metal_switch_context(context_t* ctx);
+
+// Compatibility for unused parameters
+#if defined(__GNUC__) || defined(__clang__)
+#define UNUSED __attribute__((unused))
+#else
+#define UNUSED
+#endif
 
 #endif  // METAL_H

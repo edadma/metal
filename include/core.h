@@ -1,6 +1,8 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include <stdbool.h>
+
 #include "cell.h"
 
 extern bool compilation_mode;

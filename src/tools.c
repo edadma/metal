@@ -18,14 +18,14 @@ static void native_dot_s(context_t* ctx) { print_data_stack(ctx); }
 
 // System control
 
-static void native_bye([[maybe_unused]] context_t* ctx) {
+static void native_bye(UNUSED context_t* ctx) {
   printf("Goodbye!\n");
   exit(0);
 }
 
 // Meta commands
 
-static void native_words([[maybe_unused]] context_t* ctx) {
+static void native_words(UNUSED context_t* ctx) {
   printf("Dictionary (%d words):\n", get_dictionary_size());
 
   int words_per_line = 8;  // Adjust for readability

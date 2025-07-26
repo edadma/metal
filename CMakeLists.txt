@@ -37,7 +37,7 @@ else ()
     project(metal C)
 endif ()
 
-set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD 11)
 
 # Initialize Pico SDK
 if (TARGET_PLATFORM STREQUAL "pico")
