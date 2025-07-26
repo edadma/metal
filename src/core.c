@@ -538,9 +538,8 @@ static void native_undefined_check(context_t* ctx) {
   require(ctx, 1, "UNDEFINED?");
 
   cell_t* item = data_pop(ctx);
-  bool is_undefined = (item->type == CELL_UNDEFINED);
+  bool is_undefined = item->type == CELL_UNDEFINED;
 
-  release(item);
   data_push(ctx, new_boolean(is_undefined));
 }
 
