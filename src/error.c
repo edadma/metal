@@ -5,11 +5,12 @@
 #include <string.h>
 
 #include "cell.h"
+#include "compat.h"
 #include "core.h"
 #include "memory.h"
 
 // Error handling function
-void error(context_t* ctx, const char* fmt, ...) {
+NORETURN void error(context_t* ctx, const char* fmt, ...) {
   static char error_buffer[256];
 
   // Format the error message

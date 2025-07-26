@@ -22,74 +22,60 @@ char compiling_word_name[32];
 static void native_dup(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
     error(ctx, "DUP: stack underflow");
-    return;
   }
 
-  cell_t top = data_peek(ctx, 0);
-  data_push(ctx, top);
+  cell_t* top = data_peek(ctx, 0);
+  data_push_ptr(ctx, top);
 }
 
 static void native_drop(context_t* ctx) {
   if (ctx->data_stack_ptr <= 0) {
     error(ctx, "DROP: stack underflow");
-    return;
   }
 
-  cell_t cell = data_pop(ctx);
-  metal_release(&cell);
+  cell_t* cell = data_pop(ctx);
+  metal_release(cell);
 }
 
 static void native_swap(context_t* ctx) {
-  if (ctx->data_stack_ptr < 2) {
-    error(ctx, "SWAP: insufficient stack");
-    return;
-  }
+  require(ctx, 2, "SWAP");
 
-  cell_t a = data_pop(ctx);
-  cell_t b = data_pop(ctx);
-  data_push(ctx, a);
-  data_push(ctx, b);
-
-  // Release the references we got from data_pop
-  metal_release(&a);
-  metal_release(&b);
+  cell_t* a = data_pop(ctx);
+  cell_t b = data_pop_cell(ctx);
+  data_push_ptr_no_retain(ctx, a);
+  data_push_no_retain(ctx, b);
 }
 
 // Arithmetic words
 
 static void native_add(context_t* ctx) {
-  if (ctx->data_stack_ptr < 2) {
-    error(ctx, "+ : insufficient stack");
-    return;
-  }
+  require(ctx, 2, "+");
 
-  cell_t b = data_pop(ctx);
-  cell_t a = data_pop(ctx);
+  cell_t* b = data_pop(ctx);
+  cell_t* a = data_peek(ctx, 0);
 
-  // Simple integer addition for now
-  if (a.type == CELL_INT32 && b.type == CELL_INT32) {
-    data_push(ctx, new_int32(a.payload.i32 + b.payload.i32));
+  if (a->type == CELL_INT32 && b->type == CELL_INT32) {
+    a->payload.i32 += b->payload.i32;
+  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    a->payload.f64 += b->payload.f64;
+  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    a->payload.i64 += b->payload.i64;
   } else {
     error(ctx, "+ : type mismatch");
-    data_push(ctx, a);
-    data_push(ctx, b);
   }
 
-  metal_release(&a);
-  metal_release(&b);
+  // metal_release(a);
+  // metal_release(b);
 }
 
 // I/O words
 
 static void native_print(context_t* ctx) {
-  if (ctx->data_stack_ptr <= 0) {
-    error(ctx, "PRINT: stack underflow");
-    return;
-  }
+  require(ctx, 1, "PRINT");
 
-  cell_t cell = data_pop(ctx);
-  print_cell(&cell);
-  metal_release(&cell);
+  cell_t* cell = data_pop(ctx);
+  print_cell(cell);
+  metal_release(cell);
 }
 
 // Array words
@@ -99,20 +85,14 @@ static void native_nil(context_t* ctx) { data_push(ctx, new_nil()); }
 static void native_comma(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
     error(ctx, ", : insufficient stack (need array and element)");
-    return;
   }
 
-  cell_t element = data_pop(ctx);
-  cell_t array_cell = data_pop(ctx);
+  cell_t element = data_pop_cell(ctx);
+  cell_t array_cell = data_pop_cell(ctx);
 
   if (array_cell.type == CELL_NIL) {
     // Convert NIL to ARRAY with first element
     cell_array_t* data = create_array_data(ctx, 1);
-    if (!data) {
-      data_push(ctx, array_cell);
-      data_push(ctx, element);
-      return;
-    }
 
     // Add the element
     data->elements[0] = element;
@@ -163,7 +143,7 @@ static void native_length(context_t* ctx) {
     return;
   }
 
-  cell_t array_cell = data_pop(ctx);
+  cell_t array_cell = data_pop_cell(ctx);
 
   if (array_cell.type == CELL_NIL) {
     data_push(ctx, new_int32(0));
@@ -185,8 +165,8 @@ static void native_index(context_t* ctx) {
     return;
   }
 
-  cell_t index_cell = data_pop(ctx);
-  cell_t array_cell = data_pop(ctx);
+  cell_t index_cell = data_pop_cell(ctx);
+  cell_t array_cell = data_pop_cell(ctx);
 
   if (index_cell.type != CELL_INT32) {
     error(ctx, "INDEX: index must be integer");
@@ -232,18 +212,14 @@ static void native_fetch(context_t* ctx) {
     return;
   }
 
-  cell_t pointer_cell = data_pop(ctx);
+  cell_t pointer_cell = data_pop_cell(ctx);
 
   if (pointer_cell.type != CELL_POINTER) {
     error(ctx, "@ : not a pointer");
-    data_push(ctx, pointer_cell);
-    return;
   }
 
   if (!pointer_cell.payload.pointer) {
     error(ctx, "@ : null pointer");
-    data_push(ctx, pointer_cell);
-    return;
   }
 
   // Push a copy of the pointed-to cell
@@ -260,21 +236,15 @@ static void native_store(context_t* ctx) {
     return;
   }
 
-  cell_t value = data_pop(ctx);
-  cell_t pointer_cell = data_pop(ctx);
+  cell_t value = data_pop_cell(ctx);
+  cell_t pointer_cell = data_pop_cell(ctx);
 
   if (pointer_cell.type != CELL_POINTER) {
     error(ctx, "! : not a pointer");
-    data_push(ctx, pointer_cell);
-    data_push(ctx, value);
-    return;
   }
 
   if (!pointer_cell.payload.pointer) {
     error(ctx, "! : null pointer");
-    data_push(ctx, pointer_cell);
-    data_push(ctx, value);
-    return;
   }
 
   // Release the old value and store the new one
@@ -291,7 +261,6 @@ static void native_paren_comment(context_t* ctx) {
   char* comment = parse_until_char(ctx, ')');
   if (!comment) {
     error(ctx, "( : missing closing )");
-    return;
   }
   // It's a comment, so just discard it
   metal_free(comment);
@@ -300,7 +269,6 @@ static void native_paren_comment(context_t* ctx) {
 static void native_def(context_t* ctx) {
   if (compilation_mode) {
     error(ctx, "DEF: already in compilation mode");
-    return;
   }
 
   // Parse next word as the definition name
@@ -309,7 +277,6 @@ static void native_def(context_t* ctx) {
       parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
   if (token_type != TOKEN_WORD) {
     error(ctx, "DEF: expected word name");
-    return;
   }
 
   // Initialize compilation
@@ -317,7 +284,6 @@ static void native_def(context_t* ctx) {
       create_array_data(ctx, 8);  // Start with small capacity
   if (!compiling_definition) {
     error(ctx, "DEF: allocation failed");
-    return;
   }
 
   strncpy(compiling_word_name, word_buffer, sizeof(compiling_word_name) - 1);
@@ -330,14 +296,12 @@ static void native_def(context_t* ctx) {
 static void native_end(context_t* ctx) {
   if (!compilation_mode) {
     error(ctx, "END: not in compilation mode");
-    return;
   }
 
   // Add EXIT to the end of the definition
   dictionary_entry_t* exit_word = find_word("EXIT");
   if (!exit_word) {
     error(ctx, "END: EXIT word not found");
-    return;
   }
 
   // Add EXIT as the last instruction
@@ -346,8 +310,6 @@ static void native_end(context_t* ctx) {
         ctx, compiling_definition, compiling_definition->capacity * 2);
     if (!compiling_definition) {
       error(ctx, "END: failed to resize definition");
-      compilation_mode = false;
-      return;
     }
   }
 
@@ -370,9 +332,7 @@ static void native_end(context_t* ctx) {
 }
 
 static void native_exit(context_t* ctx) {
-  // EXIT is a runtime word that stops execution
-  // Its presence in code signals the interpreter to stop
-  // The actual stopping is handled by the code execution engine
+  // todo: finish EXIT
   debug("EXIT executed");
 }
 

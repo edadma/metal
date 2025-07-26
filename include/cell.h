@@ -63,7 +63,7 @@ typedef struct cell {
   union {
     int32_t i32;           // 32-bit integer
     int64_t i64;           // 64-bit integer
-    double f;              // Double precision float
+    double f64;              // Double precision float
     void* ptr;             // Pointer to allocated cell
     native_func_t native;  // Function pointer
     struct cell* pointer;  // Code pointer (using struct tag to avoid issues)

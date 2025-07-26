@@ -25,7 +25,7 @@ cell_t new_int64(int64_t value) {
 cell_t new_float(double value) {
   cell_t cell = {0};
   cell.type = CELL_FLOAT;
-  cell.payload.f = value;
+  cell.payload.f64 = value;
   return cell;
 }
 

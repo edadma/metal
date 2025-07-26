@@ -4,6 +4,7 @@
 
 #include "cell.h"
 #include "debug.h"
+#include "error.h"
 #include "memory.h"
 
 // Array data management functions
@@ -14,15 +15,17 @@ cell_array_t* create_array_data(context_t* ctx, size_t initial_capacity) {
   size_t alloc_size =
       sizeof(cell_array_t) + (initial_capacity * sizeof(cell_t));
   cell_array_t* data = metal_alloc(ctx, alloc_size);
-  if (!data) {
-    debug("Failed to allocate array data for capacity %zu", initial_capacity);
-    return NULL;
+
+  if (data) {
+    data->length = 0;
+    data->capacity = initial_capacity;
+    debug("Created array data with capacity %zu", initial_capacity);
+    return data;
   }
 
-  data->length = 0;
-  data->capacity = initial_capacity;
-  debug("Created array data with capacity %zu", initial_capacity);
-  return data;
+  debug("Failed to allocate array data for capacity %zu", initial_capacity);
+  error(ctx, "Failed to allocate array data for capacity %zu",
+        initial_capacity);
 }
 
 cell_array_t* resize_array_data(context_t* ctx, cell_array_t* data,

@@ -17,7 +17,7 @@ void print_cell(const cell_t* cell) {
       printf("%lld", (long long)cell->payload.i64);
       break;
     case CELL_FLOAT:
-      printf("%g", cell->payload.f);
+      printf("%g", cell->payload.f64);
       break;
     case CELL_STRING:
       printf("\"%s\"", (char*)cell->payload.ptr);

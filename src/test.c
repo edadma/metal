@@ -161,7 +161,7 @@ void test_stack_top_int(const char* file, int line, const char* expr,
     return;
   }
 
-  cell_t top = data_peek(ctx, 0);
+  cell_t top = data_peek_cell(ctx, 0);
   if (top.type == CELL_INT32 && top.payload.i32 == expected) {
     test_pass(file, line, expr);
   } else if (top.type == CELL_INT32) {
@@ -215,7 +215,7 @@ void test_stack_top_string(const char* file, int line, const char* expr,
     return;
   }
 
-  cell_t top = data_peek(ctx, 0);
+  cell_t top = data_peek_cell(ctx, 0);
   if (top.type == CELL_STRING) {
     const char* actual = (const char*)top.payload.ptr;
     if (actual && expected && strcmp(actual, expected) == 0) {
@@ -276,7 +276,7 @@ void run_all_tests(void) {
     // Clear context stack after each test function
     int cleared_count = 0;
     while (!is_data_empty(&test_context)) {
-      cell_t cell = data_pop(&test_context);
+      cell_t cell = data_pop_cell(&test_context);
       metal_release(&cell);
       debug("run_all_tests: Cleared cell %d from stack", cleared_count);
     }
