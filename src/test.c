@@ -117,6 +117,7 @@ void test_string_equal(const char* file, int line, const char* expr,
 context_t* current_test_context = NULL;
 
 void test_interpret(const char* file, int line, const char* code) {
+  debug("test_interpret: About to interpret: '%s'", code);
   test_count++;
 
   metal_result_t result = interpret(code);
@@ -128,6 +129,7 @@ void test_interpret(const char* file, int line, const char* code) {
            code);
     test_failed++;
   }
+  debug("test_interpret: Completed");
 }
 
 void test_stack_depth(const char* file, int line, const char* expr,
@@ -242,6 +244,7 @@ void register_test(const char* name, void (*test_func)(void)) {
 }
 
 void reset_test_stats(context_t* ctx) {
+  debug("reset_test_stats: Starting with context %p", (void*)ctx);
   test_count = 0;
   test_passed = 0;
   test_failed = 0;
@@ -316,12 +319,14 @@ void add_test_words(void) {
 
 // Example test functions to demonstrate usage
 TEST_FUNCTION(basic_arithmetic) {
+  debug("test_basic_arithmetic: Starting");
   TEST_INTERPRET("5 3 +");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_INT(8);
 
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
+  debug("test_basic_arithmetic: Completed");
 }
 
 TEST_FUNCTION(string_operations) {
