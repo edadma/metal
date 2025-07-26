@@ -1,6 +1,7 @@
 #ifndef CELL_H
 #define CELL_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -13,6 +14,7 @@ typedef enum : uint8_t {
   CELL_INT32,
   CELL_INT64,
   CELL_FLOAT,
+  CELL_BOOLEAN,
   CELL_STRING,
   CELL_INTERNED,
   CELL_OBJECT,
@@ -63,7 +65,7 @@ typedef struct cell {
   union {
     int32_t i32;           // 32-bit integer
     int64_t i64;           // 64-bit integer
-    double f64;              // Double precision float
+    double f64;            // Double precision float
     void* ptr;             // Pointer to allocated cell
     native_func_t native;  // Function pointer
     struct cell* pointer;  // Code pointer (using struct tag to avoid issues)
@@ -86,6 +88,7 @@ typedef struct cell {
     struct {
       int32_t first, second;
     } int_pair;
+    bool boolean;
   } payload;  // 8 bytes
 } cell_t;
 
@@ -111,6 +114,7 @@ cell_t new_pointer(cell_t* target);
 cell_t new_null(void);
 cell_t new_undefined(void);
 cell_t new_code(cell_array_t* code_data);
+cell_t new_boolean(bool value);
 
 // Cell lifecycle management
 void retain(cell_t* cell);

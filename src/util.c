@@ -46,6 +46,15 @@ void print_cell(const cell_t* cell) {
     case CELL_EMPTY:
       printf("<empty>");
       break;
+    case CELL_BOOLEAN:
+      printf("%s", cell->payload.boolean ? "true" : "false");
+      break;
+    case CELL_NULL:
+      printf("null");
+      break;
+    case CELL_UNDEFINED:
+      printf("undefined");
+      break;
     default:
       printf("<type %d>", cell->type);
       break;

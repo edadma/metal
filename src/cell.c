@@ -85,6 +85,13 @@ cell_t new_code(cell_array_t* code_data) {
   return cell;
 }
 
+cell_t new_boolean(bool value) {
+  cell_t cell = {0};
+  cell.type = CELL_BOOLEAN;
+  cell.payload.boolean = value;
+  return cell;
+}
+
 // Cell lifecycle management
 
 void retain(cell_t* cell) {

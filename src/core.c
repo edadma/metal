@@ -478,6 +478,22 @@ static void native_exit(context_t* ctx) {
   debug("EXIT executed");
 }
 
+static void native_true(context_t* ctx) { data_push(ctx, new_boolean(true)); }
+
+static void native_false(context_t* ctx) { data_push(ctx, new_boolean(false)); }
+
+static void native_null(context_t* ctx) { data_push(ctx, new_null()); }
+
+static void native_undefined_check(context_t* ctx) {
+  require(ctx, 1, "UNDEFINED?");
+
+  cell_t* item = data_pop(ctx);
+  bool is_undefined = (item->type == CELL_UNDEFINED);
+
+  release(item);
+  data_push(ctx, new_boolean(is_undefined));
+}
+
 // Register all core words
 void add_core_words(void) {
   // Stack manipulation
@@ -491,6 +507,13 @@ void add_core_words(void) {
   add_native_word("*", native_multiply, "( a b -- c ) Multiply two numbers");
   add_native_word("/", native_divide, "( a b -- c ) Divide two numbers");
   add_native_word("%", native_modulo, "( a b -- c ) Modulo of two integers");
+
+  // Boolean and null values
+  add_native_word("TRUE", native_true, "( -- true ) Push boolean true");
+  add_native_word("FALSE", native_false, "( -- false ) Push boolean false");
+  add_native_word("NULL", native_null, "( -- null ) Push null value");
+  add_native_word("UNDEFINED?", native_undefined_check,
+                  "( a -- bool ) Test if value is undefined");
 
   // Type conversions
   add_native_word("INT32", native_to_int32,
