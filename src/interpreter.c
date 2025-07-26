@@ -66,10 +66,12 @@ void execute_code(context_t* ctx, cell_array_t* code) {
       case CELL_ARRAY:
       case CELL_NIL:
       case CELL_EMPTY:
+      case CELL_NULL:
+      case CELL_UNDEFINED:
+      case CELL_BOOLEAN:
       default: {
-        cell_t copy = *cell;
-        retain(&copy);
-        data_push(ctx, copy);
+        retain(cell);
+        data_push(ctx, *cell);
         break;
       }
     }
