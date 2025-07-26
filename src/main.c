@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "metal.h"
 #include "repl.h"
+#include "test.h"
 #include "tools.h"
 
 // Global state
