@@ -464,6 +464,103 @@ TEST_FUNCTION(control_stack_cleanup) {
   TEST_STACK_TOP_INT(99);
 }
 
+// Test basic BEGIN/UNTIL counting
+TEST_FUNCTION(begin_until_counter) {
+  TEST_INTERPRET("DEF count-to-5 0 BEGIN 1 + DUP 5 = UNTIL END");
+  TEST_INTERPRET("count-to-5");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(5);
+}
+
+// Test BEGIN/UNTIL with different exit condition
+TEST_FUNCTION(begin_until_greater_than) {
+  TEST_INTERPRET("DEF count-past-10 0 BEGIN 1 + DUP 10 > UNTIL END");
+  TEST_INTERPRET("count-past-10");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(11);
+}
+
+// Test BEGIN/UNTIL with modulo operation
+TEST_FUNCTION(begin_until_modulo) {
+  TEST_INTERPRET("DEF find-multiple-of-3 1 BEGIN 1 + DUP 3 % 0 = UNTIL END");
+  TEST_INTERPRET("find-multiple-of-3");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(3);  // First multiple of 3 after 1
+}
+
+// Test BEGIN/UNTIL with boolean values
+TEST_FUNCTION(begin_until_boolean) {
+  TEST_INTERPRET("DEF test-bool 0 BEGIN 1 + DUP 3 = UNTIL END");
+  TEST_INTERPRET("test-bool");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(3);
+}
+
+// Test nested control structures with BEGIN/UNTIL
+TEST_FUNCTION(begin_until_with_if) {
+  TEST_INTERPRET(
+      "DEF complex-until 0 BEGIN 1 + DUP 2 % 0 = IF DUP 6 >= ELSE FALSE THEN "
+      "UNTIL END");
+  TEST_INTERPRET("complex-until");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(6);  // First even number >= 6
+}
+
+// Test BEGIN/UNTIL doesn't execute body when condition is initially true
+TEST_FUNCTION(begin_until_immediate_exit) {
+  TEST_INTERPRET("DEF immediate-exit BEGIN 42 TRUE UNTIL END");
+  TEST_INTERPRET("immediate-exit");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(42);  // Executes body once, then exits
+}
+
+// Test multiple accumulators with BEGIN/UNTIL
+TEST_FUNCTION(begin_until_double_counter) {
+  TEST_INTERPRET(
+      "DEF double-count 0 0 BEGIN SWAP 1 + SWAP 2 + DUP 10 >= UNTIL DROP END");
+  TEST_INTERPRET("double-count");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(5);  // Counter that increments by 1 while other goes by 2
+}
+
+// Test BEGIN/UNTIL with string comparison
+TEST_FUNCTION(begin_until_string_length) {
+  TEST_INTERPRET(
+      "DEF build-string \"\" BEGIN \"x\" + DUP LENGTH 4 >= UNTIL END");
+  TEST_INTERPRET("build-string");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_STRING("xxxx");
+}
+
+// Test that BEGIN/UNTIL properly manages return stack
+TEST_FUNCTION(begin_until_stack_cleanup) {
+  TEST_INTERPRET("DEF test-cleanup 1 BEGIN 2 * DUP 16 >= UNTIL END");
+  TEST_INTERPRET("test-cleanup");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(16);  // 1*2*2*2*2 = 16
+
+  // Clear stack between sub-tests
+  TEST_INTERPRET("DROP");
+  TEST_STACK_DEPTH(0);
+
+  // Test that we can define another word afterward (return stack should be
+  // clean)
+  TEST_INTERPRET("DEF after-until 99 END");
+  TEST_INTERPRET("after-until");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(99);
+}
+
+// Test mixing BEGIN/AGAIN and BEGIN/UNTIL patterns
+TEST_FUNCTION(mixed_begin_patterns) {
+  TEST_INTERPRET(
+      "DEF mixed-test 0 BEGIN 1 + DUP 3 = IF 10 BEGIN 1 - DUP 5 <= UNTIL EXIT "
+      "THEN DUP 10 >= UNTIL END");
+  TEST_INTERPRET("mixed-test");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(5);
+}
+
 // Register example tests (would be called from main or test initialization)
 static void register_example_tests(void) {
   REGISTER_TEST(basic_arithmetic);
@@ -482,6 +579,18 @@ static void register_example_tests(void) {
   REGISTER_TEST(begin_again_conditional);
   REGISTER_TEST(complex_control_flow);
   REGISTER_TEST(control_stack_cleanup);
+
+  // BEGIN/UNTIL tests
+  REGISTER_TEST(begin_until_counter);
+  REGISTER_TEST(begin_until_greater_than);
+  REGISTER_TEST(begin_until_modulo);
+  REGISTER_TEST(begin_until_boolean);
+  REGISTER_TEST(begin_until_with_if);
+  REGISTER_TEST(begin_until_immediate_exit);
+  REGISTER_TEST(begin_until_double_counter);
+  REGISTER_TEST(begin_until_string_length);
+  REGISTER_TEST(begin_until_stack_cleanup);
+  REGISTER_TEST(mixed_begin_patterns);
 }
 
 // Call this from main.c when TEST_ENABLED

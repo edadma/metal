@@ -52,7 +52,7 @@ static void native_swap(context_t* ctx) {
 // Arithmetic words
 
 static void native_add(context_t* ctx) {
-  debug("execting +");
+  debug("executing +");
   require(ctx, 2, "+");
 
   cell_t* b = data_pop(ctx);
@@ -64,9 +64,38 @@ static void native_add(context_t* ctx) {
     a->payload.f64 += b->payload.f64;
   } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
     a->payload.i64 += b->payload.i64;
+  } else if (a->type == CELL_STRING && b->type == CELL_STRING) {
+    // String concatenation
+    const char* str_a = a->payload.utf8_ptr;
+    const char* str_b = b->payload.utf8_ptr;
+
+    if (!str_a) str_a = "";
+    if (!str_b) str_b = "";
+
+    size_t len_a = strlen(str_a);
+    size_t len_b = strlen(str_b);
+    size_t total_len = len_a + len_b;
+
+    char* new_str = metal_alloc(ctx, total_len + 1);
+    if (!new_str) {
+      error(ctx, "+ : failed to allocate memory for string concatenation");
+      return;
+    }
+
+    strcpy(new_str, str_a);
+    strcat(new_str, str_b);
+
+    // Release the old string in a
+    release(a);
+
+    // Update the cell with new string
+    a->type = CELL_STRING;
+    a->payload.utf8_ptr = new_str;
   } else {
     error(ctx, "+ : type mismatch");
   }
+
+  release(b);
 }
 
 static void native_subtract(context_t* ctx) {
@@ -296,8 +325,15 @@ static void native_length(context_t* ctx) {
   } else if (array_cell.type == CELL_ARRAY) {
     cell_array_t* data = array_cell.payload.array;
     data_push(ctx, new_int32((int32_t)data->length));
+  } else if (array_cell.type == CELL_STRING) {
+    const char* str = array_cell.payload.utf8_ptr;
+    if (!str) {
+      data_push(ctx, new_int32(0));  // null string has length 0
+    } else {
+      data_push(ctx, new_int32((int32_t)strlen(str)));
+    }
   } else {
-    error(ctx, "LENGTH: not an array");
+    error(ctx, "LENGTH: not an array or string");
     data_push(ctx, array_cell);
     return;
   }
@@ -1057,6 +1093,33 @@ static void native_again(context_t* ctx) {
   release(begin_cell);
 }
 
+// UNTIL ( flag -- ) Branch back to BEGIN if flag is false
+static void native_until(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "UNTIL: only valid during compilation");
+  }
+
+  if (is_return_empty(ctx)) {
+    error(ctx, "UNTIL: no matching BEGIN");
+  }
+
+  // Get the BEGIN location
+  cell_t* begin_cell = return_pop(ctx);
+  int begin_location = begin_cell->payload.i32;
+
+  // Calculate offset for conditional branch back to BEGIN
+  int until_location = compiling_definition->length;
+  int offset = begin_location - (until_location + 1);
+
+  // Compile the conditional branch (continues loop if flag is false)
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH_IF_FALSE;
+  branch_cell.payload.i32 = offset;
+
+  compile_cell(ctx, branch_cell);
+  release(begin_cell);
+}
+
 // Helper function to add a compiled word definition from source
 static void add_definition(const char* name, const char* source,
                            const char* help) {
@@ -1129,7 +1192,8 @@ void add_core_words(void) {
                   "( xu...x1 x0 u -- xu-1...x1 x0 xu ) Move u-th item to top");
 
   // Arithmetic
-  add_native_word("+", native_add, "( a b -- c ) Add two numbers");
+  add_native_word("+", native_add,
+                  "( a b -- c ) Add numbers or concatenate strings");
   add_native_word("-", native_subtract, "( a b -- c ) Subtract two numbers");
   add_native_word("*", native_multiply, "( a b -- c ) Multiply two numbers");
   add_native_word("/", native_divide, "( a b -- c ) Divide two numbers");
@@ -1186,7 +1250,8 @@ void add_core_words(void) {
   add_native_word("[]", native_nil, "( -- array ) Create empty array");
   add_native_word(",", native_comma,
                   "( array item -- array ) Append item to array");
-  add_native_word("LENGTH", native_length, "( array -- n ) Get array length");
+  add_native_word("LENGTH", native_length,
+                  "( array|string -- n ) Get array or string length");
   add_native_word("INDEX", native_index,
                   "( array n -- ptr ) Get pointer to array element");
   add_native_word("@", native_fetch,
@@ -1207,6 +1272,9 @@ void add_core_words(void) {
   add_native_word_immediate("BEGIN", native_begin, "( -- ) Mark start of loop");
   add_native_word_immediate("AGAIN", native_again,
                             "( -- ) Branch back to BEGIN");
+  add_native_word_immediate(
+      "UNTIL", native_until,
+      "( flag -- ) Branch back to BEGIN if flag is false");
 
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
   add_definition("2DUP", "OVER OVER",
