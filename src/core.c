@@ -1120,6 +1120,59 @@ static void native_until(context_t* ctx) {
   release(begin_cell);
 }
 
+// WHILE ( flag -- ) Continue loop if flag is true, exit if false
+static void native_while(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "WHILE: only valid during compilation");
+  }
+
+  if (is_return_empty(ctx)) {
+    error(ctx, "WHILE: no matching BEGIN");
+  }
+
+  // Compile conditional branch with placeholder (jumps out if false)
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH_IF_FALSE;
+  branch_cell.payload.i32 = 0;  // Placeholder for REPEAT to patch
+
+  int while_location = compiling_definition->length;
+
+  compile_cell(ctx, branch_cell);
+
+  // Push WHILE location for REPEAT to patch later
+  return_push(ctx, new_int32(while_location));
+}
+
+// REPEAT ( -- ) Jump back to BEGIN and patch WHILE's forward jump
+static void native_repeat(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "REPEAT: only valid during compilation");
+  }
+
+  if (ctx->return_stack_ptr < 2) {
+    error(ctx, "REPEAT: no matching BEGIN/WHILE");
+  }
+
+  // Pop WHILE location and patch its forward jump to here
+  cell_t* while_cell = return_pop(ctx);
+  int while_location = while_cell->payload.i32;
+  int forward_offset = compiling_definition->length + 1 - (while_location + 1);
+
+  compiling_definition->elements[while_location].payload.i32 = forward_offset;
+  // Pop BEGIN location and compile backward jump
+  cell_t* begin_cell = return_pop(ctx);
+  int begin_location = begin_cell->payload.i32;
+  int backward_offset = begin_location - (compiling_definition->length + 1);
+
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH;
+  branch_cell.payload.i32 = backward_offset;
+  compile_cell(ctx, branch_cell);
+
+  release(while_cell);
+  release(begin_cell);
+}
+
 // Helper function to add a compiled word definition from source
 static void add_definition(const char* name, const char* source,
                            const char* help) {
@@ -1275,6 +1328,10 @@ void add_core_words(void) {
   add_native_word_immediate(
       "UNTIL", native_until,
       "( flag -- ) Branch back to BEGIN if flag is false");
+  add_native_word_immediate("WHILE", native_while,
+                            "( flag -- ) Continue loop if flag is true");
+  add_native_word_immediate("REPEAT", native_repeat,
+                            "( -- ) Jump back to BEGIN");
 
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
   add_definition("2DUP", "OVER OVER",
