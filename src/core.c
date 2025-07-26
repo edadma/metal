@@ -1024,6 +1024,39 @@ static void native_roll(context_t* ctx) {
   ctx->data_stack[ctx->data_stack_ptr - 1] = item;
 }
 
+// BEGIN ( -- ) Mark start of loop
+static void native_begin(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "BEGIN: only valid during compilation");
+  }
+  // Push current location for AGAIN to reference
+  return_push(ctx, new_int32(compiling_definition->length));
+}
+
+// AGAIN ( -- ) Branch back to matching BEGIN
+static void native_again(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "AGAIN: only valid during compilation");
+  }
+  if (is_return_empty(ctx)) {
+    error(ctx, "AGAIN: no matching BEGIN");
+  }
+  // Get the BEGIN location
+  cell_t* begin_cell = return_pop(ctx);
+  int begin_location = begin_cell->payload.i32;
+  // Calculate offset for unconditional branch back to BEGIN
+  int branch_location = compiling_definition->length;
+  int offset = begin_location - (branch_location + 1);
+
+  // Compile the branch
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH;
+  branch_cell.payload.i32 = offset;
+
+  compile_cell(ctx, branch_cell);
+  release(begin_cell);
+}
+
 // Helper function to add a compiled word definition from source
 static void add_definition(const char* name, const char* source,
                            const char* help) {
@@ -1171,6 +1204,9 @@ void add_core_words(void) {
                             "( -- ) <name> Start word definition");
   add_native_word_immediate("END", native_end, "( -- ) End word definition");
   add_native_word("EXIT", native_exit, "( -- ) Exit from word definition");
+  add_native_word_immediate("BEGIN", native_begin, "( -- ) Mark start of loop");
+  add_native_word_immediate("AGAIN", native_again,
+                            "( -- ) Branch back to BEGIN");
 
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
   add_definition("2DUP", "OVER OVER",
