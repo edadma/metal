@@ -663,6 +663,92 @@ TEST_FUNCTION(mixed_loop_types) {
   TEST_STACK_TOP_INT(6);
 }
 
+// DO/LOOP unit tests
+TEST_FUNCTION(do_loop_basic) {
+  TEST_INTERPRET("DEF test-basic 0 5 0 DO I + LOOP END");
+  TEST_INTERPRET("test-basic");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(10);  // 0+1+2+3+4 = 10
+}
+
+TEST_FUNCTION(do_loop_plus_positive) {
+  TEST_INTERPRET("DEF test-plus-pos 0 10 0 DO I + 2 +LOOP END");
+  TEST_INTERPRET("test-plus-pos");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(20);  // 0+2+4+6+8 = 20
+}
+
+TEST_FUNCTION(do_loop_plus_negative) {
+  TEST_INTERPRET("DEF test-plus-neg 0 0 5 DO I + -1 +LOOP END");
+  TEST_INTERPRET("test-plus-neg");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(15);  // 5+4+3+2+1+0 = 15
+}
+
+TEST_FUNCTION(do_loop_nested_basic) {
+  TEST_INTERPRET("DEF test-nested 0 2 0 DO 2 0 DO J I + + LOOP LOOP END");
+  TEST_INTERPRET("test-nested");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(4);  // 0 + (0+0) + (0+1) + (1+0) + (1+1) = 4
+}
+
+TEST_FUNCTION(do_loop_i_access) {
+  TEST_INTERPRET("DEF test-i-access 3 0 DO I LOOP END");
+  TEST_INTERPRET("test-i-access");
+  TEST_STACK_DEPTH(3);
+  TEST_STACK_TOP_INT(2);  // Should have 0, 1, 2 on stack, top is 2
+}
+
+TEST_FUNCTION(do_loop_unloop_exit) {
+  TEST_INTERPRET(
+      "DEF test-unloop 5 0 DO I DUP 2 = IF UNLOOP 99 EXIT THEN LOOP 77 END");
+  TEST_INTERPRET("test-unloop");
+  TEST_STACK_DEPTH(4);     // Should have 0, 1, 2, 99
+  TEST_STACK_TOP_INT(99);  // Early exit when I=2
+}
+
+TEST_FUNCTION(do_loop_boundary_equal) {
+  TEST_INTERPRET("DEF test-boundary 3 3 DO I LOOP 42 END");
+  TEST_INTERPRET("test-boundary");
+  TEST_STACK_DEPTH(2);
+  TEST_STACK_TOP_INT(42);  // Loop doesn't execute, just pushes 42
+}
+
+TEST_FUNCTION(do_loop_single_iteration) {
+  TEST_INTERPRET("DEF test-single 1 0 DO I LOOP END");
+  TEST_INTERPRET("test-single");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(0);  // Single iteration with index 0
+}
+
+TEST_FUNCTION(do_loop_large_increment) {
+  TEST_INTERPRET("DEF test-large 0 10 0 DO I + 5 +LOOP END");
+  TEST_INTERPRET("test-large");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(5);  // 0+5 = 5 (only two iterations: 0, 5, then 10 >= 10)
+}
+
+TEST_FUNCTION(do_loop_backwards_range) {
+  TEST_INTERPRET("DEF test-backwards 0 5 10 DO I + -2 +LOOP END");
+  TEST_INTERPRET("test-backwards");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(24);  // 10+8+6 = 24
+}
+
+TEST_FUNCTION(do_loop_j_outer_index) {
+  TEST_INTERPRET("DEF test-j 0 2 0 DO 2 0 DO J + LOOP LOOP END");
+  TEST_INTERPRET("test-j");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(2);  // outer=0: 0+0=0, outer=1: 1+1=2, sum=2
+}
+
+TEST_FUNCTION(do_loop_accumulator_pattern) {
+  TEST_INTERPRET("DEF test-accum 0 4 1 DO I I * + LOOP END");
+  TEST_INTERPRET("test-accum");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(14);  // 0 + 1*1 + 2*2 + 3*3 = 0+1+4+9 = 14
+}
+
 // Register example tests (would be called from main or test initialization)
 static void register_example_tests(void) {
   REGISTER_TEST(basic_arithmetic);
@@ -705,6 +791,20 @@ static void register_example_tests(void) {
   REGISTER_TEST(begin_while_repeat_multi_var);
   REGISTER_TEST(begin_while_repeat_cleanup);
   REGISTER_TEST(mixed_loop_types);
+
+  // DO/LOOP tests
+  REGISTER_TEST(do_loop_basic);
+  REGISTER_TEST(do_loop_plus_positive);
+  REGISTER_TEST(do_loop_plus_negative);
+  REGISTER_TEST(do_loop_nested_basic);
+  REGISTER_TEST(do_loop_i_access);
+  REGISTER_TEST(do_loop_unloop_exit);
+  REGISTER_TEST(do_loop_boundary_equal);
+  REGISTER_TEST(do_loop_single_iteration);
+  REGISTER_TEST(do_loop_large_increment);
+  REGISTER_TEST(do_loop_backwards_range);
+  REGISTER_TEST(do_loop_j_outer_index);
+  REGISTER_TEST(do_loop_accumulator_pattern);
 }
 
 // Call this from main.c when TEST_ENABLED
