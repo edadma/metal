@@ -1,7 +1,6 @@
 #ifndef REPL_H
 #define REPL_H
 
-#include "compat.h"
 #include "context.h"
 
 // Main REPL system

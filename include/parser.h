@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 
-#include "compat.h"
 #include "context.h"
 
 // Token types for lexical analysis

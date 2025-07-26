@@ -1,7 +1,6 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include "compat.h"
 #include "context.h"
 
 // Stack initialization

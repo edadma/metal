@@ -2,7 +2,6 @@
 #define UTIL_H
 
 #include "cell.h"
-#include "compat.h"
 
 // Cell printing utility
 void print_cell(const cell_t* cell);
