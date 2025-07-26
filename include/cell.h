@@ -37,13 +37,8 @@ typedef enum : uint8_t {
 } cell_type_t;
 
 typedef enum : uint8_t {
-  CELL_FLAG_NONE = 0,
-  CELL_FLAG_INCOMPLETE = 1 << 0,  // 0x0001
-  CELL_FLAG_IMMUTABLE = 1 << 1,   // 0x0002
-  CELL_FLAG_WEAK_REF = 1 << 2,    // 0x0004
-  CELL_FLAG_TEMPORARY = 1 << 3,   // 0x0008
-  CELL_FLAG_IMMEDIATE = 1 << 4,
-  CELL_FLAG_INTERNED = 1 << 5,
+  CELL_FLAG_IMMEDIATE = 1 << 0,
+  CELL_FLAG_INTERNED = 1 << 1,
 } cell_flags_t;
 
 typedef void (*native_func_t)(context_t* context);
@@ -54,18 +49,17 @@ typedef struct {
   // Actual data follows
 } alloc_header_t;
 
+typedef struct cell_array cell_array_t;
+
 #ifdef TARGET_PICO
 #pragma pack(push, 4)
 #endif
 
-typedef struct cell_array cell_array_t;
-
 // Metal cell
 typedef struct cell {
   cell_type_t type;    // 8 bits
-  cell_flags_t flags;  // 8 bits
-  uint8_t str_len;     // 8 bits - string length (0-9)
-  uint8_t first_char;  // 8 bits - first character (if len > 0)
+  cell_flags_t flags;  // 8 bits: [5 bits flags][3 bits str_len]
+  int16_t word_idx;    // index of the dictionary word, or -1
   union {
     int32_t i32;            // 32-bit integer
     int64_t i64;            // 64-bit integer
@@ -73,12 +67,16 @@ typedef struct cell {
     void* ptr;              // Pointer to allocated memory
     cell_array_t* array;    // Pointer to a cell array
     char* utf8_ptr;         // Pointer to UTF-8 string
+    uint16_t* utf16_ptr;    // Pointer to UTF-16 string
+    uint32_t* utf32_ptr;    // Pointer to UTF-32 string
+    char utf8[8];           // 0-8 UTF-8 characters
+    uint16_t utf16[4];      // 0-4 UTF-16 characters
+    uint32_t utf32[2];      // 0-2 UTF-32 characters
     native_func_t native;   // Function pointer
     struct cell* cell_ptr;  // Code pointer (using struct tag to avoid issues)
-    uint32_t utf32[2];      // 1-2 UTF-32 characters
     struct {
       uint8_t r, g, b;
-    } rgb;
+    } rgb;  // RGB color
     struct {
       uint32_t timestamp;  // Seconds since Unix epoch (good until 2106)
       int16_t tz_offset;   // Minutes from UTC
@@ -100,6 +98,19 @@ typedef struct cell {
 #ifdef TARGET_PICO
 #pragma pack(pop)
 #endif
+
+#define CELL_STR_LEN(cell) ((cell)->flags_and_len & 0x07)
+#define CELL_FLAGS(cell) (((cell)->flags_and_len >> 3) & 0x1F)
+
+#define CELL_SET_STR_LEN(cell, len) \
+  ((cell)->flags_and_len = ((cell)->flags_and_len & 0xF8) | ((len) & 0x07))
+
+#define CELL_SET_FLAGS(cell, flags) \
+  ((cell)->flags_and_len =          \
+       ((cell)->flags_and_len & 0x07) | (((flags) & 0x1F) << 3))
+
+#define CELL_SET_FLAGS_AND_LEN(cell, flags, len) \
+  ((cell)->flags_and_len = (((flags) & 0x1F) << 3) | ((len) & 0x07))
 
 // Array data structure
 typedef struct cell_array {

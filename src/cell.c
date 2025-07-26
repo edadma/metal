@@ -108,29 +108,26 @@ void retain(cell_t* cell) {
   switch (cell->type) {
     case CELL_STRING:
     case CELL_OBJECT:
-    case CELL_CODE:
-      if (!(cell->flags & CELL_FLAG_WEAK_REF)) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        header->refcount++;
-        debug("Retained cell type %d, refcount now %d", cell->type,
-              header->refcount);
-      }
+    case CELL_CODE: {
+      alloc_header_t* header =
+          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
+      header->refcount++;
+      debug("Retained cell type %d, refcount now %d", cell->type,
+            header->refcount);
       break;
-    case CELL_ARRAY:
-      if (!(cell->flags & CELL_FLAG_WEAK_REF)) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        header->refcount++;
-        debug("Retained array cell, refcount now %d", header->refcount);
-      }
+    }
+    case CELL_ARRAY: {
+      alloc_header_t* header =
+          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
+      header->refcount++;
+      debug("Retained array cell, refcount now %d", header->refcount);
       break;
+    }
     case CELL_POINTER:
       // For pointers, we don't manage the pointed-to memory's refcount
       // The pointer itself doesn't own the memory
       break;
     default:
-      break;
   }
 }
 
@@ -140,40 +137,35 @@ void release(cell_t* cell) {
   switch (cell->type) {
     case CELL_STRING:
     case CELL_OBJECT:
-    case CELL_CODE:
-      if (!(cell->flags & CELL_FLAG_WEAK_REF)) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        header->refcount--;
-        debug("Released cell type %d, refcount now %d", cell->type,
-              header->refcount);
-        if (header->refcount == 0) {
-          metal_free(cell->payload.ptr);
-          cell->payload.ptr = NULL;
-        }
+    case CELL_CODE: {
+      alloc_header_t* header =
+          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
+      header->refcount--;
+      debug("Released cell type %d, refcount now %d", cell->type,
+            header->refcount);
+      if (header->refcount == 0) {
+        metal_free(cell->payload.ptr);
+        cell->payload.ptr = NULL;
       }
-      break;
-    case CELL_ARRAY:
-      if (!(cell->flags & CELL_FLAG_WEAK_REF)) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        header->refcount--;
-        debug("Released array cell, refcount now %d", header->refcount);
-        if (header->refcount == 0) {
-          // Release all elements first
-          cell_array_t* data = (cell_array_t*)cell->payload.ptr;
-          for (size_t i = 0; i < data->length; i++) {
-            release(&data->elements[i]);
-          }
-          metal_free(cell->payload.ptr);
-          cell->payload.ptr = NULL;
+    } break;
+    case CELL_ARRAY: {
+      alloc_header_t* header =
+          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
+      header->refcount--;
+      debug("Released array cell, refcount now %d", header->refcount);
+      if (header->refcount == 0) {
+        // Release all elements first
+        cell_array_t* data = (cell_array_t*)cell->payload.ptr;
+        for (size_t i = 0; i < data->length; i++) {
+          release(&data->elements[i]);
         }
+        metal_free(cell->payload.ptr);
+        cell->payload.ptr = NULL;
       }
-      break;
+    } break;
     case CELL_POINTER:
       // Pointers don't own the pointed-to memory
       break;
     default:
-      break;
   }
 }
