@@ -199,7 +199,7 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
   return 0;
 }
 
-// Helper function for equality comparison (works on any types)
+// Helper function for equality comparison (works on any type)
 bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
   if (a->type != b->type) {
     // Different types are only equal if both are numeric and have same value
@@ -286,9 +286,13 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
       // Regular string comparison
       if (!a->payload.utf8_ptr && !b->payload.utf8_ptr) return true;
       if (!a->payload.utf8_ptr || !b->payload.utf8_ptr) return false;
-      return strcmp((char*)a->payload.utf8_ptr, (char*)b->payload.utf8_ptr) ==
-             0;
 
+      const char* adata = a->payload.utf8_ptr->data;
+      const size_t alen = a->payload.utf8_ptr->length;
+      const char* bdata = b->payload.utf8_ptr->data;
+
+      return alen == b->payload.utf8_ptr->length &&
+             strncmp(adata, bdata, alen) == 0;
     case CELL_NULL:
     case CELL_UNDEFINED:
     case CELL_EMPTY:
