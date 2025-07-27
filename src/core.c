@@ -1434,6 +1434,52 @@ static void native_unloop(context_t* ctx) {
   ctx->return_stack_ptr -= 2;
 }
 
+// ' (tick) - Get code cell from dictionary
+static void native_tick(context_t* ctx) {
+  char word_buffer[32];
+  token_type_t token_type =
+      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+
+  if (token_type != TOKEN_WORD) {
+    error(ctx, "' : expected word name");
+  }
+
+  dictionary_entry_t* entry = find_word(word_buffer);
+  if (!entry) {
+    error(ctx, "' : word '%s' not found", word_buffer);
+  }
+
+  // Push the definition cell
+  data_push(ctx, entry->definition);
+  debug("' pushed definition for '%s'", word_buffer);
+}
+
+// EXECUTE - Execute a code cell
+static void native_execute(context_t* ctx) {
+  require(ctx, 1, "EXECUTE");
+
+  cell_t code_cell = data_pop_cell(ctx);
+
+  switch (code_cell.type) {
+    case CELL_NATIVE:
+      debug("EXECUTE: calling native function");
+      code_cell.payload.native(ctx);
+      break;
+
+    case CELL_CODE:
+      debug("EXECUTE: executing code array");
+      return_push(ctx, new_return(ctx->ip));
+      ctx->ip = code_cell.payload.array->elements;
+      execute_code(ctx);
+      break;
+
+    default:
+      error(ctx, "EXECUTE: not executable (type %d)", code_cell.type);
+  }
+
+  release(&code_cell);
+}
+
 // Helper function to add a compiled word definition from source
 static void add_definition(const char* name, const char* source,
                            const char* help) {
@@ -1614,6 +1660,10 @@ void add_core_words(void) {
   add_native_word("CONSTANT", native_constant,
                   "( value -- ) <name> Define named constant");
   add_native_word("VARIABLE", native_variable, "( -- ) <name> Define variable");
+
+  add_native_word("'", native_tick,
+                  "( -- code ) <name> Get code from dictionary");
+  add_native_word("EXECUTE", native_execute, "( code -- ) Execute code cell");
 
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
   add_definition("2DUP", "OVER OVER",
