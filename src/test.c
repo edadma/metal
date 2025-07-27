@@ -452,9 +452,7 @@ static void native_refcount(context_t* ctx) {
     case CELL_OBJECT:
     case CELL_CODE: {
       if (cell->payload.ptr) {
-        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
-                                                   sizeof(alloc_header_t));
-        refcount = header->refcount;
+        refcount = *cell->payload.refcount;
       }
       break;
     }

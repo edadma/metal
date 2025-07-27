@@ -45,24 +45,24 @@ typedef enum : uint8_t {
 
 typedef void (*native_func_t)(context_t* context);
 
-typedef struct uint8_array {
-  uint32_t refcount;  // First field - embedded refcount
-  int length;
-  int capacity;
+typedef struct uint8_array {  // extends refcount_t
+  int refcount;               // First field - embedded refcount
+  size_t length;
+  size_t capacity;
   uint8_t data[];  // Variable length string data
 } uint8_array_t;
 
-typedef struct uint16_array {
-  uint32_t refcount;  // First field - embedded refcount
-  int length;
-  int capacity;
+typedef struct uint16_array {  // extends refcount_t
+  int refcount;                // First field - embedded refcount
+  size_t length;
+  size_t capacity;
   uint16_t data[];  // Variable length string data
 } uint16_array_t;
 
-typedef struct uint32_array {
-  uint32_t refcount;  // First field - embedded refcount
-  int length;
-  int capacity;
+typedef struct uint32_array {  // extends refcount_t
+  int refcount;                // First field - embedded refcount
+  size_t length;
+  size_t capacity;
   uint32_t data[];  // Variable length string data
 } uint32_array_t;
 
@@ -79,6 +79,7 @@ typedef struct cell {
   int16_t word_idx;    // index of the dictionary word, or -1
   union {
     void* ptr;                  // payload pointer
+    int* refcount;              // pointer to embedded refcount
     int32_t i32;                // 32-bit integer
     int64_t i64;                // 64-bit integer
     double f64;                 // Double precision float

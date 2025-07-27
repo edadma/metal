@@ -42,7 +42,7 @@ cell_t new_string(context_t* ctx, const char* utf8) {
     return new_empty();
   }
 
-  str->refcount = 1;
+  str->refcount = 0;  // no owner yet
   str->length = len;
   str->capacity = len;           // Exact fit for now
   memcpy(str->data, utf8, len);  // Copy without null terminator
@@ -180,24 +180,31 @@ void release(cell_t* cell) {
   switch (cell->type) {
     case CELL_STRING:
       cell->payload.utf8_ptr->refcount--;
+      debug("Released string, refcount now %d",
+            cell->payload.utf8_ptr->refcount);
+      if (cell->payload.array->refcount == 0) {
+        metal_free(cell->payload.ptr);
+        cell->payload.ptr = NULL;
+      }
     case CELL_OBJECT:
     case CELL_CODE: {
-      alloc_header_t* header =
-          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
-      header->refcount--;
-      debug("Released cell type %d, refcount now %d", cell->type,
-            header->refcount);
-      if (header->refcount == 0) {
+      cell->payload.array->refcount--;
+      debug("Released code, refcount now %d", cell->payload.array->refcount);
+      if (cell->payload.array->refcount == 0) {
+        // Release all elements first
+        cell_array_t* data = cell->payload.array;
+        for (size_t i = 0; i < data->length; i++) {
+          release(&data->elements[i]);
+        }
         metal_free(cell->payload.ptr);
         cell->payload.ptr = NULL;
       }
     } break;
     case CELL_ARRAY: {
-      alloc_header_t* header =
-          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
-      header->refcount--;
-      debug("Released array cell, refcount now %d", header->refcount);
-      if (header->refcount == 0) {
+      cell->payload.array->refcount--;
+      debug("Released array cell, refcount now %d",
+            cell->payload.array->refcount);
+      if (cell->payload.array->refcount == 0) {
         // Release all elements first
         cell_array_t* data = (cell_array_t*)cell->payload.ptr;
         for (size_t i = 0; i < data->length; i++) {

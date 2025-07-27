@@ -25,31 +25,13 @@ static void native_add(context_t* ctx) {
     a->payload.i64 += b->payload.i64;
   } else if (a->type == CELL_STRING && b->type == CELL_STRING) {
     // String concatenation
-    const char* str_a = a->payload.utf8_ptr;
-    const char* str_b = b->payload.utf8_ptr;
-
-    if (!str_a) str_a = "";
-    if (!str_b) str_b = "";
-
-    size_t len_a = strlen(str_a);
-    size_t len_b = strlen(str_b);
-    size_t total_len = len_a + len_b;
-
-    char* new_str = metal_alloc(ctx, total_len + 1);
-    if (!new_str) {
-      error(ctx, "+ : failed to allocate memory for string concatenation");
-      return;
-    }
-
-    strcpy(new_str, str_a);
-    strcat(new_str, str_b);
-
+    // not yet implemented
     // Release the old string in a
     release(a);
 
     // Update the cell with new string
     a->type = CELL_STRING;
-    a->payload.utf8_ptr = new_str;
+    // a->payload.utf8_ptr = new_str;
   } else {
     error(ctx, "+ : type mismatch");
   }
