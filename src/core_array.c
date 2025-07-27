@@ -32,7 +32,7 @@ static void native_comma(context_t* ctx) {
     new_array.type = CELL_ARRAY;
     new_array.payload.array = data;
 
-    data_push(ctx, new_array);
+    data_push_ptr(ctx, &new_array);
     release(&array_cell);
   } else if (array_cell.type == CELL_ARRAY) {
     cell_array_t* data = array_cell.payload.array;
@@ -41,9 +41,7 @@ static void native_comma(context_t* ctx) {
     if (data->length >= data->capacity) {
       data = resize_array_data(ctx, data, data->capacity + 1);
       if (!data) {
-        data_push(ctx, array_cell);
-        data_push(ctx, element);
-        return;
+        error(ctx, ", : failed to resize array");
       }
       // Update the array cell's pointer (realloc might have moved it)
       array_cell.payload.array = data;
@@ -54,12 +52,9 @@ static void native_comma(context_t* ctx) {
     data->length++;
     retain(&element);  // Array now owns this reference
 
-    data_push(ctx, array_cell);
+    data_push_no_retain(ctx, array_cell);
   } else {
     error(ctx, ", : can only append to arrays");
-    data_push(ctx, array_cell);
-    data_push(ctx, element);
-    return;
   }
 
   release(&element);  // We retained it above, so release our reference
@@ -87,8 +82,6 @@ static void native_length(context_t* ctx) {
     }
   } else {
     error(ctx, "LENGTH: not an array or string");
-    data_push(ctx, array_cell);
-    return;
   }
 
   release(&array_cell);
@@ -97,7 +90,6 @@ static void native_length(context_t* ctx) {
 static void native_index(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
     error(ctx, "INDEX: insufficient stack (need array and index)");
-    return;
   }
 
   cell_t index_cell = data_pop_cell(ctx);
@@ -114,23 +106,14 @@ static void native_index(context_t* ctx) {
 
   if (array_cell.type == CELL_NIL) {
     error(ctx, "INDEX: cannot index empty array");
-    data_push(ctx, array_cell);
-    data_push(ctx, index_cell);
-    return;
   } else if (array_cell.type != CELL_ARRAY) {
     error(ctx, "INDEX: not an array");
-    data_push(ctx, array_cell);
-    data_push(ctx, index_cell);
-    return;
   }
 
   cell_array_t* data = array_cell.payload.array;
 
   if (index < 0 || index >= (int32_t)data->length) {
     error(ctx, "INDEX: index out of bounds");
-    data_push(ctx, array_cell);
-    data_push(ctx, index_cell);
-    return;
   }
 
   // Create pointer to the element

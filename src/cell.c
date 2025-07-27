@@ -4,6 +4,7 @@
 
 #include "compat.h"
 #include "debug.h"
+#include "error.h"
 #include "memory.h"
 
 // Cell creation functions (fundamental immediate types)
@@ -33,17 +34,20 @@ cell_t new_string(context_t* ctx, const char* utf8) {
   cell_t cell = {0};
   cell.type = CELL_STRING;
 
-  size_t len = strlen(utf8);
-
-  // For now, just allocate all strings. Later we'll optimize for short ones
-  char* allocated = metal_alloc(ctx, len + 1);
-  if (!allocated) {
-    // Return empty on allocation failure
+  size_t len = strlen(utf8);  // Input length (for now, UTF-8 from C strings)
+  size_t alloc_size =
+      sizeof(uint8_array_t) + len;  // No +1 needed, length is explicit
+  uint8_array_t* str = metal_alloc(ctx, alloc_size);
+  if (!str) {
     return new_empty();
   }
-  strcpy(allocated, utf8);
-  cell.payload.utf8_ptr = allocated;
 
+  str->refcount = 1;
+  str->length = len;
+  str->capacity = len;           // Exact fit for now
+  memcpy(str->data, utf8, len);  // Copy without null terminator
+
+  cell.payload.utf8_ptr = str;
   return cell;
 }
 
@@ -142,11 +146,17 @@ cell_t new_complex(float re, float im) {
 // Cell lifecycle management
 
 void retain(cell_t* cell) {
-  if (!cell || !cell->payload.ptr) return;
+  if (!cell->payload.ptr) return;
 
   // Only allocated types need refcount management
   switch (cell->type) {
     case CELL_STRING:
+      if (cell->payload.utf8_ptr) {
+        cell->payload.utf8_ptr->refcount++;
+        debug("Retained string, refcount now %d",
+              cell->payload.utf8_ptr->refcount);
+      }
+      break;
     case CELL_OBJECT:
     case CELL_CODE: {
       alloc_header_t* header =

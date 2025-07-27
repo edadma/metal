@@ -55,22 +55,18 @@ void* metal_alloc(context_t* ctx, size_t size) {
   debug("Allocating %zu bytes", size);
 
   LOCK_MEMORY();
-  alloc_header_t* header = malloc(sizeof(alloc_header_t) + size);
+  void* mem = malloc(size);
+  UNLOCK_MEMORY();
 
-  if (!header) {
+  if (!mem) {
     error(ctx, "Out of memory");
-    UNLOCK_MEMORY();
-    return NULL;
   }
-
-  header->refcount = 1;
 
 #ifdef TEST_ENABLED
   total_allocs++;
 #endif
 
-  UNLOCK_MEMORY();
-  return (char*)header + sizeof(alloc_header_t);
+  return mem;
 }
 
 void* metal_realloc(context_t* ctx, void* ptr, size_t new_size) {
@@ -78,52 +74,39 @@ void* metal_realloc(context_t* ctx, void* ptr, size_t new_size) {
 
   if (!ptr) {
     // Just allocate new
-    alloc_header_t* header = malloc(sizeof(alloc_header_t) + new_size);
-    if (!header) {
+    void* new_ptr = malloc(new_size);
+    UNLOCK_MEMORY();
+
+    if (!new_ptr) {
       error(ctx, "Out of memory");
-      UNLOCK_MEMORY();
-      return NULL;
     }
 
-    header->refcount = 1;
-
 #ifdef TEST_ENABLED
-    total_allocs++;  // New allocation
+    total_allocs++;
 #endif
 
-    UNLOCK_MEMORY();
-    return (char*)header + sizeof(alloc_header_t);
+    return new_ptr;
   }
 
-  alloc_header_t* old_header =
-      (alloc_header_t*)((char*)ptr - sizeof(alloc_header_t));
-  alloc_header_t* new_header =
-      realloc(old_header, sizeof(alloc_header_t) + new_size);
-
-  if (!new_header) {
-    error(ctx, "Out of memory");
-    UNLOCK_MEMORY();
-    return NULL;
-  }
-
-  // Note: When ptr is not NULL, this is just resizing existing memory,
-  // so no change to allocation/free counts
-
+  void* new_ptr = realloc(ptr, new_size);
   UNLOCK_MEMORY();
-  return (char*)new_header + sizeof(alloc_header_t);
+
+  if (!new_ptr) {
+    error(ctx, "Out of memory");
+  }
+
+  return new_ptr;
 }
 
 void metal_free(void* ptr) {
   if (!ptr) return;
 
   LOCK_MEMORY();
-  alloc_header_t* header =
-      (alloc_header_t*)((char*)ptr - sizeof(alloc_header_t));
 
 #ifdef TEST_ENABLED
   total_frees++;
 #endif
 
-  free(header);
+  free(ptr);
   UNLOCK_MEMORY();
 }

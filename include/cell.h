@@ -45,11 +45,26 @@ typedef enum : uint8_t {
 
 typedef void (*native_func_t)(context_t* context);
 
-// Allocated data header (for refcounting)
-typedef struct {
-  uint32_t refcount;
-  // Actual data follows
-} alloc_header_t;
+typedef struct uint8_array {
+  uint32_t refcount;  // First field - embedded refcount
+  int length;
+  int capacity;
+  uint8_t data[];  // Variable length string data
+} uint8_array_t;
+
+typedef struct uint16_array {
+  uint32_t refcount;  // First field - embedded refcount
+  int length;
+  int capacity;
+  uint16_t data[];  // Variable length string data
+} uint16_array_t;
+
+typedef struct uint32_array {
+  uint32_t refcount;  // First field - embedded refcount
+  int length;
+  int capacity;
+  uint32_t data[];  // Variable length string data
+} uint32_array_t;
 
 typedef struct cell_array cell_array_t;
 
@@ -63,18 +78,18 @@ typedef struct cell {
   cell_flags_t flags;  // 8 bits: [5 bits flags][3 bits str_len]
   int16_t word_idx;    // index of the dictionary word, or -1
   union {
-    int32_t i32;            // 32-bit integer
-    int64_t i64;            // 64-bit integer
-    double f64;             // Double precision float
-    void* ptr;              // Pointer to allocated memory
-    cell_array_t* array;    // Pointer to a cell array
-    char* utf8_ptr;         // Pointer to UTF-8 string
-    uint16_t* utf16_ptr;    // Pointer to UTF-16 string
-    uint32_t* utf32_ptr;    // Pointer to UTF-32 string
-    char utf8[8];           // 0-8 UTF-8 characters
-    uint16_t utf16[4];      // 0-4 UTF-16 characters
-    uint32_t utf32[2];      // 0-2 UTF-32 characters
-    native_func_t native;   // Function pointer
+    void* ptr;                  // payload pointer
+    int32_t i32;                // 32-bit integer
+    int64_t i64;                // 64-bit integer
+    double f64;                 // Double precision float
+    cell_array_t* array;        // Pointer to a cell array
+    uint8_array_t* utf8_ptr;    // Pointer to UTF-8 string
+    uint16_array_t* utf16_ptr;  // Pointer to UTF-16 string
+    uint32_array_t* utf32_ptr;  // Pointer to UTF-32 string
+    char utf8[8];               // 0-8 UTF-8 characters
+    uint16_t utf16[4];          // 0-4 UTF-16 characters
+    uint32_t utf32[2];          // 0-2 UTF-32 characters
+    native_func_t native;       // Function pointer
     struct cell* cell_ptr;  // Code pointer (using struct tag to avoid issues)
     struct {
       uint8_t r, g, b;
@@ -116,6 +131,7 @@ typedef struct cell {
 
 // Array data structure
 typedef struct cell_array {
+  uint32_t refcount;
   int length;
   int capacity;
   cell_t elements[];
