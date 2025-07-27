@@ -1454,6 +1454,36 @@ static void native_tick(context_t* ctx) {
   debug("' pushed definition for '%s'", word_buffer);
 }
 
+// ['] (bracket tick) - Compile-time get code cell from dictionary
+static void native_bracket_tick(context_t* ctx) {
+  if (!compilation_mode && !ctx->anonymous_compilation_mode) {
+    error(ctx, "['] : only valid during compilation");
+  }
+
+  char word_buffer[32];
+  token_type_t token_type =
+      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+
+  if (token_type != TOKEN_WORD) {
+    error(ctx, "['] : expected word name");
+  }
+
+  dictionary_entry_t* entry = find_word(word_buffer);
+  if (!entry) {
+    error(ctx, "['] : word '%s' not found", word_buffer);
+  }
+
+  // Compile LITERAL followed by the code cell
+  dictionary_entry_t* literal_word = find_word("LITERAL");
+  if (!literal_word) {
+    error(ctx, "['] : LITERAL word not found");
+  }
+
+  compile_cell(ctx, literal_word->definition);
+  compile_cell(ctx, entry->definition);
+  debug("['] compiled definition for '%s'", word_buffer);
+}
+
 // EXECUTE - Execute a code cell
 static void native_execute(context_t* ctx) {
   require(ctx, 1, "EXECUTE");
@@ -1478,6 +1508,20 @@ static void native_execute(context_t* ctx) {
   }
 
   release(&code_cell);
+}
+
+// LITERAL ( -- value ) Runtime: push next compiled cell as data
+static void native_literal(context_t* ctx) {
+  if (!ctx->ip) {
+    error(ctx, "LITERAL: no instruction pointer");
+  }
+
+  // Push the next cell as data, don't execute it
+  cell_t* literal_cell = ctx->ip;
+  ctx->ip++;  // Skip over the literal data
+
+  data_push_ptr(ctx, literal_cell);
+  debug("LITERAL: pushed cell type %d as data", literal_cell->type);
 }
 
 // Helper function to add a compiled word definition from source
@@ -1538,6 +1582,28 @@ static void add_definition(const char* name, const char* source,
   strncpy(compiling_word_name, saved_compiling_word_name,
           sizeof(compiling_word_name));
 }
+
+// Internal words - not in dictionary
+static const cell_t literal_cell = {.type = CELL_NATIVE,
+                                    .flags = 0,
+                                    .word_idx = -1,
+                                    .payload.native = native_literal};
+
+static const cell_t do_runtime_cell = {.type = CELL_NATIVE,
+                                       .flags = 0,
+                                       .word_idx = -1,
+                                       .payload.native = native_do_runtime};
+
+static const cell_t loop_runtime_cell = {.type = CELL_NATIVE,
+                                         .flags = 0,
+                                         .word_idx = -1,
+                                         .payload.native = native_loop_runtime};
+
+static const cell_t plus_loop_runtime_cell = {
+    .type = CELL_NATIVE,
+    .flags = 0,
+    .word_idx = -1,
+    .payload.native = native_plus_loop_runtime};
 
 // Register all core words
 void add_core_words(void) {
@@ -1663,6 +1729,8 @@ void add_core_words(void) {
 
   add_native_word("'", native_tick,
                   "( -- code ) <name> Get code from dictionary");
+  add_native_word_immediate("[']", native_bracket_tick,
+                            "( -- code ) <name> Compile code from dictionary");
   add_native_word("EXECUTE", native_execute, "( code -- ) Execute code cell");
 
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");

@@ -10,5 +10,7 @@ context_t main_context;
 void init_context(context_t* ctx, const char* name) {
   memset(ctx, 0, sizeof(context_t));
   ctx->name = name;
+  ctx->anonymous_compilation_mode = false;
+  ctx->compiling_anonymous_definition = NULL;
   stack_init(ctx);
 }

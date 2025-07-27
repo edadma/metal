@@ -193,16 +193,34 @@ metal_result_t interpret(context_t* ctx, const char* input) {
 }
 
 void compile_cell(context_t* ctx, cell_t cell) {
-  if (compiling_definition->length >= compiling_definition->capacity) {
-    compiling_definition = resize_array_data(
-        ctx, compiling_definition, compiling_definition->capacity * 2);
-    if (!compiling_definition) {
-      error(&main_context, "Compilation: failed to resize definition");
+  cell_array_t* target_definition;
+
+  if (ctx->anonymous_compilation_mode) {
+    target_definition = ctx->compiling_anonymous_definition;
+  } else if (compilation_mode) {
+    target_definition = compiling_definition;
+  } else {
+    error(ctx, "compile_cell: not in compilation mode");
+    return;
+  }
+
+  if (target_definition->length >= target_definition->capacity) {
+    target_definition = resize_array_data(ctx, target_definition,
+                                          target_definition->capacity * 2);
+    if (!target_definition) {
+      error(ctx, "compile_cell: failed to resize definition");
       return;
+    }
+
+    // Update the global pointer
+    if (ctx->anonymous_compilation_mode) {
+      ctx->compiling_anonymous_definition = target_definition;
+    } else {
+      compiling_definition = target_definition;
     }
   }
 
-  compiling_definition->elements[compiling_definition->length] = cell;
-  compiling_definition->length++;
+  target_definition->elements[target_definition->length] = cell;
+  target_definition->length++;
   retain(&cell);
 }

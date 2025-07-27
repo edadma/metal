@@ -32,6 +32,10 @@ typedef struct context {
   // Parsing state (for words that need to parse ahead)
   const char* input_start;  // Start of input (for bounds checking/errors)
   const char* input_pos;    // Current position in input being parsed
+
+  // Anonymous compilation state (add after parsing state)
+  bool anonymous_compilation_mode;
+  cell_array_t* compiling_anonymous_definition;
 } context_t;
 
 extern context_t main_context;
