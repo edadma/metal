@@ -74,7 +74,6 @@ context_t* get_test_context(void);
 
 // Add test words to dictionary
 void add_test_words(void);
-
 void init_tests(void);
 #else
 // No-op macros when testing disabled

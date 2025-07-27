@@ -33,7 +33,24 @@ static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 // Memory management initialization
 void init_memory(void) { INIT_MEMORY_MUTEX(); }
 
-// Core allocation functions
+// Add to src/memory.c
+
+#ifdef TEST_ENABLED
+// Memory tracking for unit tests
+static int total_allocs = 0;
+static int total_frees = 0;
+
+void reset_memory_stats(void) {
+  total_allocs = 0;
+  total_frees = 0;
+}
+
+void get_memory_stats(int* allocs, int* frees) {
+  *allocs = total_allocs;
+  *frees = total_frees;
+}
+#endif
+
 void* metal_alloc(context_t* ctx, size_t size) {
   debug("Allocating %zu bytes", size);
 
@@ -47,6 +64,11 @@ void* metal_alloc(context_t* ctx, size_t size) {
   }
 
   header->refcount = 1;
+
+#ifdef TEST_ENABLED
+  total_allocs++;
+#endif
+
   UNLOCK_MEMORY();
   return (char*)header + sizeof(alloc_header_t);
 }
@@ -64,6 +86,11 @@ void* metal_realloc(context_t* ctx, void* ptr, size_t new_size) {
     }
 
     header->refcount = 1;
+
+#ifdef TEST_ENABLED
+    total_allocs++;  // New allocation
+#endif
+
     UNLOCK_MEMORY();
     return (char*)header + sizeof(alloc_header_t);
   }
@@ -79,6 +106,9 @@ void* metal_realloc(context_t* ctx, void* ptr, size_t new_size) {
     return NULL;
   }
 
+  // Note: When ptr is not NULL, this is just resizing existing memory,
+  // so no change to allocation/free counts
+
   UNLOCK_MEMORY();
   return (char*)new_header + sizeof(alloc_header_t);
 }
@@ -89,6 +119,11 @@ void metal_free(void* ptr) {
   LOCK_MEMORY();
   alloc_header_t* header =
       (alloc_header_t*)((char*)ptr - sizeof(alloc_header_t));
+
+#ifdef TEST_ENABLED
+  total_frees++;
+#endif
+
   free(header);
   UNLOCK_MEMORY();
 }

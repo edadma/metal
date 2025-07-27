@@ -5,6 +5,12 @@
 
 #include "context.h"
 
+#ifdef TEST_ENABLED
+// Memory tracking for unit tests
+void reset_memory_stats(void);
+void get_memory_stats(int* allocs, int* frees);
+#endif
+
 // Memory management initialization
 void init_memory(void);
 

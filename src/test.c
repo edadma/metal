@@ -405,8 +405,8 @@ void run_all_tests(void) {
     // Clear context stack after each test function
     int cleared_count = 0;
     while (!is_data_empty(&test_context)) {
-      cell_t cell = data_pop_cell(&test_context);
-      release(&cell);
+      cell_t* cell = data_pop(&test_context);
+      release(cell);
       debug("run_all_tests: Cleared cell %d from stack", cleared_count);
     }
     debug("run_all_tests: Cleared %d cells from stack", cleared_count);
@@ -437,9 +437,80 @@ static void native_test(context_t* ctx) {
   debug("native_test: run_all_tests completed, about to return");
 }
 
+// Include memory tracking
+#include "memory.h"
+
+// REFCOUNT ( cell -- n ) Get reference count of allocated cell data
+static void native_refcount(context_t* ctx) {
+  require(ctx, 1, "REFCOUNT");
+  cell_t* cell = data_pop(ctx);
+  int refcount = 0;
+  // Only allocated types have refcounts
+  switch (cell->type) {
+    case CELL_STRING:
+    case CELL_ARRAY:
+    case CELL_OBJECT:
+    case CELL_CODE: {
+      if (cell->payload.ptr) {
+        alloc_header_t* header = (alloc_header_t*)((char*)cell->payload.ptr -
+                                                   sizeof(alloc_header_t));
+        refcount = header->refcount;
+      }
+      break;
+    }
+    default:
+      refcount = 0;  // Immediate types don't have refcounts
+  }
+
+  data_push(ctx, new_int32(refcount));
+  release(cell);
+}
+
+// MEM-STATS ( -- ) Show memory allocation statistics
+static void native_mem_stats(context_t* ctx) {
+  int allocs, frees;
+  get_memory_stats(&allocs, &frees);
+  printf("Memory: %d allocs, %d frees, %d leaked\n", allocs, frees,
+         allocs - frees);
+}
+
+// MEM-RESET ( -- ) Reset memory statistics
+static void native_mem_reset(context_t* ctx) {
+  reset_memory_stats();
+  printf("Memory statistics reset\n");
+}
+
+// CELL-ADDR ( cell -- addr ) Get payload address for comparing sharing
+static void native_cell_addr(context_t* ctx) {
+  require(ctx, 1, "CELL-ADDR");
+  cell_t* cell = data_pop(ctx);
+  data_push(ctx, new_int64((int64_t)(uintptr_t)cell->payload.ptr));
+  release(cell);
+}
+
+// CELL-TYPE ( cell -- type ) Get cell type as integer
+static void native_cell_type(context_t* ctx) {
+  require(ctx, 1, "CELL-TYPE");
+  cell_t* cell = data_pop(ctx);
+  data_push(ctx, new_int32((int32_t)cell->type));
+  release(cell);
+}
+
 // Add test words to dictionary
 void add_test_words(void) {
   add_native_word("TEST", native_test, "( -- ) Run all unit tests");
+
+  // Memory inspection words for testing
+  add_native_word("REFCOUNT", native_refcount,
+                  "( cell -- n ) Get reference count");
+  add_native_word("MEM-STATS", native_mem_stats,
+                  "( -- ) Show memory statistics");
+  add_native_word("MEM-RESET", native_mem_reset,
+                  "( -- ) Reset memory statistics");
+  add_native_word("CELL-ADDR", native_cell_addr,
+                  "( cell -- addr ) Get payload address");
+  add_native_word("CELL-TYPE", native_cell_type,
+                  "( cell -- type ) Get cell type as number");
 }
 
 // Example test functions to demonstrate usage
@@ -972,8 +1043,8 @@ TEST_FUNCTION(combination_word_error_testing) {
 
   // Clear any remaining stack items after error tests
   while (!is_data_empty(&test_context)) {
-    cell_t cell = data_pop_cell(&test_context);
-    release(&cell);
+    cell_t* cell = data_pop(&test_context);
+    release(cell);
   }
 }
 
