@@ -151,26 +151,19 @@ void retain(cell_t* cell) {
   // Only allocated types need refcount management
   switch (cell->type) {
     case CELL_STRING:
-      if (cell->payload.utf8_ptr) {
-        cell->payload.utf8_ptr->refcount++;
-        debug("Retained string, refcount now %d",
-              cell->payload.utf8_ptr->refcount);
-      }
+      cell->payload.utf8_ptr->refcount++;
+      debug("Retained string, refcount now %d",
+            cell->payload.utf8_ptr->refcount);
       break;
     case CELL_OBJECT:
     case CELL_CODE: {
-      alloc_header_t* header =
-          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
-      header->refcount++;
-      debug("Retained cell type %d, refcount now %d", cell->type,
-            header->refcount);
+      cell->payload.array->refcount++;
+      debug("Retained code, refcount now %d", cell->payload.array->refcount);
       break;
     }
     case CELL_ARRAY: {
-      alloc_header_t* header =
-          (alloc_header_t*)((char*)cell->payload.ptr - sizeof(alloc_header_t));
-      header->refcount++;
-      debug("Retained array cell, refcount now %d", header->refcount);
+      cell->payload.array->refcount++;
+      debug("Retained array, refcount now %d", cell->payload.array->refcount);
       break;
     }
     case CELL_POINTER:
@@ -186,6 +179,7 @@ void release(cell_t* cell) {
 
   switch (cell->type) {
     case CELL_STRING:
+      cell->payload.utf8_ptr->refcount--;
     case CELL_OBJECT:
     case CELL_CODE: {
       alloc_header_t* header =
