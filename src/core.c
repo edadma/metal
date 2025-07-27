@@ -29,53 +29,51 @@ static void native_fetch(context_t* ctx) {
     return;
   }
 
-  cell_t pointer_cell = data_pop_cell(ctx);
+  cell_t* pointer_cell = data_pop(ctx);  // Get pointer to stack cell
 
-  if (pointer_cell.type != CELL_POINTER) {
+  if (pointer_cell->type != CELL_POINTER) {
     error(ctx, "@ : not a pointer");
   }
 
-  if (!pointer_cell.payload.cell_ptr) {
+  if (!pointer_cell->payload.cell_ptr) {
     error(ctx, "@ : null pointer");
   }
 
-  // Push a copy of the pointed-to cell
-  cell_t value = *pointer_cell.payload.cell_ptr;
-  retain(&value);  // We're making a copy, so retain it
-  data_push(ctx, value);
+  // Push the pointed-to cell directly (no copying!)
+  data_push_ptr(ctx, pointer_cell->payload.cell_ptr);
 
-  release(&pointer_cell);
+  release(pointer_cell);
 }
 
 static void native_store(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
-    error(ctx, "! : insufficient stack (need pointer and value)");
+    error(ctx, "! : insufficient stack (need value and address)");
     return;
   }
 
-  cell_t value = data_pop_cell(ctx);
-  cell_t pointer_cell = data_pop_cell(ctx);
+  cell_t* pointer_cell = data_pop(ctx);  // Pop address (top)
+  cell_t* value_cell = data_pop(ctx);    // Pop value (second)
 
   // Check that value is not undefined
-  if (value.type == CELL_UNDEFINED) {
+  if (value_cell->type == CELL_UNDEFINED) {
     error(ctx, "! : cannot store undefined value");
   }
 
-  if (pointer_cell.type != CELL_POINTER) {
+  if (pointer_cell->type != CELL_POINTER) {
     error(ctx, "! : not a pointer");
   }
 
-  if (!pointer_cell.payload.cell_ptr) {
+  if (!pointer_cell->payload.cell_ptr) {
     error(ctx, "! : null pointer");
   }
 
   // Release the old value and store the new one
-  release(pointer_cell.payload.cell_ptr);
-  *pointer_cell.payload.cell_ptr = value;
-  retain(&value);  // The pointed-to location now owns this reference
+  release(pointer_cell->payload.cell_ptr);
+  *pointer_cell->payload.cell_ptr = *value_cell;
+  retain(value_cell);  // The pointed-to location now owns this reference
 
-  release(&pointer_cell);
-  release(&value);  // We retained it above
+  release(pointer_cell);
+  release(value_cell);
 }
 
 // Comment word

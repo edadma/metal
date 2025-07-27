@@ -175,34 +175,6 @@ void test_stack_top_int(const char* file, int line, const char* expr,
   }
 }
 
-// void test_stack_top_float(const char* file, int line, const char* expr,
-//                           double expected) {
-//   test_count++;
-//   context_t* ctx = &test_context;
-//
-//   if (is_data_empty(ctx)) {
-//     printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
-//            expr);
-//     test_failed++;
-//     return;
-//   }
-//
-//   cell_t top = data_peek(ctx, 0);
-//   if (top.type == CELL_FLOAT && fabs(top.payload.f - expected) < 1e-10) {
-//     test_pass(file, line, expr);
-//   } else if (top.type == CELL_FLOAT) {
-//     printf("FAIL: %s:%d - %s (got %g, expected %g)\n", get_filename(file),
-//     line,
-//            expr, top.payload.f, expected);
-//     test_failed++;
-//   } else {
-//     printf("FAIL: %s:%d - %s (top is not float, type=%d)\n",
-//     get_filename(file),
-//            line, expr, top.type);
-//     test_failed++;
-//   }
-// }
-
 void test_stack_top_string(const char* file, int line, const char* expr,
                            const char* expected) {
   test_count++;
@@ -232,6 +204,163 @@ void test_stack_top_string(const char* file, int line, const char* expr,
     test_failed++;
   }
 }
+
+void test_stack_top_float(const char* file, int line, const char* expr,
+                          double expected) {
+  test_count++;
+  context_t* ctx = &test_context;
+
+  if (is_data_empty(ctx)) {
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
+           expr);
+    test_failed++;
+    return;
+  }
+
+  cell_t top = data_peek_cell(ctx, 0);
+  if (top.type == CELL_FLOAT && fabs(top.payload.f64 - expected) < 1e-10) {
+    test_pass(file, line, expr);
+  } else if (top.type == CELL_FLOAT) {
+    printf("FAIL: %s:%d - %s (got %g, expected %g)\n", get_filename(file), line,
+           expr, top.payload.f64, expected);
+    test_failed++;
+  } else {
+    printf("FAIL: %s:%d - %s (top is not float, type=%d)\n", get_filename(file),
+           line, expr, top.type);
+    test_failed++;
+  }
+}
+
+// Add error testing framework
+static bool expecting_error = false;
+static bool error_occurred = false;
+static char expected_error_pattern[256];
+
+// Test helper to expect an error
+void test_expect_error(const char* file, int line, const char* code,
+                       const char* error_pattern) {
+  test_count++;
+  context_t* ctx = &test_context;
+  // Set up error expectation
+  expecting_error = true;
+  error_occurred = false;
+  strncpy(expected_error_pattern, error_pattern,
+          sizeof(expected_error_pattern) - 1);
+  expected_error_pattern[sizeof(expected_error_pattern) - 1] = '\0';
+  // Save current error handler
+  jmp_buf saved_error_jmp;
+  memcpy(saved_error_jmp, ctx->error_jmp, sizeof(jmp_buf));
+  // Set up test error handler
+  if (setjmp(ctx->error_jmp) != 0) {
+    // Error occurred - check if it matches what we expected
+    error_occurred = true;
+    if (expecting_error) {
+      // Check if error message contains expected pattern
+      if (ctx->error_msg && strstr(ctx->error_msg, error_pattern)) {
+        printf("PASS: %s:%d - expect_error(\"%s\", \"%s\")\n",
+               get_filename(file), line, code, error_pattern);
+        test_passed++;
+      } else {
+        printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - wrong error: %s\n",
+               get_filename(file), line, code, error_pattern,
+               ctx->error_msg ? ctx->error_msg : "(null)");
+        test_failed++;
+      }
+    } else {
+      printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - unexpected error\n",
+             get_filename(file), line, code, error_pattern);
+      test_failed++;
+    }
+    // Restore error handler and reset state
+    memcpy(ctx->error_jmp, saved_error_jmp, sizeof(jmp_buf));
+    expecting_error = false;
+    return;
+  }
+  // Try to interpret the code
+  metal_result_t result = interpret(ctx, code);
+  // Restore error handler
+  memcpy(ctx->error_jmp, saved_error_jmp, sizeof(jmp_buf));
+  // Check results
+  if (expecting_error && !error_occurred) {
+    if (result != METAL_OK) {
+      // interpret() returned error code but didn't longjmp
+      printf(
+          "PASS: %s:%d - expect_error(\"%s\", \"%s\") - error via return "
+          "code\n",
+          get_filename(file), line, code, error_pattern);
+      test_passed++;
+    } else {
+      printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - no error occurred\n",
+             get_filename(file), line, code, error_pattern);
+      test_failed++;
+    }
+  }
+  expecting_error = false;
+}
+
+// Add macro for error testing
+#define TEST_EXPECT_ERROR(code, pattern) \
+  test_expect_error(__FILE__, __LINE__, code, pattern)
+
+// Enhanced boolean testing helpers
+void test_stack_top_boolean(const char* file, int line, const char* expr,
+                            bool expected) {
+  test_count++;
+  context_t* ctx = &test_context;
+
+  if (is_data_empty(ctx)) {
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
+           expr);
+    test_failed++;
+    return;
+  }
+
+  cell_t top = data_peek_cell(ctx, 0);
+  if (top.type == CELL_BOOLEAN && top.payload.boolean == expected) {
+    test_pass(file, line, expr);
+  } else if (top.type == CELL_BOOLEAN) {
+    printf("FAIL: %s:%d - %s (got %s, expected %s)\n", get_filename(file), line,
+           expr, top.payload.boolean ? "true" : "false",
+           expected ? "true" : "false");
+    test_failed++;
+  } else {
+    printf("FAIL: %s:%d - %s (top is not boolean, type=%d)\n",
+           get_filename(file), line, expr, top.type);
+    test_failed++;
+  }
+}
+
+#define TEST_STACK_TOP_BOOLEAN(expected) \
+  test_stack_top_boolean(__FILE__, __LINE__, #expected, (expected))
+
+// Helper to test if stack top is truthy (for any type)
+void test_stack_top_truthy(const char* file, int line, const char* expr,
+                           bool should_be_truthy) {
+  test_count++;
+  context_t* ctx = &test_context;
+
+  if (is_data_empty(ctx)) {
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
+           expr);
+    test_failed++;
+    return;
+  }
+
+  cell_t top = data_peek_cell(ctx, 0);
+  bool is_truthy_result = is_truthy(&top);
+
+  if (is_truthy_result == should_be_truthy) {
+    test_pass(file, line, expr);
+  } else {
+    printf("FAIL: %s:%d - %s (value is %s, expected %s)\n", get_filename(file),
+           line, expr, is_truthy_result ? "truthy" : "falsy",
+           should_be_truthy ? "truthy" : "falsy");
+    test_failed++;
+  }
+}
+
+#define TEST_STACK_TOP_TRUTHY(expected) \
+  test_stack_top_truthy(__FILE__, __LINE__, #expected, (expected))
 
 // Test management
 void register_test(const char* name, void (*test_func)(void)) {
@@ -749,6 +878,123 @@ TEST_FUNCTION(do_loop_accumulator_pattern) {
   TEST_STACK_TOP_INT(14);  // 0 + 1*1 + 2*2 + 3*3 = 0+1+4+9 = 14
 }
 
+// Updated test functions using the new helpers:
+
+TEST_FUNCTION(arithmetic_combination_words_enhanced) {
+  // Test 1+ with floats
+  TEST_INTERPRET("3.5 1+");
+  TEST_STACK_TOP_FLOAT(4.5);
+  TEST_INTERPRET("DROP");
+  // Test 2* with floats
+  TEST_INTERPRET("2.5 2*");
+  TEST_STACK_TOP_FLOAT(5.0);
+  TEST_INTERPRET("DROP");
+  // Test 2/ with floats
+  TEST_INTERPRET("7.0 2/");
+  TEST_STACK_TOP_FLOAT(3.5);
+  TEST_INTERPRET("DROP");
+  // Test NEGATE with floats
+  TEST_INTERPRET("3.14 NEGATE");
+  TEST_STACK_TOP_FLOAT(-3.14);
+  TEST_INTERPRET("DROP");
+}
+
+TEST_FUNCTION(zero_comparison_enhanced) {
+  // Test 0= with proper boolean results
+  TEST_INTERPRET("0 0=");
+  TEST_STACK_TOP_BOOLEAN(true);
+  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("5 0=");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
+  // Test 0<
+  TEST_INTERPRET("-3 0<");
+  TEST_STACK_TOP_BOOLEAN(true);
+  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("5 0<");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
+  // Test 0>
+  TEST_INTERPRET("5 0>");
+  TEST_STACK_TOP_BOOLEAN(true);
+  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("-3 0>");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
+  // Test 0>=
+  TEST_INTERPRET("0 0>=");
+  TEST_STACK_TOP_BOOLEAN(true);
+  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("-1 0>=");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
+  // Test 0<=
+  TEST_INTERPRET("0 0<=");
+  TEST_STACK_TOP_BOOLEAN(true);
+  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("1 0<=");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
+  // Test 0<>
+  TEST_INTERPRET("0 0<>");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("5 0<>");
+  TEST_STACK_TOP_BOOLEAN(true);
+  TEST_INTERPRET("DROP");
+}
+
+TEST_FUNCTION(arithmetic_combinations_enhanced) {
+  // Test */ with precise results
+  TEST_INTERPRET("6 7 3 */");
+  TEST_STACK_TOP_INT(14);  // 6*7/3 = 42/3 = 14
+  TEST_INTERPRET("DROP");
+  // Test floating point */
+  TEST_INTERPRET("3.0 4.0 2.0 */");
+  TEST_STACK_TOP_FLOAT(6.0);  // 3.0*4.0/2.0 = 6.0
+  TEST_INTERPRET("DROP");
+}
+
+TEST_FUNCTION(combination_word_error_testing) {
+  // Test division by zero errors
+  TEST_EXPECT_ERROR("10 0 /MOD", "division by zero");
+  TEST_EXPECT_ERROR("10 5 0 */", "division by zero");
+  TEST_EXPECT_ERROR("10 5 0 */MOD", "division by zero");
+  // Test type errors
+  TEST_EXPECT_ERROR("\"hello\" 1+", "requires numeric type");
+  TEST_EXPECT_ERROR("\"hello\" 0=", "requires numeric");
+  // Test memory errors
+  TEST_EXPECT_ERROR("5 NULL +!", "null pointer");
+  TEST_EXPECT_ERROR("NULL 1+!", "null pointer");
+  // Test stack underflow
+  TEST_EXPECT_ERROR("1+", "insufficient stack");
+  TEST_EXPECT_ERROR("/MOD", "insufficient stack");
+
+  // Clear any remaining stack items after error tests
+  while (!is_data_empty(&test_context)) {
+    cell_t cell = data_pop_cell(&test_context);
+    release(&cell);
+  }
+}
+
+TEST_FUNCTION(memory_combination_enhanced) {
+  // Test +! with floating point
+  TEST_INTERPRET("VARIABLE float-var");
+  TEST_INTERPRET("3.5 float-var !");
+  TEST_INTERPRET("2.5 float-var +!");
+  TEST_INTERPRET("float-var @");
+  TEST_STACK_TOP_FLOAT(6.0);
+  TEST_INTERPRET("DROP");
+
+  // Test type promotion in +!
+  TEST_INTERPRET("VARIABLE int-var");
+  TEST_INTERPRET("5 int-var !");
+  TEST_INTERPRET("2.5 int-var +!");  // Should promote to float
+  TEST_INTERPRET("int-var @");
+  TEST_STACK_TOP_FLOAT(7.5);
+  TEST_INTERPRET("DROP");
+}
+
 // Register example tests (would be called from main or test initialization)
 static void register_example_tests(void) {
   REGISTER_TEST(basic_arithmetic);
@@ -805,6 +1051,12 @@ static void register_example_tests(void) {
   REGISTER_TEST(do_loop_backwards_range);
   REGISTER_TEST(do_loop_j_outer_index);
   REGISTER_TEST(do_loop_accumulator_pattern);
+
+  REGISTER_TEST(arithmetic_combination_words_enhanced);
+  REGISTER_TEST(zero_comparison_enhanced);
+  REGISTER_TEST(arithmetic_combinations_enhanced);
+  REGISTER_TEST(combination_word_error_testing);
+  REGISTER_TEST(memory_combination_enhanced);
 }
 
 // Call this from main.c when TEST_ENABLED
