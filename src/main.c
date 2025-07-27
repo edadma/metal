@@ -7,6 +7,9 @@
 #include "cell.h"
 #include "context.h"
 #include "core.h"
+#include "core_arithmetic.h"
+#include "core_primitive.h"
+#include "core_stack.h"
 #include "debug.h"
 #include "dictionary.h"
 #include "memory.h"
@@ -16,8 +19,11 @@
 
 // Initialize built-in words
 void populate_dictionary(void) {
-  add_core_words();   // Core language features
-  add_tools_words();  // Development tools
+  add_core_primitive_words();   // Primitive words
+  add_core_stack_words();       // Stack manipulation
+  add_core_arithmetic_words();  // Arithmetic operations
+  add_core_words();             // Core language features
+  add_tools_words();            // Development tools
 
   // Debug words (only when debug support compiled in)
 #ifdef DEBUG_ENABLED

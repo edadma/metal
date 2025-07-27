@@ -12,7 +12,11 @@ typedef enum {
   METAL_COMPILE_ERROR,
 } metal_result_t;
 
-// Core interpreter functions
+extern bool compilation_mode;
+extern cell_array_t* compiling_definition;
+extern char compiling_word_name[32];
+
+void add_definition(const char* name, const char* source, const char* help);
 metal_result_t interpret(context_t* ctx, const char* input);
 void execute_code(context_t* ctx);
 bool try_parse_number(const char* token, cell_t* result);

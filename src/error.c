@@ -7,6 +7,7 @@
 #include "cell.h"
 #include "compat.h"
 #include "core.h"
+#include "interpreter.h"
 #include "memory.h"
 
 // Error handling function

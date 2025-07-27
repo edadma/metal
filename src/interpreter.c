@@ -13,9 +13,73 @@
 #include "debug.h"
 #include "dictionary.h"
 #include "error.h"
+#include "memory.h"
 #include "parser.h"
 #include "stack.h"
 #include "util.h"
+
+// Global compilation state
+bool compilation_mode = false;
+cell_array_t* compiling_definition = NULL;
+char compiling_word_name[32];
+
+// Helper function to add a compiled word definition from source
+void add_definition(const char* name, const char* source, const char* help) {
+  // Save current compilation state
+  bool saved_compilation_mode = compilation_mode;
+  cell_array_t* saved_compiling_definition = compiling_definition;
+  char saved_compiling_word_name[32];
+  strncpy(saved_compiling_word_name, compiling_word_name,
+          sizeof(saved_compiling_word_name));
+  // Set up compilation
+  compilation_mode = true;
+  compiling_definition = create_array_data(&main_context, 8);
+  if (!compiling_definition) {
+    error(&main_context, "add_definition: allocation failed for %s", name);
+  }
+  strncpy(compiling_word_name, name, sizeof(compiling_word_name) - 1);
+  compiling_word_name[sizeof(compiling_word_name) - 1] = '\0';
+  // Compile the source code
+  metal_result_t result = interpret(&main_context, source);
+  if (result != METAL_OK) {
+    // Clean up on error
+    if (compiling_definition) {
+      for (size_t i = 0; i < compiling_definition->length; i++) {
+        release(&compiling_definition->elements[i]);
+      }
+      metal_free(compiling_definition);
+    }
+    error(&main_context, "add_definition: failed to compile %s", name);
+  }
+  // Add EXIT to the end of the definition
+  dictionary_entry_t* exit_word = find_word("EXIT");
+  if (!exit_word) {
+    error(&main_context, "add_definition: EXIT word not found");
+  }
+  if (compiling_definition->length >= compiling_definition->capacity) {
+    compiling_definition =
+        resize_array_data(&main_context, compiling_definition,
+                          compiling_definition->capacity * 2);
+    if (!compiling_definition) {
+      error(&main_context, "add_definition: failed to resize definition for %s",
+            name);
+    }
+  }
+  compiling_definition->elements[compiling_definition->length] =
+      exit_word->definition;
+  compiling_definition->length++;
+  retain(&exit_word->definition);
+
+  // Create the code cell and add to dictionary
+  cell_t code_cell = new_code(compiling_definition);
+  add_cell(name, code_cell, help);
+
+  // Restore compilation state
+  compilation_mode = saved_compilation_mode;
+  compiling_definition = saved_compiling_definition;
+  strncpy(compiling_word_name, saved_compiling_word_name,
+          sizeof(compiling_word_name));
+}
 
 // Number parsing
 bool try_parse_number(const char* token, cell_t* result) {
