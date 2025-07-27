@@ -1,13 +1,5 @@
-#include <string.h>
-
-#include "array.h"
-#include "context.h"
-#include "core_primitive.h"
-#include "debug.h"
 #include "dictionary.h"
 #include "error.h"
-#include "interpreter.h"
-#include "parser.h"
 #include "stack.h"
 #include "util.h"
 
