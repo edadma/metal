@@ -8,6 +8,7 @@
 #include "context.h"
 #include "core.h"
 #include "core_arithmetic.h"
+#include "core_comparison.h"
 #include "core_primitive.h"
 #include "core_stack.h"
 #include "debug.h"
@@ -22,6 +23,7 @@ void populate_dictionary(void) {
   add_core_primitive_words();   // Primitive words
   add_core_stack_words();       // Stack manipulation
   add_core_arithmetic_words();  // Arithmetic operations
+  add_core_comparison_words();  // Comparison operations
   add_core_words();             // Core language features
   add_tools_words();            // Development tools
 
