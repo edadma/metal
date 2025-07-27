@@ -35,17 +35,12 @@ cell_t new_string(context_t* ctx, const char* utf8) {
   cell.type = CELL_STRING;
 
   size_t len = strlen(utf8);  // Input length (for now, UTF-8 from C strings)
-  size_t alloc_size =
-      sizeof(uint8_array_t) + len;  // No +1 needed, length is explicit
-  uint8_array_t* str = metal_alloc(ctx, alloc_size);
-  if (!str) {
-    return new_empty();
-  }
+  uint8_array_t* str = metal_alloc(ctx, sizeof(uint8_array_t) + len);
 
   str->refcount = 0;  // no owner yet
   str->length = len;
-  str->capacity = len;           // Exact fit for now
-  memcpy(str->data, utf8, len);  // Copy without null terminator
+  str->capacity = len;
+  memcpy(str->data, utf8, len);
 
   cell.payload.utf8_ptr = str;
   return cell;
