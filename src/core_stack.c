@@ -105,4 +105,5 @@ void add_core_stack_words(void) {
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
   add_definition("2DUP", "OVER OVER",
                  "( a b -- a b a b ) Duplicate top two items");
+  add_definition("ROT", "2 ROLL", "( a b c -- b c a ) Rotate top three items");
 }

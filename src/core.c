@@ -850,7 +850,6 @@ void add_core_words(void) {
                  "( a b -- min ) Return minimum of two numbers");
   add_definition("MAX", "2DUP < IF SWAP THEN DROP",
                  "( a b -- max ) Return maximum of two numbers");
-  add_definition("ROT", "2 ROLL", "( a b c -- b c a ) Rotate top three items");
   add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN",
                  "( n -- -1|0|1 ) Return sign of number");
   add_definition("CONST", "CONSTANT", "( value -- ) Define constant");
