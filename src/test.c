@@ -190,7 +190,7 @@ void test_stack_top_string(const char* file, int line, const char* expr,
   cell_t top = data_peek_cell(ctx, 0);
   if (top.type == CELL_STRING) {
     const char* actual = (const char*)top.payload.utf8_ptr->data;
-    const int len = top.payload.utf8_ptr->length;
+    const size_t len = top.payload.utf8_ptr->length;
 
     if (actual && expected && len == strlen(expected) &&
         strncmp(actual, expected, len) == 0) {

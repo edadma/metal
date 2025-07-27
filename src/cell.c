@@ -181,6 +181,7 @@ void release(cell_t* cell) {
         metal_free(cell->payload.ptr);
         cell->payload.ptr = NULL;
       }
+      break;
     case CELL_OBJECT:
     case CELL_CODE: {
       cell->payload.array->refcount--;

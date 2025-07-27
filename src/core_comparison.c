@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "dictionary.h"
 #include "error.h"
 #include "stack.h"
