@@ -1611,6 +1611,10 @@ void add_core_words(void) {
   add_native_word("J", native_j, "( -- outer_index ) Outer loop index");
   add_native_word("UNLOOP", native_unloop, "( -- ) Remove loop parameters");
 
+  add_native_word("CONSTANT", native_constant,
+                  "( value -- ) <name> Define named constant");
+  add_native_word("VARIABLE", native_variable, "( -- ) <name> Define variable");
+
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
   add_definition("2DUP", "OVER OVER",
                  "( a b -- a b a b ) Duplicate top two items");
@@ -1621,7 +1625,5 @@ void add_core_words(void) {
   add_definition("ROT", "2 ROLL", "( a b c -- b c a ) Rotate top three items");
   add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN",
                  "( n -- -1|0|1 ) Return sign of number");
-  add_native_word("CONSTANT", native_constant,
-                  "( value -- ) <name> Define named constant");
-  add_native_word("VARIABLE", native_variable, "( -- ) <name> Define variable");
+  add_definition("CONST", "CONSTANT", "( value -- ) Define constant");
 }
