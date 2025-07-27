@@ -174,22 +174,14 @@ metal_result_t interpret(context_t* ctx, const char* input) {
             ctx->ip = dict_word->definition.payload.array->elements;
             execute_code(ctx);
           } else {
-            // Store error in context and longjmp
-            static char error_buf[256];
-            snprintf(error_buf, sizeof(error_buf), "Unknown word type: %d",
-                     dict_word->definition.type);
-            ctx->error_msg = error_buf;
-            longjmp(ctx->error_jmp, 1);
+            // For constants and variables - just push the cell onto the stack
+            data_push(ctx, dict_word->definition);
           }
         }
         continue;
       }
 
-      // Unknown word - store error in context and longjmp
-      static char error_buf[270];
-      snprintf(error_buf, sizeof(error_buf), "Unknown word: %s", word);
-      ctx->error_msg = error_buf;
-      longjmp(ctx->error_jmp, 1);
+      error(ctx, "Unknown word: %s", word);
     }
   }
 

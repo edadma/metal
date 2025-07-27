@@ -421,6 +421,11 @@ static void native_store(context_t* ctx) {
   cell_t value = data_pop_cell(ctx);
   cell_t pointer_cell = data_pop_cell(ctx);
 
+  // Check that value is not undefined
+  if (value.type == CELL_UNDEFINED) {
+    error(ctx, "! : cannot store undefined value");
+  }
+
   if (pointer_cell.type != CELL_POINTER) {
     error(ctx, "! : not a pointer");
   }
@@ -446,6 +451,54 @@ static void native_paren_comment(context_t* ctx) {
   }
   // It's a comment, so just discard it
   metal_free(comment);
+}
+
+// CONSTANT ( value -- ) <name> Define a named constant
+static void native_constant(context_t* ctx) {
+  require(ctx, 1, "CONSTANT");
+  // Parse next word as the constant name
+  char word_buffer[32];
+  token_type_t token_type =
+      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+  if (token_type != TOKEN_WORD) {
+    error(ctx, "CONSTANT: expected constant name");
+  }
+
+  // Pop the value from stack
+  cell_t value = data_pop_cell(ctx);
+  // Check that value is not undefined
+  if (value.type == CELL_UNDEFINED) {
+    error(ctx, "CONSTANT: cannot create constant with undefined value");
+  }
+
+  // Add to dictionary
+  add_cell(word_buffer, value, "User-defined constant");
+  debug("Created constant '%s'", word_buffer);
+}
+
+// VARIABLE ( -- ) <name> Define a variable
+static void native_variable(context_t* ctx) {
+  // Parse next word as the variable name
+  char word_buffer[32];
+  token_type_t token_type =
+      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+  if (token_type != TOKEN_WORD) {
+    error(ctx, "VARIABLE: expected variable name");
+  }
+
+  // Allocate storage for one cell, initialized to undefined
+  cell_t* storage = metal_alloc(ctx, sizeof(cell_t));
+  if (!storage) {
+    error(ctx, "VARIABLE: allocation failed");
+  }
+  *storage = new_undefined();
+  // Create pointer cell
+  cell_t pointer_cell = new_pointer(storage);
+
+  // Add to dictionary
+  add_cell(word_buffer, pointer_cell, "User-defined variable");
+
+  debug("Created variable '%s'", word_buffer);
 }
 
 static void native_def(context_t* ctx) {
@@ -1568,4 +1621,7 @@ void add_core_words(void) {
   add_definition("ROT", "2 ROLL", "( a b c -- b c a ) Rotate top three items");
   add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN",
                  "( n -- -1|0|1 ) Return sign of number");
+  add_native_word("CONSTANT", native_constant,
+                  "( value -- ) <name> Define named constant");
+  add_native_word("VARIABLE", native_variable, "( -- ) <name> Define variable");
 }
