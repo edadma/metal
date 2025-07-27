@@ -132,7 +132,6 @@ void execute_code(context_t* ctx) {
         release(condition);
         break;
       }
-
       case CELL_BRANCH: {
         // Unconditional branch
         ctx->ip += cell->payload.i32;
@@ -143,13 +142,11 @@ void execute_code(context_t* ctx) {
         cell->payload.native(ctx);
         break;
       }
-
       case CELL_CODE: {
         return_push(ctx, new_return(ctx->ip));
         ctx->ip = cell->payload.array->elements;
         break;
       }
-
         // All other cell types push themselves onto the stack
       case CELL_INT32:
       case CELL_INT64:
@@ -162,7 +159,6 @@ void execute_code(context_t* ctx) {
       case CELL_UNDEFINED:
       case CELL_BOOLEAN:
       default: {
-        retain(cell);
         data_push(ctx, *cell);
         break;
       }
