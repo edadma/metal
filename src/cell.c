@@ -99,6 +99,46 @@ cell_t new_boolean(bool value) {
   return cell;
 }
 
+void new_boolean_inplace(bool value, cell_t* ptr) {
+  cell_t cell = {0};
+  cell.type = CELL_BOOLEAN;
+  cell.payload.boolean = value;
+  *ptr = cell;
+}
+
+cell_t new_rgb(uint8_t r, uint8_t g, uint8_t b) {
+  cell_t cell = {0};
+  cell.type = CELL_RGB;
+  cell.payload.rgb.r = r;
+  cell.payload.rgb.g = g;
+  cell.payload.rgb.b = b;
+  return cell;
+}
+
+cell_t new_datetime(uint32_t timestamp, int16_t tz_offset) {
+  cell_t cell = {0};
+  cell.type = CELL_DATETIME;
+  cell.payload.datetime.timestamp = timestamp;
+  cell.payload.datetime.tz_offset = tz_offset;
+  return cell;
+}
+
+cell_t new_coordinate(float lon, float lat) {
+  cell_t cell = {0};
+  cell.type = CELL_COORDINATE;
+  cell.payload.coordinate.lon = lon;
+  cell.payload.coordinate.lat = lat;
+  return cell;
+}
+
+cell_t new_complex(float re, float im) {
+  cell_t cell = {0};
+  cell.type = CELL_COMPLEX;
+  cell.payload.complex.re = re;
+  cell.payload.complex.im = im;
+  return cell;
+}
+
 // Cell lifecycle management
 
 void retain(cell_t* cell) {

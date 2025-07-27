@@ -134,6 +134,11 @@ cell_t new_null(void);
 cell_t new_undefined(void);
 cell_t new_code(cell_array_t* code_data);
 cell_t new_boolean(bool value);
+void new_boolean_inplace(bool value, cell_t* ptr);
+cell_t new_rgb(uint8_t r, uint8_t g, uint8_t b);
+cell_t new_datetime(uint32_t timestamp, int16_t tz_offset);
+cell_t new_coordinate(float lon, float lat);
+cell_t new_complex(float re, float im);
 
 // Cell lifecycle management
 void retain(cell_t* cell);

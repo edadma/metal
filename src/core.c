@@ -1524,6 +1524,386 @@ static void native_literal(context_t* ctx) {
   debug("LITERAL: pushed cell type %d as data", literal_cell->type);
 }
 
+// Efficient arithmetic combination words
+
+static void native_one_plus(context_t* ctx) {
+  require(ctx, 1, "1+");
+  cell_t* top = data_peek(ctx, 0);
+  switch (top->type) {
+    case CELL_INT32:
+      // Fast in-place increment - no overflow check for speed
+      top->payload.i32++;
+      break;
+    case CELL_INT64:
+      top->payload.i64++;
+      break;
+    case CELL_FLOAT:
+      top->payload.f64 += 1.0;
+      break;
+    default:
+      error(ctx, "1+ : requires numeric type");
+  }
+}
+
+static void native_one_minus(context_t* ctx) {
+  require(ctx, 1, "1-");
+  cell_t* top = data_peek(ctx, 0);
+  switch (top->type) {
+    case CELL_INT32:
+      top->payload.i32--;
+      break;
+    case CELL_INT64:
+      top->payload.i64--;
+      break;
+    case CELL_FLOAT:
+      top->payload.f64 -= 1.0;
+      break;
+    default:
+      error(ctx, "1- : requires numeric type");
+  }
+}
+
+static void native_two_star(context_t* ctx) {
+  require(ctx, 1, "2*");
+  cell_t* top = data_peek(ctx, 0);
+  switch (top->type) {
+    case CELL_INT32:
+      // Use bit shift for maximum efficiency
+      top->payload.i32 <<= 1;
+      break;
+    case CELL_INT64:
+      top->payload.i64 <<= 1;
+      break;
+    case CELL_FLOAT:
+      // Use multiplication for floats
+      top->payload.f64 *= 2.0;
+      break;
+    default:
+      error(ctx, "2* : requires numeric type");
+  }
+}
+
+static void native_two_slash(context_t* ctx) {
+  require(ctx, 1, "2/");
+  cell_t* top = data_peek(ctx, 0);
+  switch (top->type) {
+    case CELL_INT32:
+      // Use arithmetic right shift (preserves sign)
+      top->payload.i32 >>= 1;
+      break;
+    case CELL_INT64:
+      top->payload.i64 >>= 1;
+      break;
+    case CELL_FLOAT:
+      top->payload.f64 /= 2.0;
+      break;
+    default:
+      error(ctx, "2/ : requires numeric type");
+  }
+}
+
+static void native_negate(context_t* ctx) {
+  require(ctx, 1, "NEGATE");
+  cell_t* top = data_peek(ctx, 0);
+  switch (top->type) {
+    case CELL_INT32:
+      top->payload.i32 = -top->payload.i32;
+      break;
+    case CELL_INT64:
+      top->payload.i64 = -top->payload.i64;
+      break;
+    case CELL_FLOAT:
+      top->payload.f64 = -top->payload.f64;
+      break;
+    default:
+      error(ctx, "NEGATE : requires numeric type");
+  }
+}
+
+// Efficient comparison combination words
+
+static void native_zero_equals(context_t* ctx) {
+  require(ctx, 1, "0=");
+  cell_t* top = data_peek(ctx, 0);
+  bool result;
+  switch (top->type) {
+    case CELL_INT32:
+      result = top->payload.i32 == 0;
+      break;
+    case CELL_INT64:
+      result = (top->payload.i64 == 0);
+      break;
+    case CELL_FLOAT:
+      result = (top->payload.f64 == 0.0);
+      break;
+    case CELL_BOOLEAN:
+      result = !top->payload.boolean;
+      break;
+    default:
+      error(ctx, "0= : requires numeric or boolean type");
+      return;
+  }
+  // Replace top of stack with boolean result
+  new_boolean_inplace(result, top);
+}
+
+static void native_zero_less(context_t* ctx) {
+  require(ctx, 1, "0<");
+  cell_t* top = data_peek(ctx, 0);
+  bool result;
+  switch (top->type) {
+    case CELL_INT32:
+      result = (top->payload.i32 < 0);
+      break;
+    case CELL_INT64:
+      result = (top->payload.i64 < 0);
+      break;
+    case CELL_FLOAT:
+      result = (top->payload.f64 < 0.0);
+      break;
+    default:
+      error(ctx, "0< : requires numeric type");
+      return;
+  }
+
+  new_boolean_inplace(result, top);
+}
+
+static void native_zero_greater(context_t* ctx) {
+  require(ctx, 1, "0>");
+
+  cell_t* top = data_peek(ctx, 0);
+  bool result;
+
+  switch (top->type) {
+    case CELL_INT32:
+      result = (top->payload.i32 > 0);
+      break;
+    case CELL_INT64:
+      result = (top->payload.i64 > 0);
+      break;
+    case CELL_FLOAT:
+      result = (top->payload.f64 > 0.0);
+      break;
+    default:
+      error(ctx, "0> : requires numeric type");
+      return;
+  }
+
+  new_boolean_inplace(result, top);
+}
+
+static void native_zero_greater_equal(context_t* ctx) {
+  require(ctx, 1, "0>=");
+  cell_t* top = data_peek(ctx, 0);
+  bool result;
+  switch (top->type) {
+    case CELL_INT32:
+      result = (top->payload.i32 >= 0);
+      break;
+    case CELL_INT64:
+      result = (top->payload.i64 >= 0);
+      break;
+    case CELL_FLOAT:
+      result = (top->payload.f64 >= 0.0);
+      break;
+    default:
+      error(ctx, "0>= : requires numeric type");
+      return;
+  }
+
+  new_boolean_inplace(result, top);
+}
+
+static void native_zero_less_equal(context_t* ctx) {
+  require(ctx, 1, "0<=");
+  cell_t* top = data_peek(ctx, 0);
+  bool result;
+  switch (top->type) {
+    case CELL_INT32:
+      result = (top->payload.i32 <= 0);
+      break;
+    case CELL_INT64:
+      result = (top->payload.i64 <= 0);
+      break;
+    case CELL_FLOAT:
+      result = (top->payload.f64 <= 0.0);
+      break;
+    default:
+      error(ctx, "0<= : requires numeric type");
+      return;
+  }
+
+  new_boolean_inplace(result, top);
+}
+
+static void native_zero_not_equal(context_t* ctx) {
+  require(ctx, 1, "0<>");
+
+  cell_t* top = data_peek(ctx, 0);
+  bool result;
+
+  switch (top->type) {
+    case CELL_INT32:
+      result = (top->payload.i32 != 0);
+      break;
+    case CELL_INT64:
+      result = (top->payload.i64 != 0);
+      break;
+    case CELL_FLOAT:
+      result = (top->payload.f64 != 0.0);
+      break;
+    case CELL_BOOLEAN:
+      result = top->payload
+                   .boolean;  // true if non-zero (true), false if zero (false)
+      break;
+    default:
+      error(ctx, "0<> : requires numeric or boolean type");
+      return;
+  }
+
+  new_boolean_inplace(result, top);
+}
+
+// Memory combination words
+
+static void native_plus_store(context_t* ctx) {
+  require(ctx, 2, "+!");
+
+  cell_t* addr_cell = data_pop(ctx);
+  cell_t* value_cell = data_pop(ctx);
+
+  if (addr_cell->type != CELL_POINTER) {
+    error(ctx, "+! : second argument must be a pointer");
+  }
+
+  if (!addr_cell->payload.cell_ptr) {
+    error(ctx, "+! : null pointer");
+  }
+
+  cell_t* target = addr_cell->payload.cell_ptr;
+
+  // Efficient in-place addition based on target type
+  switch (target->type) {
+    case CELL_INT32:
+      if (value_cell->type == CELL_INT32) {
+        target->payload.i32 += value_cell->payload.i32;
+      } else if (value_cell->type == CELL_INT64) {
+        // Promote to INT64 if needed
+        int64_t result = (int64_t)target->payload.i32 + value_cell->payload.i64;
+        target->type = CELL_INT64;
+        target->payload.i64 = result;
+      } else if (value_cell->type == CELL_FLOAT) {
+        // Promote to FLOAT
+        target->type = CELL_FLOAT;
+        target->payload.f64 =
+            (double)target->payload.i32 + value_cell->payload.f64;
+      } else {
+        error(ctx, "+! : incompatible types");
+      }
+      break;
+
+    case CELL_INT64:
+      if (value_cell->type == CELL_INT32) {
+        target->payload.i64 += (int64_t)value_cell->payload.i32;
+      } else if (value_cell->type == CELL_INT64) {
+        target->payload.i64 += value_cell->payload.i64;
+      } else if (value_cell->type == CELL_FLOAT) {
+        // Promote to FLOAT
+        target->type = CELL_FLOAT;
+        target->payload.f64 =
+            (double)target->payload.i64 + value_cell->payload.f64;
+      } else {
+        error(ctx, "+! : incompatible types");
+      }
+      break;
+
+    case CELL_FLOAT:
+      if (value_cell->type == CELL_INT32) {
+        target->payload.f64 += (double)value_cell->payload.i32;
+      } else if (value_cell->type == CELL_INT64) {
+        target->payload.f64 += (double)value_cell->payload.i64;
+      } else if (value_cell->type == CELL_FLOAT) {
+        target->payload.f64 += value_cell->payload.f64;
+      } else {
+        error(ctx, "+! : incompatible types");
+      }
+      break;
+
+    default:
+      error(ctx, "+! : target must be numeric");
+  }
+
+  release(addr_cell);
+  release(value_cell);
+}
+
+static void native_one_plus_store(context_t* ctx) {
+  require(ctx, 1, "1+!");
+
+  cell_t* addr_cell = data_pop(ctx);
+
+  if (addr_cell->type != CELL_POINTER) {
+    error(ctx, "1+! : argument must be a pointer");
+  }
+
+  if (!addr_cell->payload.cell_ptr) {
+    error(ctx, "1+! : null pointer");
+  }
+
+  cell_t* target = addr_cell->payload.cell_ptr;
+
+  // Efficient in-place increment
+  switch (target->type) {
+    case CELL_INT32:
+      target->payload.i32++;
+      break;
+    case CELL_INT64:
+      target->payload.i64++;
+      break;
+    case CELL_FLOAT:
+      target->payload.f64 += 1.0;
+      break;
+    default:
+      error(ctx, "1+! : target must be numeric");
+  }
+
+  release(addr_cell);
+}
+
+static void native_one_minus_store(context_t* ctx) {
+  require(ctx, 1, "1-!");
+
+  cell_t* addr_cell = data_pop(ctx);
+
+  if (addr_cell->type != CELL_POINTER) {
+    error(ctx, "1-! : argument must be a pointer");
+  }
+
+  if (!addr_cell->payload.cell_ptr) {
+    error(ctx, "1-! : null pointer");
+  }
+
+  cell_t* target = addr_cell->payload.cell_ptr;
+
+  // Efficient in-place decrement
+  switch (target->type) {
+    case CELL_INT32:
+      target->payload.i32--;
+      break;
+    case CELL_INT64:
+      target->payload.i64--;
+      break;
+    case CELL_FLOAT:
+      target->payload.f64 -= 1.0;
+      break;
+    default:
+      error(ctx, "1-! : target must be numeric");
+  }
+
+  release(addr_cell);
+}
+
 // Helper function to add a compiled word definition from source
 static void add_definition(const char* name, const char* source,
                            const char* help) {
@@ -1722,6 +2102,32 @@ void add_core_words(void) {
   add_native_word("I", native_i, "( -- index ) Current loop index");
   add_native_word("J", native_j, "( -- outer_index ) Outer loop index");
   add_native_word("UNLOOP", native_unloop, "( -- ) Remove loop parameters");
+
+  // Efficient arithmetic combination words
+  add_native_word("1+", native_one_plus, "( n -- n+1 ) Add one");
+  add_native_word("1-", native_one_minus, "( n -- n-1 ) Subtract one");
+  add_native_word("2*", native_two_star, "( n -- n*2 ) Multiply by two");
+  add_native_word("2/", native_two_slash, "( n -- n/2 ) Divide by two");
+  add_native_word("NEGATE", native_negate, "( n -- -n ) Change sign");
+
+  // Efficient comparison combination words
+  add_native_word("0=", native_zero_equals, "( n -- flag ) Test if zero");
+  add_native_word("0<", native_zero_less, "( n -- flag ) Test if negative");
+  add_native_word("0>", native_zero_greater, "( n -- flag ) Test if positive");
+  add_native_word("0>=", native_zero_greater_equal,
+                  "( n -- flag ) Test if >= zero");
+  add_native_word("0<=", native_zero_less_equal,
+                  "( n -- flag ) Test if <= zero");
+  add_native_word("0<>", native_zero_not_equal,
+                  "( n -- flag ) Test if not zero");
+
+  // Memory combination words
+  add_native_word("+!", native_plus_store,
+                  "( n addr -- ) Add n to memory location");
+  add_native_word("1+!", native_one_plus_store,
+                  "( addr -- ) Increment memory location");
+  add_native_word("1-!", native_one_minus_store,
+                  "( addr -- ) Decrement memory location");
 
   add_native_word("CONSTANT", native_constant,
                   "( value -- ) <name> Define named constant");
