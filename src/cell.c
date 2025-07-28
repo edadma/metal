@@ -46,6 +46,12 @@ cell_t new_string(context_t* ctx, const char* utf8) {
   return cell;
 }
 
+cell_t new_empty_string(void) {
+  cell_t cell = {0};
+  cell.type = CELL_STRING;
+  return cell;
+}
+
 cell_t new_empty_object(void) {
   cell_t cell = {0};
   cell.type = CELL_OBJECT;

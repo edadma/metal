@@ -24,33 +24,10 @@ static void native_add(context_t* ctx) {
   } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
     a->payload.i64 += b->payload.i64;
   } else if (a->type == CELL_STRING && b->type == CELL_STRING) {
-    // Get lengths
-    const size_t alen = a->payload.utf8->length;
-    const size_t blen = b->payload.utf8->length;
+    const cell_t result = string_concat(ctx, a, b);
 
-    // Allocate new string with combined length
-    uint8_array_t* new_str =
-        metal_alloc(ctx, sizeof(uint8_array_t) + alen + blen);
-    if (!new_str) {
-      error(ctx, "String concatenation: allocation failed");
-      return;
-    }
-
-    // Initialize the new string
-    new_str->refcount = 1;
-    new_str->length = alen + blen;
-    new_str->capacity = alen + blen;
-
-    // Copy both strings into the new buffer
-    memcpy(new_str->data, a->payload.utf8->data, alen);
-    memcpy(new_str->data + alen, b->payload.utf8->data, blen);
-
-    // Release the old string in a
     release(a);
-
-    // Update the cell with new string
-    a->type = CELL_STRING;
-    a->payload.utf8 = new_str;
+    *a = result;
   } else {
     error(ctx, "+ : type mismatch");
   }
