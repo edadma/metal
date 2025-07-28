@@ -986,18 +986,18 @@ TEST_FUNCTION(arithmetic_combinations_enhanced) {
 
 TEST_FUNCTION(combination_word_error_testing) {
   // Test division by zero errors
-  // TEST_EXPECT_ERROR("10 0 /MOD", "division by zero");
-  // TEST_EXPECT_ERROR("10 5 0 */", "division by zero");
-  // TEST_EXPECT_ERROR("10 5 0 */MOD", "division by zero");
-  // // Test type errors
-  // TEST_EXPECT_ERROR("\"hello\" 1+", "requires numeric type");
-  // TEST_EXPECT_ERROR("\"hello\" 0=", "requires numeric");
-  // // Test memory errors
-  // TEST_EXPECT_ERROR("5 NULL +!", "must be a pointer");
-  // TEST_EXPECT_ERROR("NULL 1+!", "must be a pointer");
-  // // Test stack underflow
-  // TEST_EXPECT_ERROR("1+", "insufficient stack");
-  // TEST_EXPECT_ERROR("/MOD", "insufficient stack");
+  TEST_EXPECT_ERROR("10 0 /MOD", "division by zero");
+  TEST_EXPECT_ERROR("10 5 0 */", "division by zero");
+  TEST_EXPECT_ERROR("10 5 0 */MOD", "division by zero");
+  // Test type errors
+  TEST_EXPECT_ERROR("\"hello\" 1+", "requires numeric type");
+  TEST_EXPECT_ERROR("\"hello\" 0=", "requires numeric");
+  // Test memory errors
+  TEST_EXPECT_ERROR("5 NULL +!", "cannot use null value as pointer");
+  TEST_EXPECT_ERROR("NULL 1+!", "argument must be a pointer");
+  // Test stack underflow
+  TEST_EXPECT_ERROR("1+", "insufficient stack");
+  TEST_EXPECT_ERROR("/MOD", "insufficient stack");
 
   // Clear any remaining stack items after error tests
   while (!is_data_empty(&test_context)) {
@@ -1029,7 +1029,6 @@ static void register_tests(void) {
   REGISTER_TEST(basic_arithmetic);
   REGISTER_TEST(string_operations);
   REGISTER_TEST(array_operations);
-
   // Control flow tests
   REGISTER_TEST(if_then_true);
   REGISTER_TEST(if_then_false);
@@ -1042,7 +1041,6 @@ static void register_tests(void) {
   REGISTER_TEST(begin_again_conditional);
   REGISTER_TEST(complex_control_flow);
   REGISTER_TEST(control_stack_cleanup);
-
   // BEGIN/UNTIL tests
   REGISTER_TEST(begin_until_counter);
   REGISTER_TEST(begin_until_greater_than);
@@ -1054,7 +1052,6 @@ static void register_tests(void) {
   REGISTER_TEST(begin_until_string_length);
   REGISTER_TEST(begin_until_stack_cleanup);
   REGISTER_TEST(mixed_begin_patterns);
-
   // BEGIN/WHILE/REPEAT tests
   REGISTER_TEST(begin_while_repeat_counter);
   REGISTER_TEST(begin_while_repeat_no_loop);
