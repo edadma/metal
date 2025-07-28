@@ -10,6 +10,7 @@
 #include "dictionary.h"
 #include "interpreter.h"
 #include "stack.h"
+#include "test_arithmetic_combo.h"
 #include "test_conversion.h"
 #include "test_stack.h"
 #include "util.h"
@@ -1089,8 +1090,15 @@ static void register_tests(void) {
 // Call this from main.c when TEST_ENABLED
 void init_tests(void) {
   register_tests();
+
+  // Stack manipulation tests
   register_stack_tests();
+
+  // Type conversion tests
   register_conversion_tests();
+
+  // Arithmetic combination tests
+  register_arithmetic_combo_tests();
 }
 
 #endif  // TEST_ENABLED
