@@ -16,7 +16,6 @@ typedef enum : uint8_t {
   CELL_FLOAT,
   CELL_BOOLEAN,
   CELL_STRING,
-  CELL_INTERNED,
   CELL_OBJECT,
   CELL_ARRAY,
   CELL_CODE,
