@@ -10,6 +10,7 @@
 #include "dictionary.h"
 #include "interpreter.h"
 #include "stack.h"
+#include "test_stack.h"
 #include "util.h"
 
 // Test statistics
@@ -18,7 +19,7 @@ int test_passed = 0;
 int test_failed = 0;
 
 // Test registry
-#define MAX_TESTS 100
+#define MAX_TESTS 500
 static struct {
   const char* name;
   void (*func)(void);
@@ -301,11 +302,6 @@ void test_expect_error(const char* file, int line, const char* code,
   expecting_error = false;
 }
 
-// Add macro for error testing
-#define TEST_EXPECT_ERROR(code, pattern) \
-  test_expect_error(__FILE__, __LINE__, code, pattern)
-
-// Enhanced boolean testing helpers
 void test_stack_top_boolean(const char* file, int line, const char* expr,
                             bool expected) {
   test_count++;
@@ -333,9 +329,6 @@ void test_stack_top_boolean(const char* file, int line, const char* expr,
   }
 }
 
-#define TEST_STACK_TOP_BOOLEAN(expected) \
-  test_stack_top_boolean(__FILE__, __LINE__, #expected, (expected))
-
 // Helper to test if stack top is truthy (for any type)
 void test_stack_top_truthy(const char* file, int line, const char* expr,
                            bool should_be_truthy) {
@@ -361,9 +354,6 @@ void test_stack_top_truthy(const char* file, int line, const char* expr,
     test_failed++;
   }
 }
-
-#define TEST_STACK_TOP_TRUTHY(expected) \
-  test_stack_top_truthy(__FILE__, __LINE__, #expected, (expected))
 
 // Test management
 void register_test(const char* name, void (*test_func)(void)) {
@@ -1068,7 +1058,7 @@ TEST_FUNCTION(memory_combination_enhanced) {
 }
 
 // Register example tests (would be called from main or test initialization)
-static void register_example_tests(void) {
+static void register_tests(void) {
   REGISTER_TEST(basic_arithmetic);
   REGISTER_TEST(string_operations);
   REGISTER_TEST(array_operations);
@@ -1132,6 +1122,9 @@ static void register_example_tests(void) {
 }
 
 // Call this from main.c when TEST_ENABLED
-void init_tests(void) { register_example_tests(); }
+void init_tests(void) {
+  register_tests();
+  register_stack_tests();
+}
 
 #endif  // TEST_ENABLED

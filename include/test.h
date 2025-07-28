@@ -39,8 +39,17 @@ extern int test_failed;
 #define TEST_STACK_TOP_FLOAT(expected) \
   test_stack_top_float(__FILE__, __LINE__, #expected, (expected))
 
+#define TEST_EXPECT_ERROR(code, pattern) \
+  test_expect_error(__FILE__, __LINE__, code, pattern)
+
 #define TEST_STACK_TOP_STRING(expected) \
   test_stack_top_string(__FILE__, __LINE__, #expected, (expected))
+
+#define TEST_STACK_TOP_BOOLEAN(expected) \
+  test_stack_top_boolean(__FILE__, __LINE__, #expected, (expected))
+
+#define TEST_STACK_TOP_TRUTHY(expected) \
+  test_stack_top_truthy(__FILE__, __LINE__, #expected, (expected))
 
 // Test function registration
 #define TEST_FUNCTION(name) static void test_##name(void)
@@ -63,8 +72,14 @@ void test_stack_top_int(const char* file, int line, const char* expr,
                         int expected);
 void test_stack_top_float(const char* file, int line, const char* expr,
                           double expected);
+void test_expect_error(const char* file, int line, const char* code,
+                       const char* error_pattern);
 void test_stack_top_string(const char* file, int line, const char* expr,
                            const char* expected);
+void test_stack_top_boolean(const char* file, int line, const char* expr,
+                            bool expected);
+void test_stack_top_truthy(const char* file, int line, const char* expr,
+                           bool should_be_truthy);
 
 // Test management
 void register_test(const char* name, void (*test_func)(void));
