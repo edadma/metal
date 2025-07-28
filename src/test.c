@@ -15,6 +15,7 @@
 #include "test_comparison.h"
 #include "test_complex_arithmetic.h"
 #include "test_conversion.h"
+#include "test_memory_ops.h"
 #include "test_stack.h"
 #include "util.h"
 
@@ -1111,6 +1112,9 @@ void init_tests(void) {
 
   // Comparison tests
   register_comparison_tests();
+
+  // Memory operations tests
+  register_memory_ops_tests();
 }
 
 #endif  // TEST_ENABLED
