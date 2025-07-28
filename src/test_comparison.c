@@ -100,7 +100,8 @@ TEST_FUNCTION(test_not_equal_comparison) {
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 
-  // float != float (fast path) TEST_INTERPRET("3.14 2.71 !=");
+  // float != float (fast path)
+  TEST_INTERPRET("3.14 2.71 !=");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
@@ -784,8 +785,8 @@ void register_comparison_tests(void) {
   REGISTER_TEST(test_zero_comparisons);
   REGISTER_TEST(test_string_comparisons);
   REGISTER_TEST(test_comparison_errors);
-  // REGISTER_TEST(test_comparison_edge_cases);
-  // REGISTER_TEST(test_comparison_performance);
+  REGISTER_TEST(test_comparison_edge_cases);
+  REGISTER_TEST(test_comparison_performance);
 }
 
 #endif  // TEST_ENABLED

@@ -268,9 +268,8 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
       }
 
       return a_val == b_val;
-    }
-
-    return false;
+    } else
+      error(ctx, "Cannot compare incompatible types");
   }
 
   // Same types
@@ -308,6 +307,6 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
     case CELL_UNDEFINED:
       return true;  // These are singletons
     default:
-      error(ctx, "unknown cell type: %d", a->type);
+      error(ctx, "Cannot compare values of this type");
   }
 }
