@@ -500,6 +500,14 @@ TEST_FUNCTION(test_arithmetic_combo_performance) {
   TEST_STACK_TOP_INT(-2);
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
+
+  TEST_INTERPRET("1");
+  TEST_STACK_DEPTH(1);
+  TEST_INTERPRET("1+ 2* NEGATE 1- 2*");
+  TEST_STACK_DEPTH(1);
+  TEST_STACK_TOP_INT(-10);
+  TEST_INTERPRET("DROP");
+  TEST_STACK_DEPTH(0);
 }
 
 // Register all arithmetic combination tests

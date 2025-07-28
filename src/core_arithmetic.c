@@ -425,10 +425,10 @@ static void native_two_slash(context_t* ctx) {
   switch (top->type) {
     case CELL_INT32:
       // Use arithmetic right shift (preserves sign)
-      top->payload.i32 >>= 1;
+      top->payload.i32 /= 2;
       break;
     case CELL_INT64:
-      top->payload.i64 >>= 1;
+      top->payload.i64 /= 2;
       break;
     case CELL_FLOAT:
       top->payload.f64 /= 2.0;
