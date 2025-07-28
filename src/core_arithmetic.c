@@ -37,7 +37,7 @@ static void native_add(context_t* ctx) {
     }
 
     // Initialize the new string
-    new_str->refcount = 0;  // Will be incremented when assigned to cell
+    new_str->refcount = 1;
     new_str->length = alen + blen;
     new_str->capacity = alen + blen;
 

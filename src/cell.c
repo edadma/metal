@@ -177,7 +177,7 @@ void release(cell_t* cell) {
       cell->payload.utf8_ptr->refcount--;
       debug("Released string, refcount now %d",
             cell->payload.utf8_ptr->refcount);
-      if (cell->payload.array->refcount == 0) {
+      if (cell->payload.utf8_ptr->refcount == 0) {
         metal_free(cell->payload.ptr);
         cell->payload.ptr = NULL;
       }
