@@ -5,9 +5,15 @@
 
 #include "dictionary.h"
 #include "error.h"
-#include "interpreter.h"
 #include "memory.h"
 #include "stack.h"
+
+typedef struct intern {
+  string_t* string;  // Points directly to string_t
+  struct intern* next;
+} intern_t;
+
+static intern_t* intern_list = NULL;
 
 // Create string from C string
 cell_t string_from_cstr(context_t* ctx, const char* cstr) {
