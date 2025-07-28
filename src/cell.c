@@ -210,9 +210,6 @@ void release(cell_t* cell) {
         cell->payload.ptr = NULL;
       }
     } break;
-    case CELL_POINTER:
-      // Pointers don't own the pointed-to memory
-      break;
     default:
   }
 }

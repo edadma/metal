@@ -54,8 +54,6 @@ NORETURN void error(context_t* ctx, const char* fmt, ...) {
   ctx->input_pos = NULL;
   ctx->input_start = NULL;
 
-  printf("ERROR: %s\n", error_buffer);
-
   // Jump back to error handler
   longjmp(ctx->error_jmp, 1);
 }

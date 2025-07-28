@@ -625,6 +625,10 @@ static void native_plus_store(context_t* ctx) {
   cell_t* addr_cell = data_pop(ctx);
   cell_t* value_cell = data_pop(ctx);
 
+  if (addr_cell->type == CELL_NULL) {
+    error(ctx, "+! : cannot use null value as pointer");
+  }
+
   if (addr_cell->type != CELL_POINTER) {
     error(ctx, "+! : second argument must be a pointer");
   }

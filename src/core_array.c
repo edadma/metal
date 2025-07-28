@@ -72,7 +72,7 @@ static void native_length(context_t* ctx) {
     data_push(ctx, new_int32(0));
   } else if (array_cell.type == CELL_ARRAY) {
     cell_array_t* data = array_cell.payload.array;
-    data_push(ctx, new_int32((int32_t)data->length));
+    data_push(ctx, new_int32(data->length));
   } else if (array_cell.type == CELL_STRING) {
     const uint8_array_t* str = array_cell.payload.utf8_ptr;
 
