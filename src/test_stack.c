@@ -262,18 +262,20 @@ TEST_FUNCTION(test_roll) {
   TEST_STACK_DEPTH(0);
 
   // Test ROLL 2 (move third to top)
+  // Test ROLL 2 (move third to top)
   TEST_INTERPRET("10 20 30");
   TEST_STACK_DEPTH(3);
   TEST_INTERPRET("2 ROLL");
   TEST_STACK_DEPTH(3);
-  TEST_STACK_TOP_INT(10);  // Was third, now on top
+  TEST_STACK_TOP_INT(10);  // Third item moved to top ✓
   TEST_INTERPRET("DROP");
-  TEST_STACK_TOP_INT(20);  // Was second, now second
+  TEST_STACK_TOP_INT(30);  // Was top, now second ← FIX: should be 30, not 20
   TEST_INTERPRET("DROP");
-  TEST_STACK_TOP_INT(30);  // Was top, now third
+  TEST_STACK_TOP_INT(20);  // Was second, now third ← FIX: should be 20, not 30
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 
+  // Test ROLL with mixed types
   // Test ROLL with mixed types
   TEST_INTERPRET("\"first\" 42 3.14");
   TEST_STACK_DEPTH(3);
@@ -281,9 +283,9 @@ TEST_FUNCTION(test_roll) {
   TEST_STACK_DEPTH(3);
   TEST_STACK_TOP_STRING("first");
   TEST_INTERPRET("DROP");
-  TEST_STACK_TOP_INT(42);
+  TEST_STACK_TOP_FLOAT(3.14);  // ← FIX: should be 3.14, not 42
   TEST_INTERPRET("DROP");
-  TEST_STACK_TOP_FLOAT(3.14);
+  TEST_STACK_TOP_INT(42);  // ← FIX: should be 42, not 3.14
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 
@@ -453,7 +455,7 @@ void register_stack_tests(void) {
   REGISTER_TEST(test_swap);
   REGISTER_TEST(test_pick);
   REGISTER_TEST(test_roll);
-  // REGISTER_TEST(test_over);
+  REGISTER_TEST(test_over);
   // REGISTER_TEST(test_2dup);
   // REGISTER_TEST(test_rot);
 }
