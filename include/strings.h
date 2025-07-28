@@ -19,4 +19,25 @@ bool string_is_empty(cell_t* str);
 
 void add_string_words(void);
 
+// String builder for efficient incremental construction
+
+typedef struct {
+  void* buffer;        // Points to the full allocation (prefix + data)
+  size_t length;       // Current data length
+  size_t capacity;     // Data capacity (excluding prefix)
+  size_t prefix_size;  // Size of reserved prefix space
+} string_builder_t;
+
+// String builder functions
+void stringbuilder_init(string_builder_t* builder, size_t prefix_size,
+                        size_t capacity_hint);
+void stringbuilder_append_string(string_builder_t* builder, const char* str,
+                                 size_t str_len);
+void stringbuilder_append_char(string_builder_t* builder, char c);
+char* stringbuilder_end(
+    string_builder_t* builder);  // Returns final allocated string
+
+// Create string cell from pre-allocated buffer (takes ownership)
+cell_t new_preallocated_string(context_t* ctx, char* buffer, size_t length);
+
 #endif

@@ -133,8 +133,8 @@ typedef struct cell {
 // Array data structure
 typedef struct cell_array {
   uint32_t refcount;
-  int length;
-  int capacity;
+  size_t length;
+  size_t capacity;
   cell_t elements[];
 } cell_array_t;
 
