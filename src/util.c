@@ -7,11 +7,6 @@
 #include "error.h"
 
 void print_cell(const cell_t* cell) {
-  if (!cell) {
-    printf("<null>");
-    return;
-  }
-
   switch (cell->type) {
     case CELL_INT32:
       printf("%d", cell->payload.i32);
@@ -23,23 +18,26 @@ void print_cell(const cell_t* cell) {
       printf("%g", cell->payload.f64);
       break;
     case CELL_STRING:
-      printf("%.*s", (int)cell->payload.utf8->length,
-             (char*)cell->payload.utf8->data);
-      break;
-    case CELL_NIL:
-      printf("[]");
+      if (cell->payload.utf8) {
+        printf("%.*s", (int)cell->payload.utf8->length,
+               (char*)cell->payload.utf8->data);
+      }
       break;
     case CELL_ARRAY: {
-      const cell_array_t* data = cell->payload.array;
+      const cell_array_t* array = cell->payload.array;
 
-      printf("[");
+      if (!array) {
+        printf("[]");
+      } else {
+        printf("[");
 
-      for (size_t i = 0; i < data->length; i++) {
-        if (i > 0) printf(", ");
-        print_cell(&data->elements[i]);
+        for (size_t i = 0; i < array->length; i++) {
+          if (i > 0) printf(", ");
+          print_cell(&array->elements[i]);
+        }
+
+        printf("]");
       }
-
-      printf("]");
       break;
     }
     case CELL_POINTER:
@@ -47,8 +45,10 @@ void print_cell(const cell_t* cell) {
       print_cell(cell->payload.cell_ptr);
       printf(">");
       break;
-    case CELL_EMPTY:
-      printf("<empty>");
+    case CELL_OBJECT:
+      if (!cell->payload.object) {
+        printf("{}");
+      }
       break;
     case CELL_BOOLEAN:
       printf("%s", cell->payload.boolean ? "true" : "false");
@@ -98,9 +98,6 @@ bool is_truthy(cell_t* cell) {
 
     case CELL_STRING:
       if (!cell->payload.utf8 || !cell->payload.utf8->length) return false;
-
-      // Everything else is truthy (including CELL_EMPTY, CELL_NIL, arrays,
-      // etc.)
     default:
       return true;
   }
@@ -304,10 +301,7 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
              strncmp(adata, bdata, alen) == 0;
     case CELL_NULL:
     case CELL_UNDEFINED:
-    case CELL_EMPTY:
-    case CELL_NIL:
       return true;  // These are singletons
-
     default:
       error(ctx, "unknown cell type: %d", a->type);
   }

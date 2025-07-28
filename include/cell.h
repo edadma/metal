@@ -23,8 +23,6 @@ typedef enum : uint8_t {
   CELL_NATIVE,
   CELL_POINTER,
   CELL_RETURN,
-  CELL_EMPTY,
-  CELL_NIL,
   CELL_DATETIME,
   CELL_COORDINATE,
   CELL_COMPLEX,
@@ -160,8 +158,8 @@ cell_t new_int32(int32_t value);
 cell_t new_int64(int64_t value);
 cell_t new_float(double value);
 cell_t new_string(context_t* ctx, const char* utf8);
-cell_t new_empty(void);
-cell_t new_nil(void);
+cell_t new_empty_object(void);
+cell_t new_empty_array(void);
 cell_t new_pointer(cell_t* target);
 cell_t new_return(cell_t* target);
 cell_t new_null(void);

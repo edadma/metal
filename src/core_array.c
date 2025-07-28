@@ -8,7 +8,7 @@
 
 // Array words
 
-static void native_nil(context_t* ctx) { data_push(ctx, new_nil()); }
+static void native_nil(context_t* ctx) { data_push(ctx, new_empty_array()); }
 
 static void native_comma(context_t* ctx) {
   if (ctx->data_stack_ptr < 2) {
@@ -18,8 +18,7 @@ static void native_comma(context_t* ctx) {
   cell_t element = data_pop_cell(ctx);
   cell_t array_cell = data_pop_cell(ctx);
 
-  if (array_cell.type == CELL_NIL) {
-    // Convert NIL to ARRAY with first element
+  if (array_cell.type == CELL_ARRAY && !array_cell.payload.array) {
     cell_array_t* data = create_array_data(ctx, 1);
 
     // Add the element
@@ -33,7 +32,6 @@ static void native_comma(context_t* ctx) {
     new_array.payload.array = data;
 
     data_push_ptr(ctx, &new_array);
-    release(&array_cell);
   } else if (array_cell.type == CELL_ARRAY) {
     cell_array_t* data = array_cell.payload.array;
 
@@ -68,7 +66,7 @@ static void native_length(context_t* ctx) {
 
   cell_t array_cell = data_pop_cell(ctx);
 
-  if (array_cell.type == CELL_NIL) {
+  if (array_cell.type == CELL_ARRAY && !array_cell.payload.array) {
     data_push(ctx, new_int32(0));
   } else if (array_cell.type == CELL_ARRAY) {
     cell_array_t* data = array_cell.payload.array;
@@ -105,7 +103,7 @@ static void native_index(context_t* ctx) {
 
   int32_t index = index_cell.payload.i32;
 
-  if (array_cell.type == CELL_NIL) {
+  if (array_cell.type == CELL_ARRAY && !array_cell.payload.array) {
     error(ctx, "INDEX: cannot index empty array");
   } else if (array_cell.type != CELL_ARRAY) {
     error(ctx, "INDEX: not an array");
@@ -113,7 +111,7 @@ static void native_index(context_t* ctx) {
 
   cell_array_t* data = array_cell.payload.array;
 
-  if (index < 0 || index >= (int32_t)data->length) {
+  if (index < 0 || index >= data->length) {
     error(ctx, "INDEX: index out of bounds");
   }
 

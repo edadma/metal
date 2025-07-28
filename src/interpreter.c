@@ -153,8 +153,6 @@ void execute_code(context_t* ctx) {
       case CELL_FLOAT:
       case CELL_STRING:
       case CELL_ARRAY:
-      case CELL_NIL:
-      case CELL_EMPTY:
       case CELL_NULL:
       case CELL_UNDEFINED:
       case CELL_BOOLEAN:

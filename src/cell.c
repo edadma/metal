@@ -46,15 +46,15 @@ cell_t new_string(context_t* ctx, const char* utf8) {
   return cell;
 }
 
-cell_t new_empty(void) {
+cell_t new_empty_object(void) {
   cell_t cell = {0};
-  cell.type = CELL_EMPTY;
+  cell.type = CELL_OBJECT;
   return cell;
 }
 
-cell_t new_nil(void) {
+cell_t new_empty_array(void) {
   cell_t cell = {0};
-  cell.type = CELL_NIL;
+  cell.type = CELL_ARRAY;
   return cell;
 }
 
@@ -141,7 +141,7 @@ cell_t new_complex(float re, float im) {
 // Cell lifecycle management
 
 void retain(cell_t* cell) {
-  if (!cell->payload.ptr) return;
+  if (!cell->payload.ptr) return;  // NULL payload
 
   // Only allocated types need refcount management
   switch (cell->type) {
@@ -169,7 +169,7 @@ void retain(cell_t* cell) {
 }
 
 void release(cell_t* cell) {
-  if (!cell || !cell->payload.ptr) return;
+  if (!cell->payload.ptr) return;  // NULL payload
 
   switch (cell->type) {
     case CELL_STRING:
@@ -200,7 +200,7 @@ void release(cell_t* cell) {
             cell->payload.array->refcount);
       if (cell->payload.array->refcount == 0) {
         // Release all elements first
-        cell_array_t* data = (cell_array_t*)cell->payload.ptr;
+        cell_array_t* data = cell->payload.ptr;
         for (size_t i = 0; i < data->length; i++) {
           release(&data->elements[i]);
         }

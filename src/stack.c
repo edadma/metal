@@ -119,7 +119,7 @@ cell_t* return_pop(context_t* ctx) {
 cell_t return_pop_cell(context_t* ctx) {
   if (ctx->return_stack_ptr <= 0) {
     error(ctx, "Return stack underflow");
-    return new_empty();
+    return new_empty_object();
   }
 
   cell_t cell = ctx->return_stack[--ctx->return_stack_ptr];
@@ -133,7 +133,7 @@ cell_t return_pop_cell(context_t* ctx) {
 cell_t return_peek(context_t* ctx, int depth) {
   if (depth >= ctx->return_stack_ptr || depth < 0) {
     error(ctx, "Return stack index out of range");
-    return new_empty();
+    return new_empty_object();
   }
 
   return ctx->return_stack[ctx->return_stack_ptr - 1 - depth];
