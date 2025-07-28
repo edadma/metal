@@ -17,7 +17,8 @@ TEST_FUNCTION(test_dup) {
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 
-  // Test DUP with int64 TEST_INTERPRET("9223372036854775807");  // Large int64
+  // Test DUP with int64
+  TEST_INTERPRET("9223372036854775807");  // Large int64
   TEST_STACK_DEPTH(1);
   TEST_INTERPRET("DUP");
   TEST_STACK_DEPTH(2);
@@ -456,9 +457,9 @@ TEST_FUNCTION(test_rot) {
 // Register all stack manipulation tests
 void register_stack_tests(void) {
   REGISTER_TEST(test_dup);
-  // REGISTER_TEST(test_drop);
-  // REGISTER_TEST(test_swap);
-  // REGISTER_TEST(test_pick);
+  REGISTER_TEST(test_drop);
+  REGISTER_TEST(test_swap);
+  REGISTER_TEST(test_pick);
   // REGISTER_TEST(test_roll);
   // REGISTER_TEST(test_over);
   // REGISTER_TEST(test_2dup);

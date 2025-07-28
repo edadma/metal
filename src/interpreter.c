@@ -1,6 +1,8 @@
 #include "interpreter.h"
 
+#include <asm-generic/errno-base.h>
 #include <ctype.h>
+#include <errno.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -40,7 +42,7 @@ void add_definition(const char* name, const char* source, const char* help) {
   strncpy(compiling_word_name, name, sizeof(compiling_word_name) - 1);
   compiling_word_name[sizeof(compiling_word_name) - 1] = '\0';
   // Compile the source code
-  metal_result_t result = interpret(&main_context, source);
+  metal_result_t result = interpret(&main_context, true, source);
   if (result != METAL_OK) {
     // Clean up on error
     if (compiling_definition) {
@@ -82,29 +84,69 @@ void add_definition(const char* name, const char* source, const char* help) {
 }
 
 // Number parsing
-bool try_parse_number(const char* token, cell_t* result) {
+bool try_parse_number(context_t* ctx, const char* token, cell_t* result) {
   char* endptr;
+  size_t len = strlen(token);
 
-  // Try integer first
-  const long long val = strtoll(token, &endptr, 10);
+  // Check for explicit type suffixes
+  bool force_int64 = false;
+  bool force_float = false;
+  char* working_token = (char*)token;
 
-  if (*endptr == '\0') {
-    if (val >= INT32_MIN && val <= INT32_MAX) {
-      *result = new_int32((int32_t)val);
-    } else {
-      *result = new_int64(val);
+  if (len > 1) {
+    char last_char = token[len - 1];
+    if (last_char == 'L' || last_char == 'l') {
+      force_int64 = true;
+      working_token = strndup(token, len - 1);
+    } else if (last_char == 'F' || last_char == 'f') {
+      force_float = true;
+      working_token = strndup(token, len - 1);
     }
-    return true;
   }
 
-  // Try float
-  const double fval = strtod(token, &endptr);
+  // Try integer parsing first
+  errno = 0;
+  long long val = strtoll(working_token, &endptr, 10);
 
   if (*endptr == '\0') {
-    *result = new_float(fval);
+    // It's definitely meant to be an integer
+    if (errno == ERANGE) {
+      if (working_token != token) free(working_token);
+      error(ctx, "Integer literal out of range: %s", token);
+      return false;  // Never reached due to error()
+    }
+
+    if (force_float) {
+      *result = new_float((double)val);
+    } else if (force_int64 || val < INT32_MIN || val > INT32_MAX) {
+      *result = new_int64(val);
+    } else {
+      *result = new_int32((int32_t)val);
+    }
+
+    if (working_token != token) free(working_token);
     return true;
   }
 
+  // Try float parsing
+  errno = 0;
+  double fval = strtod(working_token, &endptr);
+
+  if (*endptr == '\0') {
+    // It's definitely meant to be a float
+    if (errno == ERANGE) {
+      if (working_token != token) free(working_token);
+      error(ctx, "Float literal out of range: %s", token);
+      return false;  // Never reached due to error()
+    }
+
+    *result = new_float(fval);
+    if (working_token != token) free(working_token);
+    return true;
+  }
+
+  // Clean up and return false - not a number at all
+  if (working_token != token) free(working_token);
   return false;
 }
 
@@ -165,11 +207,11 @@ void execute_code(context_t* ctx) {
 }
 
 // Main interpreter
-metal_result_t interpret(context_t* ctx, const char* input) {
+metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
   // Set up exception handling
   if (setjmp(ctx->error_jmp) != 0) {
     // We jumped here due to an error
-    printf("ERROR: %s\n", ctx->error_msg);
+    if (print_errors) printf("ERROR: %s\n", ctx->error_msg);
 
     // Clear parsing state
     ctx->input_pos = NULL;
@@ -203,7 +245,7 @@ metal_result_t interpret(context_t* ctx, const char* input) {
 
       // Try to parse as number first
       cell_t num;
-      if (try_parse_number(word, &num)) {
+      if (try_parse_number(ctx, word, &num)) {
         if (compilation_mode) {
           compile_cell(ctx, num);
         } else {

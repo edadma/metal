@@ -123,7 +123,7 @@ void test_interpret(const char* file, int line, const char* code) {
   debug("test_interpret: About to interpret: '%s'", code);
   test_count++;
 
-  metal_result_t result = interpret(&test_context, code);
+  metal_result_t result = interpret(&test_context, true, code);
   if (result == METAL_OK) {
     printf("PASS: %s:%d - interpret(\"%s\")\n", get_filename(file), line, code);
     test_passed++;
@@ -245,61 +245,28 @@ void test_expect_error(const char* file, int line, const char* code,
                        const char* error_pattern) {
   test_count++;
   context_t* ctx = &test_context;
-  // Set up error expectation
-  expecting_error = true;
-  error_occurred = false;
-  strncpy(expected_error_pattern, error_pattern,
-          sizeof(expected_error_pattern) - 1);
-  expected_error_pattern[sizeof(expected_error_pattern) - 1] = '\0';
-  // Save current error handler
-  jmp_buf saved_error_jmp;
-  memcpy(saved_error_jmp, ctx->error_jmp, sizeof(jmp_buf));
-  // Set up test error handler
-  if (setjmp(ctx->error_jmp) != 0) {
+
+  // Just call interpret normally - no setjmp needed
+  metal_result_t result = interpret(ctx, false, code);
+
+  if (result != METAL_OK) {
     // Error occurred - check if it matches what we expected
-    error_occurred = true;
-    if (expecting_error) {
-      // Check if error message contains expected pattern
-      if (ctx->error_msg && strstr(ctx->error_msg, error_pattern)) {
-        printf("PASS: %s:%d - expect_error(\"%s\", \"%s\")\n",
-               get_filename(file), line, code, error_pattern);
-        test_passed++;
-      } else {
-        printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - wrong error: %s\n",
-               get_filename(file), line, code, error_pattern,
-               ctx->error_msg ? ctx->error_msg : "(null)");
-        test_failed++;
-      }
-    } else {
-      printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - unexpected error\n",
-             get_filename(file), line, code, error_pattern);
-      test_failed++;
-    }
-    // Restore error handler and reset state
-    memcpy(ctx->error_jmp, saved_error_jmp, sizeof(jmp_buf));
-    expecting_error = false;
-    return;
-  }
-  // Try to interpret the code
-  metal_result_t result = interpret(ctx, code);
-  // Restore error handler
-  memcpy(ctx->error_jmp, saved_error_jmp, sizeof(jmp_buf));
-  // Check results
-  if (expecting_error && !error_occurred) {
-    if (result != METAL_OK) {
-      // interpret() returned error code but didn't longjmp
-      printf(
-          "PASS: %s:%d - expect_error(\"%s\", \"%s\") - error via return "
-          "code\n",
-          get_filename(file), line, code, error_pattern);
+    if (ctx->error_msg && strstr(ctx->error_msg, error_pattern)) {
+      printf("PASS: %s:%d - expect_error(\"%s\", \"%s\")\n", get_filename(file),
+             line, code, error_pattern);
       test_passed++;
     } else {
-      printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - no error occurred\n",
-             get_filename(file), line, code, error_pattern);
+      printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - wrong error: %s\n",
+             get_filename(file), line, code, error_pattern,
+             ctx->error_msg ? ctx->error_msg : "(null)");
       test_failed++;
     }
+  } else {
+    // No error occurred when we expected one
+    printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - no error occurred\n",
+           get_filename(file), line, code, error_pattern);
+    test_failed++;
   }
-  expecting_error = false;
 }
 
 void test_stack_top_boolean(const char* file, int line, const char* expr,

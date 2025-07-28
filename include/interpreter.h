@@ -17,9 +17,9 @@ extern cell_array_t* compiling_definition;
 extern char compiling_word_name[32];
 
 void add_definition(const char* name, const char* source, const char* help);
-metal_result_t interpret(context_t* ctx, const char* input);
+metal_result_t interpret(context_t* ctx, bool print_errors, const char* input);
 void execute_code(context_t* ctx);
-bool try_parse_number(const char* token, cell_t* result);
+bool try_parse_number(context_t* ctx, const char* token, cell_t* result);
 void compile_cell(context_t* ctx, cell_t cell);
 
 #endif  // INTERPRETER_H
