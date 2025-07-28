@@ -23,8 +23,8 @@ void print_cell(const cell_t* cell) {
       printf("%g", cell->payload.f64);
       break;
     case CELL_STRING:
-      printf("%.*s", (int)cell->payload.utf8_ptr->length,
-             (char*)cell->payload.utf8_ptr->data);
+      printf("%.*s", (int)cell->payload.utf8->length,
+             (char*)cell->payload.utf8->data);
       break;
     case CELL_NIL:
       printf("[]");
@@ -97,8 +97,7 @@ bool is_truthy(cell_t* cell) {
              val == val;  // NaN != NaN, so val == val is false for NaN
 
     case CELL_STRING:
-      if (!cell->payload.utf8_ptr || !cell->payload.utf8_ptr->length)
-        return false;
+      if (!cell->payload.utf8 || !cell->payload.utf8->length) return false;
 
       // Everything else is truthy (including CELL_EMPTY, CELL_NIL, arrays,
       // etc.)
@@ -129,19 +128,29 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
         return 0;
 
       case CELL_STRING: {
-        // Check for interned strings first
-        if ((a->flags & CELL_FLAG_INTERNED) &&
-            (b->flags & CELL_FLAG_INTERNED)) {
-          // Both interned - compare pointers
-          if (a->payload.utf8_ptr < b->payload.utf8_ptr) return -1;
-          if (a->payload.utf8_ptr > b->payload.utf8_ptr) return 1;
-          return 0;
-        }
-        // Lexicographic comparison
+        // Handle null pointers
         if (!a->payload.utf8_ptr && !b->payload.utf8_ptr) return 0;
         if (!a->payload.utf8_ptr) return -1;
         if (!b->payload.utf8_ptr) return 1;
-        return strcmp((char*)a->payload.utf8_ptr, (char*)b->payload.utf8_ptr);
+
+        // Get string data and lengths
+        const uint8_t* adata = a->payload.utf8_ptr->data;
+        const uint8_t* bdata = b->payload.utf8_ptr->data;
+        const size_t alen = a->payload.utf8_ptr->length;
+        const size_t blen = b->payload.utf8_ptr->length;
+
+        // Compare the actual string contents
+        size_t min_len = (alen < blen) ? alen : blen;
+        int result = memcmp(adata, bdata, min_len);
+
+        if (result != 0) {
+          return (result < 0) ? -1 : 1;
+        }
+
+        // If common prefix is equal, shorter string comes first
+        if (alen < blen) return -1;
+        if (alen > blen) return 1;
+        return 0;
       }
 
       default:
@@ -281,17 +290,17 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
     case CELL_STRING:
       // Check for interned strings first
       if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
-        return a->payload.utf8_ptr == b->payload.utf8_ptr;
+        return a->payload.utf8 == b->payload.utf8;
       }
       // Regular string comparison
-      if (!a->payload.utf8_ptr && !b->payload.utf8_ptr) return true;
-      if (!a->payload.utf8_ptr || !b->payload.utf8_ptr) return false;
+      if (!a->payload.utf8 && !b->payload.utf8) return true;
+      if (!a->payload.utf8 || !b->payload.utf8) return false;
 
-      const char* adata = a->payload.utf8_ptr->data;
-      const size_t alen = a->payload.utf8_ptr->length;
-      const char* bdata = b->payload.utf8_ptr->data;
+      const char* adata = a->payload.utf8->data;
+      const size_t alen = a->payload.utf8->length;
+      const char* bdata = b->payload.utf8->data;
 
-      return alen == b->payload.utf8_ptr->length &&
+      return alen == b->payload.utf8->length &&
              strncmp(adata, bdata, alen) == 0;
     case CELL_NULL:
     case CELL_UNDEFINED:

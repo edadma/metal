@@ -146,9 +146,8 @@ void retain(cell_t* cell) {
   // Only allocated types need refcount management
   switch (cell->type) {
     case CELL_STRING:
-      cell->payload.utf8_ptr->refcount++;
-      debug("Retained string, refcount now %d",
-            cell->payload.utf8_ptr->refcount);
+      cell->payload.utf8->refcount++;
+      debug("Retained string, refcount now %d", cell->payload.utf8->refcount);
       break;
     case CELL_OBJECT:
     case CELL_CODE: {
@@ -174,10 +173,9 @@ void release(cell_t* cell) {
 
   switch (cell->type) {
     case CELL_STRING:
-      cell->payload.utf8_ptr->refcount--;
-      debug("Released string, refcount now %d",
-            cell->payload.utf8_ptr->refcount);
-      if (cell->payload.utf8_ptr->refcount == 0) {
+      cell->payload.utf8->refcount--;
+      debug("Released string, refcount now %d", cell->payload.utf8->refcount);
+      if (cell->payload.utf8->refcount == 0) {
         metal_free(cell->payload.ptr);
         cell->payload.ptr = NULL;
       }

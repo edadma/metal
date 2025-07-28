@@ -67,6 +67,7 @@ typedef struct uint32_array {  // extends refcount_t
 } uint32_array_t;
 
 typedef struct cell_array cell_array_t;
+typedef struct object object_t;
 
 #ifdef TARGET_PICO
 #pragma pack(push, 4)
@@ -78,20 +79,22 @@ typedef struct cell {
   cell_flags_t flags;  // 8 bits: [5 bits flags][3 bits str_len]
   int16_t word_idx;    // index of the dictionary word, or -1
   union {
-    void* ptr;                  // payload pointer
-    int* refcount;              // pointer to embedded refcount
-    int32_t i32;                // 32-bit integer
-    int64_t i64;                // 64-bit integer
-    double f64;                 // Double precision float
-    cell_array_t* array;        // Pointer to a cell array
-    uint8_array_t* utf8_ptr;    // Pointer to UTF-8 string
-    uint16_array_t* utf16_ptr;  // Pointer to UTF-16 string
-    uint32_array_t* utf32_ptr;  // Pointer to UTF-32 string
-    char utf8[8];               // 0-8 UTF-8 characters
-    uint16_t utf16[4];          // 0-4 UTF-16 characters
-    uint32_t utf32[2];          // 0-2 UTF-32 characters
-    native_func_t native;       // Function pointer
-    struct cell* cell_ptr;  // Code pointer (using struct tag to avoid issues)
+    void* ptr;                // payload pointer
+    int* refcount;            // pointer to embedded refcount
+    int32_t i32;              // 32-bit integer
+    int64_t i64;              // 64-bit integer
+    double f64;               // Double precision float
+    cell_array_t* array;      // Pointer to a cell array
+    uint8_array_t* utf8_ptr;  // Pointer to UTF-8 string
+    uint8_array_t* utf8;      // Pointer to UTF-8 string (renamed from utf8_ptr)
+    uint16_array_t* utf16;  // Pointer to UTF-16 string (renamed from utf16_ptr)
+    uint32_array_t* utf32;  // Pointer to UTF-32 string (renamed from utf32_ptr)
+    char utf8_array[8];     // 0-8 UTF-8 characters (renamed from utf8)
+    uint16_t utf16_array[4];  // 0-4 UTF-16 characters (renamed from utf16)
+    uint32_t utf32_array[2];  // 0-2 UTF-32 characters (renamed from utf32)
+    object_t* object;         // Pointer to object (NEW)
+    struct cell* cell_ptr;    // Code pointer (using struct tag to avoid issues)
+    native_func_t native;     // Native function pointer
     struct {
       uint8_t r, g, b;
     } rgb;  // RGB color
@@ -137,6 +140,20 @@ typedef struct cell_array {
   int capacity;
   cell_t elements[];
 } cell_array_t;
+
+// Object key-value pair
+typedef struct {
+  char* key;     // Interned string key (no refcounting needed)
+  cell_t value;  // Value cell
+} object_pair_t;
+
+// Object structure
+typedef struct object {
+  int refcount;           // First field - embedded refcount
+  size_t length;          // Number of key-value pairs
+  size_t capacity;        // Allocated capacity
+  object_pair_t pairs[];  // Flexible array of key-value pairs
+} object_t;
 
 // Cell creation functions (fundamental immediate types)
 cell_t new_int32(int32_t value);

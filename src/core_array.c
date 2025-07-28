@@ -74,7 +74,7 @@ static void native_length(context_t* ctx) {
     cell_array_t* data = array_cell.payload.array;
     data_push(ctx, new_int32(data->length));
   } else if (array_cell.type == CELL_STRING) {
-    const uint8_array_t* str = array_cell.payload.utf8_ptr;
+    const uint8_array_t* str = array_cell.payload.utf8;
 
     if (!str) {
       data_push(ctx, new_int32(0));  // null string has length 0
