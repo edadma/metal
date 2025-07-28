@@ -18,9 +18,9 @@ void print_cell(const cell_t* cell) {
       printf("%g", cell->payload.f64);
       break;
     case CELL_STRING:
-      if (cell->payload.utf8) {
-        printf("%.*s", (int)cell->payload.utf8->length,
-               (char*)cell->payload.utf8->data);
+      if (cell->payload.allocated_string) {
+        printf("%.*s", (int)cell->payload.allocated_string->string.length,
+               (char*)cell->payload.allocated_string->string.data);
       }
       break;
     case CELL_ARRAY: {
@@ -97,7 +97,9 @@ bool is_truthy(cell_t* cell) {
              val == val;  // NaN != NaN, so val == val is false for NaN
 
     case CELL_STRING:
-      if (!cell->payload.utf8 || !cell->payload.utf8->length) return false;
+      if (!cell->payload.allocated_string ||
+          !cell->payload.allocated_string->string.length)
+        return false;
     default:
       return true;
   }
@@ -126,15 +128,16 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
 
       case CELL_STRING: {
         // Handle null pointers
-        if (!a->payload.utf8_ptr && !b->payload.utf8_ptr) return 0;
-        if (!a->payload.utf8_ptr) return -1;
-        if (!b->payload.utf8_ptr) return 1;
+        if (!a->payload.allocated_string && !b->payload.allocated_string)
+          return 0;
+        if (!a->payload.allocated_string) return -1;
+        if (!b->payload.allocated_string) return 1;
 
         // Get string data and lengths
-        const uint8_t* adata = a->payload.utf8_ptr->data;
-        const uint8_t* bdata = b->payload.utf8_ptr->data;
-        const size_t alen = a->payload.utf8_ptr->length;
-        const size_t blen = b->payload.utf8_ptr->length;
+        const uint8_t* adata = a->payload.allocated_string->string.data;
+        const uint8_t* bdata = b->payload.allocated_string->string.data;
+        const size_t alen = a->payload.allocated_string->string.length;
+        const size_t blen = b->payload.allocated_string->string.length;
 
         // Compare the actual string contents
         size_t min_len = (alen < blen) ? alen : blen;
@@ -287,17 +290,19 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
     case CELL_STRING:
       // Check for interned strings first
       if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
-        return a->payload.utf8 == b->payload.utf8;
+        return a->payload.allocated_string == b->payload.allocated_string;
       }
       // Regular string comparison
-      if (!a->payload.utf8 && !b->payload.utf8) return true;
-      if (!a->payload.utf8 || !b->payload.utf8) return false;
+      if (!a->payload.allocated_string && !b->payload.allocated_string)
+        return true;
+      if (!a->payload.allocated_string || !b->payload.allocated_string)
+        return false;
 
-      const char* adata = a->payload.utf8->data;
-      const size_t alen = a->payload.utf8->length;
-      const char* bdata = b->payload.utf8->data;
+      const char* adata = a->payload.allocated_string->string.data;
+      const size_t alen = a->payload.allocated_string->string.length;
+      const char* bdata = b->payload.allocated_string->string.data;
 
-      return alen == b->payload.utf8->length &&
+      return alen == b->payload.allocated_string->string.length &&
              strncmp(adata, bdata, alen) == 0;
     case CELL_NULL:
     case CELL_UNDEFINED:
