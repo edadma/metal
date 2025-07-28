@@ -11,6 +11,7 @@
 #include "interpreter.h"
 #include "stack.h"
 #include "test_arithmetic_combo.h"
+#include "test_arithmetic_mixing.h"
 #include "test_conversion.h"
 #include "test_stack.h"
 #include "util.h"
@@ -1099,6 +1100,9 @@ void init_tests(void) {
 
   // Arithmetic combination tests
   register_arithmetic_combo_tests();
+
+  // Arithmetic type mixing tests
+  register_arithmetic_mixing_tests();
 }
 
 #endif  // TEST_ENABLED
