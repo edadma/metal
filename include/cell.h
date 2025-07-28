@@ -42,26 +42,26 @@ typedef enum : uint8_t {
 
 typedef void (*native_func_t)(context_t* context);
 
-typedef struct uint8_array {  // extends refcount_t
-  int refcount;               // First field - embedded refcount
-  size_t length;
-  size_t capacity;
-  uint8_t data[];  // Variable length string data
-} uint8_array_t;
+typedef enum {
+  STRING_UTF8,   // 1 byte per code unit
+  STRING_UTF16,  // 2 bytes per code unit
+  STRING_UTF32   // 4 bytes per code unit
+} string_encoding_t;
 
-typedef struct uint16_array {  // extends refcount_t
-  int refcount;                // First field - embedded refcount
-  size_t length;
-  size_t capacity;
-  uint16_t data[];  // Variable length string data
-} uint16_array_t;
+typedef struct string {
+  string_encoding_t encoding;
+  size_t length;  // Number of elements in the chosen data array
+  union {
+    uint8_t utf8[];    // Each element is a UTF-8 byte
+    uint16_t utf16[];  // Each element is a UTF-16 code unit
+    uint32_t utf32[];  // Each element is a Unicode codepoint
+  } data;
+} string_t;
 
-typedef struct uint32_array {  // extends refcount_t
-  int refcount;                // First field - embedded refcount
-  size_t length;
-  size_t capacity;
-  uint32_t data[];  // Variable length string data
-} uint32_array_t;
+typedef struct {    // extends refcount_t
+  int refcount;     // First field - embedded refcount
+  string_t string;  // Variable length string data
+} allocated_string_t;
 
 typedef struct cell_array cell_array_t;
 typedef struct object object_t;
@@ -76,17 +76,15 @@ typedef struct cell {
   cell_flags_t flags;  // 8 bits: [5 bits flags][3 bits str_len]
   int16_t word_idx;    // index of the dictionary word, or -1
   union {
-    void* ptr;                // payload pointer
-    int* refcount;            // pointer to embedded refcount
-    int32_t i32;              // 32-bit integer
-    int64_t i64;              // 64-bit integer
-    double f64;               // Double precision float
-    cell_array_t* array;      // Pointer to a cell array
-    uint8_array_t* utf8_ptr;  // Pointer to UTF-8 string
-    uint8_array_t* utf8;      // Pointer to UTF-8 string (renamed from utf8_ptr)
-    uint16_array_t* utf16;  // Pointer to UTF-16 string (renamed from utf16_ptr)
-    uint32_array_t* utf32;  // Pointer to UTF-32 string (renamed from utf32_ptr)
-    char utf8_array[8];     // 0-8 UTF-8 characters (renamed from utf8)
+    void* ptr;                             // payload pointer
+    int* refcount;                         // pointer to embedded refcount
+    int32_t i32;                           // 32-bit integer
+    int64_t i64;                           // 64-bit integer
+    double f64;                            // Double precision float
+    cell_array_t* array;                   // Pointer to a cell array
+    string_t* interned_string;             // Pointer to interned string
+    allocated_string_t* allocated_string;  // Pointer to allocated string
+    char utf8_array[8];       // 0-8 UTF-8 characters (renamed from utf8)
     uint16_t utf16_array[4];  // 0-4 UTF-16 characters (renamed from utf16)
     uint32_t utf32_array[2];  // 0-2 UTF-32 characters (renamed from utf32)
     object_t* object;         // Pointer to object (NEW)
