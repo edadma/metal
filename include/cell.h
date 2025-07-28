@@ -50,12 +50,8 @@ typedef enum {
 
 typedef struct string {
   string_encoding_t encoding;
-  size_t length;  // Number of elements in the chosen data array
-  union {
-    uint8_t utf8[];    // Each element is a UTF-8 byte
-    uint16_t utf16[];  // Each element is a UTF-16 code unit
-    uint32_t utf32[];  // Each element is a Unicode codepoint
-  } data;
+  size_t length;   // Number of elements in the chosen data array
+  uint8_t data[];  // Flexible array, cast based on encoding
 } string_t;
 
 typedef struct {    // extends refcount_t

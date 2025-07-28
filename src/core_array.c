@@ -72,12 +72,12 @@ static void native_length(context_t* ctx) {
     cell_array_t* data = array_cell.payload.array;
     data_push(ctx, new_int32(data->length));
   } else if (array_cell.type == CELL_STRING) {
-    const uint8_array_t* str = array_cell.payload.utf8;
+    const allocated_string_t* str = array_cell.payload.allocated_string;
 
     if (!str) {
       data_push(ctx, new_int32(0));  // null string has length 0
     } else {
-      data_push(ctx, new_int32((int32_t)str->length));
+      data_push(ctx, new_int32((int32_t)str->string.length));
     }
   } else {
     error(ctx, "LENGTH: not an array or string");

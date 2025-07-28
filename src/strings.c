@@ -16,10 +16,10 @@ cell_t string_from_cstr(context_t* ctx, const char* cstr) {
 
 // Get string length (handles NULL payload)
 size_t string_length(cell_t* str) {
-  if (str->type != CELL_STRING || !str->payload.utf8) {
+  if (!str->payload.allocated_string) {
     return 0;
   }
-  return str->payload.utf8->length;
+  return str->payload.allocated_string->string.length;
 }
 
 // Check if string is empty
@@ -50,25 +50,22 @@ cell_t string_concat(context_t* ctx, cell_t* a, cell_t* b) {
   }
 
   // Both have content - allocate new string
-  uint8_array_t* new_str =
-      metal_alloc(ctx, sizeof(uint8_array_t) + alen + blen);
-  if (!new_str) {
-    error(ctx, "string_concat: allocation failed");
-  }
+  allocated_string_t* new_str =
+      metal_alloc(ctx, sizeof(allocated_string_t) + alen + blen);
 
   // Initialize the new string
   new_str->refcount = 1;
-  new_str->length = alen + blen;
-  new_str->capacity = alen + blen;
+  new_str->string.length = alen + blen;
 
   // Copy both strings
-  memcpy(new_str->data, a->payload.utf8->data, alen);
-  memcpy(new_str->data + alen, b->payload.utf8->data, blen);
+  memcpy(new_str->string.data, a->payload.allocated_string->string.data, alen);
+  memcpy(new_str->string.data + alen, b->payload.allocated_string->string.data,
+         blen);
 
   // Create result cell
   cell_t result = {0};
   result.type = CELL_STRING;
-  result.payload.utf8 = new_str;
+  result.payload.allocated_string = new_str;
 
   return result;
 }
@@ -111,12 +108,12 @@ void cell_to_cstr(cell_t* cell, char* buffer, size_t buffer_size) {
       break;
 
     case CELL_STRING:
-      if (!cell->payload.utf8) {
+      if (!cell->payload.allocated_string) {
         buffer[0] = '\0';  // Empty string
       } else {
-        size_t len = cell->payload.utf8->length;
+        size_t len = cell->payload.allocated_string->string.length;
         if (len >= buffer_size) len = buffer_size - 1;
-        memcpy(buffer, cell->payload.utf8->data, len);
+        memcpy(buffer, cell->payload.allocated_string->string.data, len);
         buffer[len] = '\0';
       }
       break;
@@ -171,31 +168,6 @@ static void native_string_empty_q(context_t* ctx) {
   bool empty = string_is_empty(str);
   release(str);
   data_push(ctx, new_boolean(empty));
-}
-
-static void native_string_length(context_t* ctx) {
-  require(ctx, 1, "STRING-LENGTH");
-  cell_t* str = data_pop(ctx);
-
-  if (str->type != CELL_STRING) {
-    error(ctx, "STRING-LENGTH: argument must be string");
-  }
-
-  size_t len = string_length(str);
-  release(str);
-  data_push(ctx, new_int32((int32_t)len));
-}
-
-static void native_string_concat(context_t* ctx) {
-  require(ctx, 2, "STRING-CONCAT");
-  cell_t* b = data_pop(ctx);
-  cell_t* a = data_pop(ctx);
-
-  cell_t result = string_concat(ctx, a, b);
-
-  release(a);
-  release(b);
-  data_push(ctx, result);
 }
 
 // static void native_format(context_t* ctx) {
@@ -345,10 +317,6 @@ static void native_string_concat(context_t* ctx) {
 void add_string_words(void) {
   add_native_word("STRING-EMPTY?", native_string_empty_q,
                   "( string -- bool ) Test if string is empty");
-  add_native_word("STRING-LENGTH", native_string_length,
-                  "( string -- n ) Get string length");
-  add_native_word("STRING-CONCAT", native_string_concat,
-                  "( str1 str2 -- str3 ) Concatenate two strings");
   // add_native_word(
   //     "FORMAT", native_format,
   //     "( args... format -- string ) Format string with {} placeholders");

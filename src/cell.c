@@ -35,14 +35,13 @@ cell_t new_string(context_t* ctx, const char* utf8) {
   cell.type = CELL_STRING;
 
   size_t len = strlen(utf8);  // Input length (for now, UTF-8 from C strings)
-  uint8_array_t* str = metal_alloc(ctx, sizeof(uint8_array_t) + len);
+  allocated_string_t* str = metal_alloc(ctx, sizeof(allocated_string_t) + len);
 
   str->refcount = 0;  // no owner yet
-  str->length = len;
-  str->capacity = len;
-  memcpy(str->data, utf8, len);
+  str->string.length = len;
+  memcpy(str->string.data, utf8, len);
 
-  cell.payload.utf8_ptr = str;
+  cell.payload.allocated_string = str;
   return cell;
 }
 
@@ -167,8 +166,9 @@ void retain(cell_t* cell) {
   // Only allocated types need refcount management
   switch (cell->type) {
     case CELL_STRING:
-      cell->payload.utf8->refcount++;
-      debug("Retained string, refcount now %d", cell->payload.utf8->refcount);
+      cell->payload.allocated_string->refcount++;
+      debug("Retained string, refcount now %d",
+            cell->payload.allocated_string->refcount);
       break;
     case CELL_OBJECT:
     case CELL_CODE: {
@@ -194,9 +194,10 @@ void release(cell_t* cell) {
 
   switch (cell->type) {
     case CELL_STRING:
-      cell->payload.utf8->refcount--;
-      debug("Released string, refcount now %d", cell->payload.utf8->refcount);
-      if (cell->payload.utf8->refcount == 0) {
+      cell->payload.allocated_string->refcount--;
+      debug("Released string, refcount now %d",
+            cell->payload.allocated_string->refcount);
+      if (cell->payload.allocated_string->refcount == 0) {
         metal_free(cell->payload.ptr);
         cell->payload.ptr = NULL;
       }
