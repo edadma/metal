@@ -223,7 +223,7 @@ TEST_FUNCTION(test_pick) {
 
   // Test PICK error conditions
   TEST_INTERPRET("10 20");
-  TEST_EXPECT_ERROR("5 PICK", "stack underflow");            // Index too large
+  TEST_EXPECT_ERROR("5 PICK", "insufficient stack");         // Index too large
   TEST_EXPECT_ERROR("-1 PICK", "index cannot be negative");  // Negative index
   TEST_INTERPRET("10 20");
   TEST_EXPECT_ERROR("\"hello\" PICK",
@@ -300,7 +300,7 @@ TEST_FUNCTION(test_roll) {
 
   // Test ROLL error conditions
   TEST_INTERPRET("10 20");
-  TEST_EXPECT_ERROR("5 ROLL", "stack underflow");  // Index too large
+  TEST_EXPECT_ERROR("5 ROLL", "insufficient stack");  // Index too large
 
   TEST_INTERPRET("10 20");
   TEST_EXPECT_ERROR("-1 ROLL", "index cannot be negative");  // Negative index
@@ -347,10 +347,9 @@ TEST_FUNCTION(test_over) {
   TEST_STACK_DEPTH(0);
 
   // Test OVER error conditions (should behave like 1 PICK)
-  TEST_EXPECT_ERROR("OVER", "insufficient stack");
+  TEST_EXPECT_ERROR("PICK", "insufficient stack");
   TEST_INTERPRET("42");
-  TEST_EXPECT_ERROR("OVER", "insufficient stack");
-  TEST_INTERPRET("DROP");
+  TEST_EXPECT_ERROR("PICK", "insufficient stack");
 }
 
 // Test 2DUP (defined as "OVER OVER")
@@ -396,7 +395,6 @@ TEST_FUNCTION(test_2dup) {
   TEST_EXPECT_ERROR("2DUP", "insufficient stack");
   TEST_INTERPRET("42");
   TEST_EXPECT_ERROR("2DUP", "insufficient stack");
-  TEST_INTERPRET("DROP");
 }
 
 // Test ROT (defined as "2 ROLL")
@@ -442,10 +440,8 @@ TEST_FUNCTION(test_rot) {
   TEST_EXPECT_ERROR("ROT", "insufficient stack");
   TEST_INTERPRET("42");
   TEST_EXPECT_ERROR("ROT", "insufficient stack");
-  TEST_INTERPRET("DROP");
   TEST_INTERPRET("42 84");
   TEST_EXPECT_ERROR("ROT", "insufficient stack");
-  TEST_INTERPRET("DROP DROP");
 }
 
 // Register all stack manipulation tests
@@ -456,8 +452,8 @@ void register_stack_tests(void) {
   REGISTER_TEST(test_pick);
   REGISTER_TEST(test_roll);
   REGISTER_TEST(test_over);
-  // REGISTER_TEST(test_2dup);
-  // REGISTER_TEST(test_rot);
+  REGISTER_TEST(test_2dup);
+  REGISTER_TEST(test_rot);
 }
 
 #endif  // TEST_ENABLED

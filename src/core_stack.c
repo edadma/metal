@@ -52,7 +52,7 @@ static void native_pick(context_t* ctx) {
     error(ctx, "PICK: index cannot be negative");
   }
   if (u >= ctx->data_stack_ptr) {
-    error(ctx, "PICK: stack underflow");
+    error(ctx, "PICK: insufficient stack");
   }
   // Copy the u-th item (0-indexed from top)
   cell_t* item = data_peek(ctx, u);
@@ -76,7 +76,7 @@ static void native_roll(context_t* ctx) {
     return;  // 0 ROLL is no-op
   }
   if (u >= ctx->data_stack_ptr) {
-    error(ctx, "ROLL: stack underflow");
+    error(ctx, "ROLL: insufficient stack");
   }
   // Move the u-th item to top
   int source_index = ctx->data_stack_ptr - 1 - u;
