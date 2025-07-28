@@ -223,16 +223,11 @@ TEST_FUNCTION(test_pick) {
 
   // Test PICK error conditions
   TEST_INTERPRET("10 20");
-  TEST_EXPECT_ERROR("5 PICK", "stack underflow");  // Index too large
-  TEST_INTERPRET("DROP DROP");
-  TEST_INTERPRET("10 20");
+  TEST_EXPECT_ERROR("5 PICK", "stack underflow");            // Index too large
   TEST_EXPECT_ERROR("-1 PICK", "index cannot be negative");  // Negative index
-  TEST_INTERPRET("DROP DROP");
-
   TEST_INTERPRET("10 20");
   TEST_EXPECT_ERROR("\"hello\" PICK",
                     "index must be integer");  // Non-integer index
-  TEST_INTERPRET("DROP DROP DROP");
 
   // Test PICK insufficient arguments
   TEST_EXPECT_ERROR("PICK", "insufficient stack");
@@ -304,16 +299,13 @@ TEST_FUNCTION(test_roll) {
   // Test ROLL error conditions
   TEST_INTERPRET("10 20");
   TEST_EXPECT_ERROR("5 ROLL", "stack underflow");  // Index too large
-  TEST_INTERPRET("DROP DROP");
 
   TEST_INTERPRET("10 20");
   TEST_EXPECT_ERROR("-1 ROLL", "index cannot be negative");  // Negative index
-  TEST_INTERPRET("DROP DROP");
 
   TEST_INTERPRET("10 20");
   TEST_EXPECT_ERROR("\"hello\" ROLL",
                     "index must be integer");  // Non-integer index
-  TEST_INTERPRET("DROP DROP DROP");
 
   // Test ROLL insufficient arguments
   TEST_EXPECT_ERROR("ROLL", "insufficient stack");
@@ -460,7 +452,7 @@ void register_stack_tests(void) {
   REGISTER_TEST(test_drop);
   REGISTER_TEST(test_swap);
   REGISTER_TEST(test_pick);
-  // REGISTER_TEST(test_roll);
+  REGISTER_TEST(test_roll);
   // REGISTER_TEST(test_over);
   // REGISTER_TEST(test_2dup);
   // REGISTER_TEST(test_rot);
