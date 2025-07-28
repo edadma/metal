@@ -8,6 +8,48 @@
 #include "memory.h"
 #include "stack.h"
 
+// Helper functions for mixed-type arithmetic
+static bool is_numeric_type(cell_type_t type) {
+  return type == CELL_INT32 || type == CELL_INT64 || type == CELL_FLOAT;
+}
+
+static cell_type_t get_promotion_type(cell_type_t a, cell_type_t b) {
+  if (a == CELL_FLOAT || b == CELL_FLOAT) return CELL_FLOAT;
+  if (a == CELL_INT64 || b == CELL_INT64) return CELL_INT64;
+  return CELL_INT32;
+}
+
+static double to_double(cell_t* cell) {
+  switch (cell->type) {
+    case CELL_INT32:
+      return (double)cell->payload.i32;
+    case CELL_INT64:
+      return (double)cell->payload.i64;
+    case CELL_FLOAT:
+      return cell->payload.f64;
+    default:
+      return 0.0;
+  }
+}
+
+static void store_numeric_result(cell_t* cell, double value,
+                                 cell_type_t result_type) {
+  cell->type = result_type;
+  switch (result_type) {
+    case CELL_INT32:
+      cell->payload.i32 = (int32_t)value;
+      break;
+    case CELL_INT64:
+      cell->payload.i64 = (int64_t)value;
+      break;
+    case CELL_FLOAT:
+      cell->payload.f64 = value;
+      break;
+    default:
+      break;
+  }
+}
+
 // Arithmetic words
 
 static void native_add(context_t* ctx) {
@@ -17,22 +59,49 @@ static void native_add(context_t* ctx) {
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
 
+  // Fast path 1: int32 + int32 (most common)
   if (a->type == CELL_INT32 && b->type == CELL_INT32) {
     a->payload.i32 += b->payload.i32;
-  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
-    a->payload.f64 += b->payload.f64;
-  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
-    a->payload.i64 += b->payload.i64;
-  } else if (a->type == CELL_STRING && b->type == CELL_STRING) {
-    const cell_t result = string_concat(ctx, a, b);
-
-    release(a);
-    *a = result;
-  } else {
-    error(ctx, "+ : type mismatch");
+    release(b);
+    return;
   }
 
-  release(b);
+  // Fast path 2: float + float (second most common)
+  if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    a->payload.f64 += b->payload.f64;
+    release(b);
+    return;
+  }
+
+  // Fast path 3: int64 + int64 (least common numeric)
+  if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    a->payload.i64 += b->payload.i64;
+    release(b);
+    return;
+  }
+
+  // String concatenation
+  if (a->type == CELL_STRING && b->type == CELL_STRING) {
+    const cell_t result = string_concat(ctx, a, b);
+    release(a);
+    *a = result;
+    release(b);
+    return;
+  }
+
+  // Mixed numeric types - promotion path
+  if (is_numeric_type(a->type) && is_numeric_type(b->type)) {
+    cell_type_t result_type = get_promotion_type(a->type, b->type);
+    double a_val = to_double(a);
+    double b_val = to_double(b);
+    double result = a_val + b_val;
+
+    store_numeric_result(a, result, result_type);
+    release(b);
+    return;
+  }
+
+  error(ctx, "+ : type mismatch");
 }
 
 static void native_subtract(context_t* ctx) {
@@ -41,17 +110,40 @@ static void native_subtract(context_t* ctx) {
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
 
+  // Fast path 1: int32 - int32 (most common)
   if (a->type == CELL_INT32 && b->type == CELL_INT32) {
-    // TODO: Check for overflow
     a->payload.i32 -= b->payload.i32;
-  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
-    a->payload.f64 -= b->payload.f64;
-  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
-    // TODO: Check for overflow
-    a->payload.i64 -= b->payload.i64;
-  } else {
-    error(ctx, "- : type mismatch");
+    release(b);
+    return;
   }
+
+  // Fast path 2: float - float (second most common)
+  if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    a->payload.f64 -= b->payload.f64;
+    release(b);
+    return;
+  }
+
+  // Fast path 3: int64 - int64 (least common numeric)
+  if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    a->payload.i64 -= b->payload.i64;
+    release(b);
+    return;
+  }
+
+  // Mixed numeric types - promotion path
+  if (is_numeric_type(a->type) && is_numeric_type(b->type)) {
+    cell_type_t result_type = get_promotion_type(a->type, b->type);
+    double a_val = to_double(a);
+    double b_val = to_double(b);
+    double result = a_val - b_val;
+
+    store_numeric_result(a, result, result_type);
+    release(b);
+    return;
+  }
+
+  error(ctx, "- : type mismatch");
 }
 
 static void native_multiply(context_t* ctx) {
@@ -60,17 +152,40 @@ static void native_multiply(context_t* ctx) {
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
 
+  // Fast path 1: int32 * int32 (most common)
   if (a->type == CELL_INT32 && b->type == CELL_INT32) {
-    // TODO: Check for overflow
     a->payload.i32 *= b->payload.i32;
-  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
-    a->payload.f64 *= b->payload.f64;
-  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
-    // TODO: Check for overflow
-    a->payload.i64 *= b->payload.i64;
-  } else {
-    error(ctx, "* : type mismatch");
+    release(b);
+    return;
   }
+
+  // Fast path 2: float * float (second most common)
+  if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    a->payload.f64 *= b->payload.f64;
+    release(b);
+    return;
+  }
+
+  // Fast path 3: int64 * int64 (least common numeric)
+  if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    a->payload.i64 *= b->payload.i64;
+    release(b);
+    return;
+  }
+
+  // Mixed numeric types - promotion path
+  if (is_numeric_type(a->type) && is_numeric_type(b->type)) {
+    cell_type_t result_type = get_promotion_type(a->type, b->type);
+    double a_val = to_double(a);
+    double b_val = to_double(b);
+    double result = a_val * b_val;
+
+    store_numeric_result(a, result, result_type);
+    release(b);
+    return;
+  }
+
+  error(ctx, "* : type mismatch");
 }
 
 static void native_divide(context_t* ctx) {
@@ -79,24 +194,53 @@ static void native_divide(context_t* ctx) {
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
 
+  // Fast path 1: int32 / int32 (most common)
   if (a->type == CELL_INT32 && b->type == CELL_INT32) {
     if (b->payload.i32 == 0) {
       error(ctx, "/ : division by zero");
     }
     a->payload.i32 /= b->payload.i32;
-  } else if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
+    release(b);
+    return;
+  }
+
+  // Fast path 2: float / float (second most common)
+  if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
     if (b->payload.f64 == 0.0) {
       error(ctx, "/ : division by zero");
     }
     a->payload.f64 /= b->payload.f64;
-  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    release(b);
+    return;
+  }
+
+  // Fast path 3: int64 / int64 (least common numeric)
+  if (a->type == CELL_INT64 && b->type == CELL_INT64) {
     if (b->payload.i64 == 0) {
       error(ctx, "/ : division by zero");
     }
     a->payload.i64 /= b->payload.i64;
-  } else {
-    error(ctx, "/ : type mismatch");
+    release(b);
+    return;
   }
+
+  // Mixed numeric types - promotion path
+  if (is_numeric_type(a->type) && is_numeric_type(b->type)) {
+    cell_type_t result_type = get_promotion_type(a->type, b->type);
+    double a_val = to_double(a);
+    double b_val = to_double(b);
+
+    if (b_val == 0.0) {
+      error(ctx, "/ : division by zero");
+    }
+
+    double result = a_val / b_val;
+    store_numeric_result(a, result, result_type);
+    release(b);
+    return;
+  }
+
+  error(ctx, "/ : type mismatch");
 }
 
 static void native_modulo(context_t* ctx) {
@@ -105,19 +249,55 @@ static void native_modulo(context_t* ctx) {
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
 
+  // Fast path 1: int32 % int32 (most common)
   if (a->type == CELL_INT32 && b->type == CELL_INT32) {
     if (b->payload.i32 == 0) {
       error(ctx, "% : division by zero");
     }
     a->payload.i32 %= b->payload.i32;
-  } else if (a->type == CELL_INT64 && b->type == CELL_INT64) {
+    release(b);
+    return;
+  }
+
+  // Fast path 2: int64 % int64
+  if (a->type == CELL_INT64 && b->type == CELL_INT64) {
     if (b->payload.i64 == 0) {
       error(ctx, "% : division by zero");
     }
     a->payload.i64 %= b->payload.i64;
-  } else {
-    error(ctx, "% : only works on integer types");
+    release(b);
+    return;
   }
+
+  // Mixed integer types - promotion to int64
+  if ((a->type == CELL_INT32 || a->type == CELL_INT64) &&
+      (b->type == CELL_INT32 || b->type == CELL_INT64)) {
+    int64_t a_val =
+        (a->type == CELL_INT32) ? (int64_t)a->payload.i32 : a->payload.i64;
+    int64_t b_val =
+        (b->type == CELL_INT32) ? (int64_t)b->payload.i32 : b->payload.i64;
+    if (b_val == 0) {
+      error(ctx, "% : division by zero");
+    }
+    int64_t result = a_val % b_val;
+    // Result type matches the larger input type
+    cell_type_t result_type = (a->type == CELL_INT64 || b->type == CELL_INT64)
+                                  ? CELL_INT64
+                                  : CELL_INT32;
+
+    if (result_type == CELL_INT64) {
+      a->type = CELL_INT64;
+      a->payload.i64 = result;
+    } else {
+      a->type = CELL_INT32;
+      a->payload.i32 = (int32_t)result;
+    }
+
+    release(b);
+    return;
+  }
+
+  error(ctx, "% : only works on integer types");
 }
 
 // Type conversion words
