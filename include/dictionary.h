@@ -3,10 +3,12 @@
 
 #include "cell.h"
 
+#define MAX_NAME_LENGTH 31
+
 typedef struct {
-  char name[32];      // Word name
-  cell_t definition;  // Code cell or other definition
-  const char* help;   // Help text (stack effect + description)
+  char name[MAX_NAME_LENGTH];  // Word name
+  cell_t definition;           // Code cell or other definition
+  const char* help;            // Help text (stack effect + description)
 } dictionary_entry_t;
 
 // Dictionary management

@@ -9,8 +9,8 @@
 typedef enum { TOKEN_WORD, TOKEN_STRING, TOKEN_EOF } token_type_t;
 
 // Core parsing functions
-token_type_t parse_next_token(const char** input_pos, char* buffer,
-                              size_t buffer_size);
+token_type_t parse_next_token(context_t* ctx, const char** input_pos,
+                              char* buffer, size_t buffer_size);
 void skip_whitespace(const char** input_pos);
 bool has_more_input(const char* input_pos);
 

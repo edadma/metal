@@ -56,9 +56,9 @@ static void native_help(context_t* ctx) {
     return;
   }
   // Try to get next word
-  char word_buffer[256];
+  char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type =
-      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
 
   if (token_type == TOKEN_WORD) {
     // Show help for specific word

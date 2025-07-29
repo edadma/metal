@@ -268,8 +268,9 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
       }
 
       return a_val == b_val;
-    } else
-      error(ctx, "Cannot compare incompatible types");
+    }
+
+    return false;
   }
 
   // Same types

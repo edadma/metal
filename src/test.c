@@ -17,6 +17,7 @@
 #include "test_conversion.h"
 #include "test_memory_ops.h"
 #include "test_stack.h"
+#include "test_variables.h"
 #include "util.h"
 
 // Test statistics
@@ -1115,6 +1116,9 @@ void init_tests(void) {
 
   // Memory operations tests
   register_memory_ops_tests();
+
+  // Variables and constants tests
+  register_variables_tests();
 }
 
 #endif  // TEST_ENABLED

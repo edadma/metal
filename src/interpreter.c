@@ -23,14 +23,14 @@
 // Global compilation state
 bool compilation_mode = false;
 cell_array_t* compiling_definition = NULL;
-char compiling_word_name[32];
+char compiling_word_name[MAX_NAME_LENGTH];
 
 // Helper function to add a compiled word definition from source
 void add_definition(const char* name, const char* source, const char* help) {
   // Save current compilation state
   bool saved_compilation_mode = compilation_mode;
   cell_array_t* saved_compiling_definition = compiling_definition;
-  char saved_compiling_word_name[32];
+  char saved_compiling_word_name[MAX_NAME_LENGTH];
   strncpy(saved_compiling_word_name, compiling_word_name,
           sizeof(saved_compiling_word_name));
   // Set up compilation
@@ -228,7 +228,7 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
   token_type_t token_type;
 
   // Parse and execute tokens one at a time
-  while ((token_type = parse_next_token(&ctx->input_pos, token_buffer,
+  while ((token_type = parse_next_token(ctx,&ctx->input_pos, token_buffer,
                                         sizeof(token_buffer))) != TOKEN_EOF) {
     if (token_type == TOKEN_STRING) {
       // String literal

@@ -2,6 +2,7 @@
 #define INTERPRETER_H
 
 #include "context.h"
+#include "dictionary.h"
 
 // Interpreter result codes
 typedef enum {
@@ -14,7 +15,7 @@ typedef enum {
 
 extern bool compilation_mode;
 extern cell_array_t* compiling_definition;
-extern char compiling_word_name[32];
+extern char compiling_word_name[MAX_NAME_LENGTH];
 
 void add_definition(const char* name, const char* source, const char* help);
 metal_result_t interpret(context_t* ctx, bool print_errors, const char* input);

@@ -621,11 +621,16 @@ TEST_FUNCTION(test_string_comparisons) {
 // Test comparison error conditions
 TEST_FUNCTION(test_comparison_errors) {
   // Mixed string/number comparisons (should error)
-  TEST_EXPECT_ERROR("42 \"hello\" =", "Cannot compare incompatible types");
-  TEST_EXPECT_ERROR("\"hello\" 42 =", "Cannot compare incompatible types");
   TEST_EXPECT_ERROR("3.14 \"world\" <", "Cannot compare incompatible types");
   TEST_EXPECT_ERROR("\"test\" 100 INT64 >",
                     "Cannot compare incompatible types");
+
+  TEST_INTERPRET("42 \"hello\" =");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("\"hello\" 42 =");
+  TEST_STACK_TOP_BOOLEAN(false);
+  TEST_INTERPRET("DROP");
 
   // Array comparisons (not implemented)
   TEST_EXPECT_ERROR("[] [] =", "Cannot compare values of this type");

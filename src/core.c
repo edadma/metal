@@ -90,9 +90,9 @@ static void native_paren_comment(context_t* ctx) {
 static void native_constant(context_t* ctx) {
   require(ctx, 1, "CONSTANT");
   // Parse next word as the constant name
-  char word_buffer[32];
+  char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type =
-      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
   if (token_type != TOKEN_WORD) {
     error(ctx, "CONSTANT: expected constant name");
   }
@@ -112,9 +112,9 @@ static void native_constant(context_t* ctx) {
 // VARIABLE ( -- ) <name> Define a variable
 static void native_variable(context_t* ctx) {
   // Parse next word as the variable name
-  char word_buffer[32];
+  char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type =
-      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
   if (token_type != TOKEN_WORD) {
     error(ctx, "VARIABLE: expected variable name");
   }
@@ -529,9 +529,9 @@ static void native_unloop(context_t* ctx) {
 
 // ' (tick) - Get code cell from dictionary
 static void native_tick(context_t* ctx) {
-  char word_buffer[32];
+  char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type =
-      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
 
   if (token_type != TOKEN_WORD) {
     error(ctx, "' : expected word name");
@@ -553,9 +553,9 @@ static void native_bracket_tick(context_t* ctx) {
     error(ctx, "['] : only valid during compilation");
   }
 
-  char word_buffer[32];
+  char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type =
-      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
 
   if (token_type != TOKEN_WORD) {
     error(ctx, "['] : expected word name");

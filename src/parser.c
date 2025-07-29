@@ -6,6 +6,7 @@
 
 #include "context.h"
 #include "debug.h"
+#include "error.h"
 #include "memory.h"
 
 void skip_whitespace(const char** input_pos) {
@@ -99,8 +100,8 @@ static bool parse_string_literal(const char** input_pos, char* buffer,
   return true;
 }
 
-token_type_t parse_next_token(const char** input_pos, char* buffer,
-                              size_t buffer_size) {
+token_type_t parse_next_token(context_t* ctx, const char** input_pos,
+                              char* buffer, size_t buffer_size) {
   skip_whitespace(input_pos);
   if (!**input_pos) {
     return TOKEN_EOF;
@@ -128,7 +129,7 @@ token_type_t parse_next_token(const char** input_pos, char* buffer,
   size_t length = end - start;
   if (length >= buffer_size) {
     debug("Word too long: %.*s", (int)length, start);
-    return TOKEN_EOF;
+    error(ctx, "Token too long: %.*s", (int)length, start);
   }
   if (length == 0) {
     return TOKEN_EOF;

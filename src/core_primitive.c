@@ -32,9 +32,9 @@ static void native_def(context_t* ctx) {
   }
 
   // Parse next word as the definition name
-  char word_buffer[32];
+  char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type =
-      parse_next_token(&ctx->input_pos, word_buffer, sizeof(word_buffer));
+      parse_next_token(ctx,&ctx->input_pos, word_buffer, sizeof(word_buffer));
   if (token_type != TOKEN_WORD) {
     error(ctx, "DEF: expected word name");
   }
