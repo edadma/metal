@@ -186,6 +186,35 @@ void test_stack_top_int(const char* file, int line, const char* expr,
   }
 }
 
+void test_stack_top_int64(const char* file, int line, const char* expr,
+                          int64_t expected) {
+  context_t* ctx = &test_context;
+
+  if (ctx->data_stack_ptr == 0) {
+    test_failed++;
+    printf("%s:%d FAIL: %s - Stack is empty\n", file, line, expr);
+    return;
+  }
+
+  cell_t* top = &ctx->data_stack[ctx->data_stack_ptr - 1];
+
+  if (top->type != CELL_INT64) {
+    test_failed++;
+    printf("%s:%d FAIL: %s - Expected CELL_INT64, got type %d\n", file, line,
+           expr, top->type);
+    return;
+  }
+
+  if (top->payload.i64 != expected) {
+    test_failed++;
+    printf("%s:%d FAIL: %s - Expected %lld, got %lld\n", file, line, expr,
+           (long long)expected, (long long)top->payload.i64);
+    return;
+  }
+
+  test_passed++;
+}
+
 void test_stack_top_string(const char* file, int line, const char* expr,
                            const char* expected) {
   test_count++;

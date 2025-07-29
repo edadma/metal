@@ -36,6 +36,12 @@ extern int test_failed;
 #define TEST_STACK_TOP_INT(expected) \
   test_stack_top_int(__FILE__, __LINE__, #expected, (expected))
 
+#define TEST_STACK_TOP_INT64(expected) \
+  test_stack_top_int64(__FILE__, __LINE__, #expected, (expected))
+
+// In the function declarations section:
+void test_stack_top_int64(const char* file, int line, const char* expr,
+                          int64_t expected);
 #define TEST_STACK_TOP_FLOAT(expected) \
   test_stack_top_float(__FILE__, __LINE__, #expected, (expected))
 
@@ -70,6 +76,8 @@ void test_stack_depth(const char* file, int line, const char* expr,
                       int expected);
 void test_stack_top_int(const char* file, int line, const char* expr,
                         int expected);
+void test_stack_top_int64(const char* file, int line, const char* expr,
+                          int64_t expected);
 void test_stack_top_float(const char* file, int line, const char* expr,
                           double expected);
 void test_expect_error(const char* file, int line, const char* code,
