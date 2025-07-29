@@ -49,7 +49,7 @@ void data_push_ptr(context_t* ctx, cell_t* cell) {
   retain(cell);
 }
 
-void require(context_t* ctx, int n, const char* op) {
+void require_params(context_t* ctx, int n, const char* op) {
   if (ctx->data_stack_ptr < n) {
     error(ctx, "%s: insufficient stack", op);
   }

@@ -52,7 +52,7 @@ static void store_numeric_result(cell_t* cell, double value,
 
 static void native_add(context_t* ctx) {
   debug("executing +");
-  require(ctx, 2, "+");
+  require_params(ctx, 2, "+");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
@@ -103,7 +103,7 @@ static void native_add(context_t* ctx) {
 }
 
 static void native_subtract(context_t* ctx) {
-  require(ctx, 2, "-");
+  require_params(ctx, 2, "-");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
@@ -145,7 +145,7 @@ static void native_subtract(context_t* ctx) {
 }
 
 static void native_multiply(context_t* ctx) {
-  require(ctx, 2, "*");
+  require_params(ctx, 2, "*");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
@@ -187,7 +187,7 @@ static void native_multiply(context_t* ctx) {
 }
 
 static void native_divide(context_t* ctx) {
-  require(ctx, 2, "/");
+  require_params(ctx, 2, "/");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
@@ -242,7 +242,7 @@ static void native_divide(context_t* ctx) {
 }
 
 static void native_modulo(context_t* ctx) {
-  require(ctx, 2, "%");
+  require_params(ctx, 2, "%");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_peek(ctx, 0);
@@ -301,7 +301,7 @@ static void native_modulo(context_t* ctx) {
 // Type conversion words
 
 static void native_to_int32(context_t* ctx) {
-  require(ctx, 1, "INT32");
+  require_params(ctx, 1, "INT32");
 
   cell_t* a = data_peek(ctx, 0);
 
@@ -321,7 +321,7 @@ static void native_to_int32(context_t* ctx) {
 }
 
 static void native_to_int64(context_t* ctx) {
-  require(ctx, 1, "INT64");
+  require_params(ctx, 1, "INT64");
 
   cell_t* a = data_peek(ctx, 0);
 
@@ -340,7 +340,7 @@ static void native_to_int64(context_t* ctx) {
 }
 
 static void native_to_float(context_t* ctx) {
-  require(ctx, 1, "FLOAT");
+  require_params(ctx, 1, "FLOAT");
 
   cell_t* a = data_peek(ctx, 0);
 
@@ -361,7 +361,7 @@ static void native_to_float(context_t* ctx) {
 // Efficient arithmetic combination words
 
 static void native_one_plus(context_t* ctx) {
-  require(ctx, 1, "1+");
+  require_params(ctx, 1, "1+");
   cell_t* top = data_peek(ctx, 0);
   switch (top->type) {
     case CELL_INT32:
@@ -380,7 +380,7 @@ static void native_one_plus(context_t* ctx) {
 }
 
 static void native_one_minus(context_t* ctx) {
-  require(ctx, 1, "1-");
+  require_params(ctx, 1, "1-");
   cell_t* top = data_peek(ctx, 0);
   switch (top->type) {
     case CELL_INT32:
@@ -398,7 +398,7 @@ static void native_one_minus(context_t* ctx) {
 }
 
 static void native_two_star(context_t* ctx) {
-  require(ctx, 1, "2*");
+  require_params(ctx, 1, "2*");
   cell_t* top = data_peek(ctx, 0);
   switch (top->type) {
     case CELL_INT32:
@@ -418,7 +418,7 @@ static void native_two_star(context_t* ctx) {
 }
 
 static void native_two_slash(context_t* ctx) {
-  require(ctx, 1, "2/");
+  require_params(ctx, 1, "2/");
   cell_t* top = data_peek(ctx, 0);
   switch (top->type) {
     case CELL_INT32:
@@ -437,7 +437,7 @@ static void native_two_slash(context_t* ctx) {
 }
 
 static void native_negate(context_t* ctx) {
-  require(ctx, 1, "NEGATE");
+  require_params(ctx, 1, "NEGATE");
   cell_t* top = data_peek(ctx, 0);
   switch (top->type) {
     case CELL_INT32:
@@ -457,7 +457,7 @@ static void native_negate(context_t* ctx) {
 // Arithmetic combination words
 
 static void native_slash_mod(context_t* ctx) {
-  require(ctx, 2, "/MOD");
+  require_params(ctx, 2, "/MOD");
   cell_t* divisor_cell = data_pop(ctx);
   cell_t* dividend_cell = data_pop(ctx);
 
@@ -512,7 +512,7 @@ static void native_slash_mod(context_t* ctx) {
 }
 
 static void native_star_slash(context_t* ctx) {
-  require(ctx, 3, "*/");
+  require_params(ctx, 3, "*/");
 
   cell_t* divisor_cell = data_pop(ctx);
   cell_t* multiplier_cell = data_pop(ctx);
@@ -645,7 +645,7 @@ static void native_star_slash(context_t* ctx) {
 }
 
 static void native_star_slash_mod(context_t* ctx) {
-  require(ctx, 3, "*/MOD");
+  require_params(ctx, 3, "*/MOD");
 
   cell_t* divisor_cell = data_pop(ctx);
   cell_t* multiplier_cell = data_pop(ctx);

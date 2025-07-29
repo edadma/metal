@@ -8,7 +8,7 @@
 // Comparison operators
 
 static void native_equal(context_t* ctx) {
-  require(ctx, 2, "=");
+  require_params(ctx, 2, "=");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -22,7 +22,7 @@ static void native_equal(context_t* ctx) {
 }
 
 static void native_not_equal(context_t* ctx) {
-  require(ctx, 2, "!=");
+  require_params(ctx, 2, "!=");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -36,7 +36,7 @@ static void native_not_equal(context_t* ctx) {
 }
 
 static void native_less_than(context_t* ctx) {
-  require(ctx, 2, "<");
+  require_params(ctx, 2, "<");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -51,7 +51,7 @@ static void native_less_than(context_t* ctx) {
 }
 
 static void native_greater_than(context_t* ctx) {
-  require(ctx, 2, ">");
+  require_params(ctx, 2, ">");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -66,7 +66,7 @@ static void native_greater_than(context_t* ctx) {
 }
 
 static void native_less_equal(context_t* ctx) {
-  require(ctx, 2, "<=");
+  require_params(ctx, 2, "<=");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -81,7 +81,7 @@ static void native_less_equal(context_t* ctx) {
 }
 
 static void native_greater_equal(context_t* ctx) {
-  require(ctx, 2, ">=");
+  require_params(ctx, 2, ">=");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -98,7 +98,7 @@ static void native_greater_equal(context_t* ctx) {
 // Efficient comparison combination words
 
 static void native_zero_equals(context_t* ctx) {
-  require(ctx, 1, "0=");
+  require_params(ctx, 1, "0=");
   cell_t* top = data_peek(ctx, 0);
   bool result;
 
@@ -121,7 +121,7 @@ static void native_zero_equals(context_t* ctx) {
 }
 
 static void native_zero_less(context_t* ctx) {
-  require(ctx, 1, "0<");
+  require_params(ctx, 1, "0<");
   cell_t* top = data_peek(ctx, 0);
   bool result;
   switch (top->type) {
@@ -143,7 +143,7 @@ static void native_zero_less(context_t* ctx) {
 }
 
 static void native_zero_greater(context_t* ctx) {
-  require(ctx, 1, "0>");
+  require_params(ctx, 1, "0>");
 
   cell_t* top = data_peek(ctx, 0);
   bool result;
@@ -167,7 +167,7 @@ static void native_zero_greater(context_t* ctx) {
 }
 
 static void native_zero_greater_equal(context_t* ctx) {
-  require(ctx, 1, "0>=");
+  require_params(ctx, 1, "0>=");
   cell_t* top = data_peek(ctx, 0);
   bool result;
   switch (top->type) {
@@ -189,7 +189,7 @@ static void native_zero_greater_equal(context_t* ctx) {
 }
 
 static void native_zero_less_equal(context_t* ctx) {
-  require(ctx, 1, "0<=");
+  require_params(ctx, 1, "0<=");
   cell_t* top = data_peek(ctx, 0);
   bool result;
   switch (top->type) {
@@ -211,7 +211,7 @@ static void native_zero_less_equal(context_t* ctx) {
 }
 
 static void native_zero_not_equal(context_t* ctx) {
-  require(ctx, 1, "0!=");
+  require_params(ctx, 1, "0!=");
 
   cell_t* top = data_peek(ctx, 0);
   bool result;

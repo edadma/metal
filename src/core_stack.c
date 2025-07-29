@@ -30,7 +30,7 @@ static void native_drop(context_t* ctx) {
 }
 
 static void native_swap(context_t* ctx) {
-  require(ctx, 2, "SWAP");
+  require_params(ctx, 2, "SWAP");
 
   cell_t* a = data_pop(ctx);
   cell_t b = data_pop_cell(ctx);
@@ -41,7 +41,7 @@ static void native_swap(context_t* ctx) {
 // PICK ( xu ... x1 x0 u -- xu ... x1 x0 xu )
 // Copy the u-th item from top of stack (0-indexed)
 static void native_pick(context_t* ctx) {
-  require(ctx, 1, "PICK");
+  require_params(ctx, 1, "PICK");
   cell_t* u_cell = data_pop(ctx);
   if (u_cell->type != CELL_INT32) {
     error(ctx, "PICK: index must be integer");
@@ -62,7 +62,7 @@ static void native_pick(context_t* ctx) {
 // ROLL ( xu xu-1 ... x1 x0 u -- xu-1 ... x1 x0 xu )
 // Move the u-th item to top of stack (0-indexed)
 static void native_roll(context_t* ctx) {
-  require(ctx, 1, "ROLL");
+  require_params(ctx, 1, "ROLL");
   cell_t* u_cell = data_pop(ctx);
   if (u_cell->type != CELL_INT32) {
     error(ctx, "ROLL: index must be integer");

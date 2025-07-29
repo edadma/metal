@@ -16,7 +16,7 @@ static void native_false(context_t* ctx) { data_push(ctx, new_boolean(false)); }
 // Logical operators
 
 static void native_and(context_t* ctx) {
-  require(ctx, 2, "AND");
+  require_params(ctx, 2, "AND");
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
   bool result = is_truthy(a) && is_truthy(b);
@@ -26,7 +26,7 @@ static void native_and(context_t* ctx) {
 }
 
 static void native_or(context_t* ctx) {
-  require(ctx, 2, "OR");
+  require_params(ctx, 2, "OR");
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
   bool result = is_truthy(a) || is_truthy(b);
@@ -36,7 +36,7 @@ static void native_or(context_t* ctx) {
 }
 
 static void native_not(context_t* ctx) {
-  require(ctx, 1, "NOT");
+  require_params(ctx, 1, "NOT");
   cell_t* a = data_pop(ctx);
   bool result = !is_truthy(a);
 
@@ -88,7 +88,7 @@ static cell_t create_bitwise_result(int64_t value, cell_type_t result_type) {
 
 // Bitwise AND
 static void native_bit_and(context_t* ctx) {
-  require(ctx, 2, "&");
+  require_params(ctx, 2, "&");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -112,7 +112,7 @@ static void native_bit_and(context_t* ctx) {
 
 // Bitwise OR
 static void native_bit_or(context_t* ctx) {
-  require(ctx, 2, "|");
+  require_params(ctx, 2, "|");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -136,7 +136,7 @@ static void native_bit_or(context_t* ctx) {
 
 // Bitwise XOR
 static void native_bit_xor(context_t* ctx) {
-  require(ctx, 2, "^");
+  require_params(ctx, 2, "^");
 
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
@@ -160,7 +160,7 @@ static void native_bit_xor(context_t* ctx) {
 
 // Bitwise NOT
 static void native_bit_not(context_t* ctx) {
-  require(ctx, 1, "~");
+  require_params(ctx, 1, "~");
 
   cell_t* a = data_pop(ctx);
 
@@ -182,7 +182,7 @@ static void native_bit_not(context_t* ctx) {
 
 // Left shift
 static void native_left_shift(context_t* ctx) {
-  require(ctx, 2, "<<");
+  require_params(ctx, 2, "<<");
 
   cell_t* shift_cell = data_pop(ctx);
   cell_t* value_cell = data_pop(ctx);
@@ -228,7 +228,7 @@ static void native_left_shift(context_t* ctx) {
 
 // Arithmetic right shift (sign-extend)
 static void native_right_shift(context_t* ctx) {
-  require(ctx, 2, ">>");
+  require_params(ctx, 2, ">>");
 
   cell_t* shift_cell = data_pop(ctx);
   cell_t* value_cell = data_pop(ctx);
@@ -274,7 +274,7 @@ static void native_right_shift(context_t* ctx) {
 
 // Logical right shift (zero-fill)
 static void native_logical_right_shift(context_t* ctx) {
-  require(ctx, 2, ">>>");
+  require_params(ctx, 2, ">>>");
 
   cell_t* shift_cell = data_pop(ctx);
   cell_t* value_cell = data_pop(ctx);

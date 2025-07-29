@@ -6,7 +6,7 @@
 // Stack initialization
 void stack_init(context_t* ctx);
 
-void require(context_t* ctx, int n, const char* op);
+void require_params(context_t* ctx, int n, const char* op);
 
 // Data stack operations
 void data_push(context_t* ctx, cell_t cell);

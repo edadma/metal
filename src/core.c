@@ -16,7 +16,7 @@
 // I/O words
 
 static void native_print(context_t* ctx) {
-  require(ctx, 1, "PRINT");
+  require_params(ctx, 1, "PRINT");
 
   cell_t* cell = data_pop(ctx);
   print_cell(cell);
@@ -88,7 +88,7 @@ static void native_paren_comment(context_t* ctx) {
 
 // CONSTANT ( value -- ) <name> Define a named constant
 static void native_constant(context_t* ctx) {
-  require(ctx, 1, "CONSTANT");
+  require_params(ctx, 1, "CONSTANT");
   // Parse next word as the constant name
   char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type =
@@ -137,7 +137,7 @@ static void native_variable(context_t* ctx) {
 static void native_null(context_t* ctx) { data_push(ctx, new_null()); }
 
 static void native_undefined_check(context_t* ctx) {
-  require(ctx, 1, "UNDEFINED?");
+  require_params(ctx, 1, "UNDEFINED?");
 
   cell_t* item = data_pop(ctx);
   bool is_undefined = item->type == CELL_UNDEFINED;
@@ -320,7 +320,7 @@ static void native_repeat(context_t* ctx) {
 
 // (DO) ( limit start -- ) Runtime: setup loop parameters
 static void native_do_runtime(context_t* ctx) {
-  require(ctx, 2, "(DO)");
+  require_params(ctx, 2, "(DO)");
 
   cell_t start = data_pop_cell(ctx);
   cell_t limit = data_pop_cell(ctx);
@@ -371,7 +371,7 @@ static void native_loop_runtime(context_t* ctx) {
 
 // (+LOOP) ( n -- ) Runtime: increment by n and test boundary crossing
 static void native_plus_loop_runtime(context_t* ctx) {
-  require(ctx, 1, "(+LOOP)");
+  require_params(ctx, 1, "(+LOOP)");
 
   if (ctx->return_stack_ptr < 2) {
     error(ctx, "(+LOOP): return stack underflow");
@@ -579,7 +579,7 @@ static void native_bracket_tick(context_t* ctx) {
 
 // EXECUTE - Execute a code cell
 static void native_execute(context_t* ctx) {
-  require(ctx, 1, "EXECUTE");
+  require_params(ctx, 1, "EXECUTE");
 
   cell_t code_cell = data_pop_cell(ctx);
 
@@ -620,7 +620,7 @@ static void native_literal(context_t* ctx) {
 // Memory combination words
 
 static void native_plus_store(context_t* ctx) {
-  require(ctx, 2, "+!");
+  require_params(ctx, 2, "+!");
 
   cell_t* addr_cell = data_pop(ctx);
   cell_t* value_cell = data_pop(ctx);
@@ -695,7 +695,7 @@ static void native_plus_store(context_t* ctx) {
 }
 
 static void native_one_plus_store(context_t* ctx) {
-  require(ctx, 1, "1+!");
+  require_params(ctx, 1, "1+!");
 
   cell_t* addr_cell = data_pop(ctx);
 
@@ -728,7 +728,7 @@ static void native_one_plus_store(context_t* ctx) {
 }
 
 static void native_one_minus_store(context_t* ctx) {
-  require(ctx, 1, "1-!");
+  require_params(ctx, 1, "1-!");
 
   cell_t* addr_cell = data_pop(ctx);
 

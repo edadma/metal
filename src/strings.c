@@ -164,7 +164,7 @@ void cell_to_cstr(cell_t* cell, char* buffer, size_t buffer_size) {
 // String operations for Metal language
 
 static void native_string_empty_q(context_t* ctx) {
-  require(ctx, 1, "STRING-EMPTY?");
+  require_params(ctx, 1, "STRING-EMPTY?");
   cell_t* str = data_pop(ctx);
 
   if (str->type != CELL_STRING) {
