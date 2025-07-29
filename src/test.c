@@ -188,6 +188,7 @@ void test_stack_top_int(const char* file, int line, const char* expr,
 
 void test_stack_top_int64(const char* file, int line, const char* expr,
                           int64_t expected) {
+  test_count++;
   context_t* ctx = &test_context;
 
   if (ctx->data_stack_ptr == 0) {
@@ -212,7 +213,7 @@ void test_stack_top_int64(const char* file, int line, const char* expr,
     return;
   }
 
-  test_passed++;
+  test_pass(file, line, expr);
 }
 
 void test_stack_top_string(const char* file, int line, const char* expr,
