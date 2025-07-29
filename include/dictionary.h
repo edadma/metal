@@ -25,4 +25,8 @@ void check_dictionary(void);
 int get_dictionary_size(void);
 dictionary_entry_t* get_dictionary_entry(int index);
 
+// Dictionary cleanup for testing
+int save_dictionary_size(void);
+void restore_dictionary_size(int saved_size);
+
 #endif  // DICTIONARY_H

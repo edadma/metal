@@ -1,7 +1,5 @@
 #include "interpreter.h"
 
-#include <asm-generic/errno-base.h>
-#include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
 #include <stdarg.h>
@@ -11,7 +9,6 @@
 
 #include "array.h"
 #include "context.h"
-#include "core.h"
 #include "debug.h"
 #include "dictionary.h"
 #include "error.h"
@@ -84,6 +81,7 @@ void add_definition(const char* name, const char* source, const char* help) {
 }
 
 // Number parsing
+// Number parsing
 bool try_parse_number(context_t* ctx, const char* token, cell_t* result) {
   char* endptr;
   size_t len = strlen(token);
@@ -92,15 +90,20 @@ bool try_parse_number(context_t* ctx, const char* token, cell_t* result) {
   bool force_int64 = false;
   bool force_float = false;
   char* working_token = (char*)token;
+  char saved_char = '\0';  // To restore the original character
 
   if (len > 1) {
     char last_char = token[len - 1];
     if (last_char == 'L' || last_char == 'l') {
       force_int64 = true;
-      working_token = strndup(token, len - 1);
+      // Temporarily null-terminate one character earlier
+      saved_char = working_token[len - 1];
+      working_token[len - 1] = '\0';
     } else if (last_char == 'F' || last_char == 'f') {
       force_float = true;
-      working_token = strndup(token, len - 1);
+      // Temporarily null-terminate one character earlier
+      saved_char = working_token[len - 1];
+      working_token[len - 1] = '\0';
     }
   }
 
@@ -111,7 +114,8 @@ bool try_parse_number(context_t* ctx, const char* token, cell_t* result) {
   if (*endptr == '\0') {
     // It's definitely meant to be an integer
     if (errno == ERANGE) {
-      if (working_token != token) free(working_token);
+      // Restore original character before error
+      if (saved_char) working_token[len - 1] = saved_char;
       error(ctx, "Integer literal out of range: %s", token);
       return false;  // Never reached due to error()
     }
@@ -124,7 +128,8 @@ bool try_parse_number(context_t* ctx, const char* token, cell_t* result) {
       *result = new_int32((int32_t)val);
     }
 
-    if (working_token != token) free(working_token);
+    // Restore original character
+    if (saved_char) working_token[len - 1] = saved_char;
     return true;
   }
 
@@ -135,18 +140,20 @@ bool try_parse_number(context_t* ctx, const char* token, cell_t* result) {
   if (*endptr == '\0') {
     // It's definitely meant to be a float
     if (errno == ERANGE) {
-      if (working_token != token) free(working_token);
+      // Restore original character before error
+      if (saved_char) working_token[len - 1] = saved_char;
       error(ctx, "Float literal out of range: %s", token);
       return false;  // Never reached due to error()
     }
 
     *result = new_float(fval);
-    if (working_token != token) free(working_token);
+    // Restore original character
+    if (saved_char) working_token[len - 1] = saved_char;
     return true;
   }
 
-  // Clean up and return false - not a number at all
-  if (working_token != token) free(working_token);
+  // Restore original character and return false - not a number at all
+  if (saved_char) working_token[len - 1] = saved_char;
   return false;
 }
 
@@ -228,7 +235,7 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
   token_type_t token_type;
 
   // Parse and execute tokens one at a time
-  while ((token_type = parse_next_token(ctx,&ctx->input_pos, token_buffer,
+  while ((token_type = parse_next_token(ctx, &ctx->input_pos, token_buffer,
                                         sizeof(token_buffer))) != TOKEN_EOF) {
     if (token_type == TOKEN_STRING) {
       // String literal

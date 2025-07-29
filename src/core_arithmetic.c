@@ -1,12 +1,10 @@
 #include "core_arithmetic.h"
 
-#include <string.h>
-
 #include "debug.h"
 #include "dictionary.h"
 #include "error.h"
-#include "memory.h"
 #include "stack.h"
+#include "strings.h"
 
 // Helper functions for mixed-type arithmetic
 static bool is_numeric_type(cell_type_t type) {
@@ -22,7 +20,7 @@ static cell_type_t get_promotion_type(cell_type_t a, cell_type_t b) {
 static double to_double(cell_t* cell) {
   switch (cell->type) {
     case CELL_INT32:
-      return (double)cell->payload.i32;
+      return cell->payload.i32;
     case CELL_INT64:
       return (double)cell->payload.i64;
     case CELL_FLOAT:

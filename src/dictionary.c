@@ -24,7 +24,7 @@ void add_cell(const char* name, cell_t def, const char* help) {
   check_dictionary();
 
   strncpy(dictionary[dict_size].name, name, 31);
-  dictionary[dict_size].name[31] = '\0';
+  dictionary[dict_size].name[MAX_NAME_LENGTH - 1] = '\0';
 
   dictionary[dict_size].definition = def;
   dictionary[dict_size].help = help;
@@ -75,4 +75,22 @@ dictionary_entry_t* get_dictionary_entry(int index) {
     return NULL;
   }
   return &dictionary[index];
+}
+
+// Dictionary cleanup for testing
+int save_dictionary_size(void) { return dict_size; }
+
+void restore_dictionary_size(int saved_size) {
+  if (saved_size < 0 || saved_size > dict_size) {
+    return;  // Invalid size
+  }
+
+  // Release any allocated memory for words beyond saved_size
+  for (int i = saved_size; i < dict_size; i++) {
+    release(&dictionary[i].definition);
+  }
+
+  // Reset dictionary size
+  dict_size = saved_size;
+  debug("Dictionary restored to size %d", dict_size);
 }

@@ -385,6 +385,11 @@ void run_all_tests(void) {
   debug("run_all_tests: About to call reset_test_stats");
   reset_test_stats();
   init_context(&test_context, "test");
+
+  // Save dictionary state before tests
+  int saved_dict_size = save_dictionary_size();
+  debug("run_all_tests: Saved dictionary size: %d", saved_dict_size);
+
   debug("run_all_tests: reset_test_stats completed");
 
   debug("run_all_tests: About to iterate through %d tests",
@@ -412,6 +417,10 @@ void run_all_tests(void) {
     debug("run_all_tests: Cleared %d cells from stack", cleared_count);
   }
 
+  // Restore dictionary state after tests
+  restore_dictionary_size(saved_dict_size);
+  debug("run_all_tests: Dictionary restored to original size");
+
   debug("run_all_tests: All tests completed, clearing test_context");
 
   debug("run_all_tests: About to print results");
@@ -422,9 +431,9 @@ void run_all_tests(void) {
   printf("Failed: %d\n", test_failed);
 
   if (test_failed == 0) {
-    printf("All tests PASSED! ✓\n");
+    printf("All tests PASSED!\n");
   } else {
-    printf("%d tests FAILED! ✗\n", test_failed);
+    printf("%d tests FAILED!\n", test_failed);
   }
 
   debug("run_all_tests: About to return");
