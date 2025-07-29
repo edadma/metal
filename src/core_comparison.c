@@ -101,6 +101,7 @@ static void native_zero_equals(context_t* ctx) {
   require(ctx, 1, "0=");
   cell_t* top = data_peek(ctx, 0);
   bool result;
+
   switch (top->type) {
     case CELL_INT32:
       result = top->payload.i32 == 0;
@@ -111,13 +112,10 @@ static void native_zero_equals(context_t* ctx) {
     case CELL_FLOAT:
       result = (top->payload.f64 == 0.0);
       break;
-    case CELL_BOOLEAN:
-      result = !top->payload.boolean;
-      break;
     default:
-      error(ctx, "0= : requires numeric or boolean type");
-      return;
+      result = false;
   }
+
   // Replace top of stack with boolean result
   new_boolean_inplace(result, top);
 }

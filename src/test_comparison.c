@@ -527,7 +527,6 @@ TEST_FUNCTION(test_zero_comparisons) {
   // Zero comparison error conditions
   TEST_EXPECT_ERROR("0=", "insufficient stack");
   TEST_EXPECT_ERROR("0<", "insufficient stack");
-  TEST_EXPECT_ERROR("\"hello\" 0=", "requires numeric");
   TEST_EXPECT_ERROR("[] 0<", "requires numeric");
 }
 

@@ -18,6 +18,7 @@
 #include "test_memory_ops.h"
 #include "test_stack.h"
 #include "test_variables.h"
+#include "test_zero_comparison.h"
 #include "util.h"
 
 // Test statistics
@@ -998,7 +999,6 @@ TEST_FUNCTION(combination_word_error_testing) {
   TEST_EXPECT_ERROR("10 5 0 */MOD", "division by zero");
   // Test type errors
   TEST_EXPECT_ERROR("\"hello\" 1+", "requires numeric type");
-  TEST_EXPECT_ERROR("\"hello\" 0=", "requires numeric");
   // Test memory errors
   TEST_EXPECT_ERROR("5 NULL +!", "cannot use null value as pointer");
   TEST_EXPECT_ERROR("NULL 1+!", "argument must be a pointer");
@@ -1119,6 +1119,9 @@ void init_tests(void) {
 
   // Variables and constants tests
   register_variables_tests();
+
+  // Zero comparison tests
+  register_zero_comparison_tests();
 }
 
 #endif  // TEST_ENABLED
