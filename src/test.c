@@ -12,6 +12,7 @@
 #include "stack.h"
 #include "test_arithmetic_combo.h"
 #include "test_arithmetic_mixing.h"
+#include "test_bitwise.h"
 #include "test_comparison.h"
 #include "test_complex_arithmetic.h"
 #include "test_conversion.h"
@@ -1126,6 +1127,9 @@ void init_tests(void) {
 
   // Logic tests
   register_logic_tests();
+
+  // Bitwise tests
+  register_bitwise_tests();
 }
 
 #endif  // TEST_ENABLED
