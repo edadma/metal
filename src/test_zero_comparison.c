@@ -443,96 +443,96 @@ TEST_FUNCTION(test_zero_less_equal_errors) {
   TEST_EXPECT_ERROR("0<=", "insufficient stack");
 }
 
-// Test 0<> (zero not equal) with various types
+// Test 0!= (zero not equal) with various types
 TEST_FUNCTION(test_zero_not_equal) {
-  // Test 0<> with zero values (should be false)
-  TEST_INTERPRET("0 0<>");
+  // Test 0!= with zero values (should be false)
+  TEST_INTERPRET("0 0!=");
   TEST_STACK_TOP_BOOLEAN(false);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("0 INT64 0<>");
+  TEST_INTERPRET("0 INT64 0!=");
   TEST_STACK_TOP_BOOLEAN(false);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("0.0 0<>");
+  TEST_INTERPRET("0.0 0!=");
   TEST_STACK_TOP_BOOLEAN(false);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("-0.0 0<>");
+  TEST_INTERPRET("-0.0 0!=");
   TEST_STACK_TOP_BOOLEAN(false);
   TEST_INTERPRET("DROP");
 
-  // Test 0<> with non-zero values (should be true)
-  TEST_INTERPRET("42 0<>");
+  // Test 0!= with non-zero values (should be true)
+  TEST_INTERPRET("42 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("-42 0<>");
+  TEST_INTERPRET("-42 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("1234567890123 0<>");
+  TEST_INTERPRET("1234567890123 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("-1234567890123 0<>");
+  TEST_INTERPRET("-1234567890123 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("3.14 0<>");
+  TEST_INTERPRET("3.14 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("-2.71 0<>");
+  TEST_INTERPRET("-2.71 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  // Test 0<> with very small values
-  TEST_INTERPRET("0.000001 0<>");
+  // Test 0!= with very small values
+  TEST_INTERPRET("0.000001 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("-0.000001 0<>");
+  TEST_INTERPRET("-0.000001 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
 
-// Test 0<> (zero not equal) with boolean values
+// Test 0!= (zero not equal) with boolean values
 TEST_FUNCTION(test_zero_not_equal_boolean) {
-  // Test 0<> with FALSE (should be false since FALSE is zero-like)
-  TEST_INTERPRET("FALSE 0<>");
+  // Test 0!= with FALSE (should be false since FALSE is zero-like)
+  TEST_INTERPRET("FALSE 0!=");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_BOOLEAN(false);
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 
-  // Test 0<> with TRUE (should be true since TRUE is non-zero-like)
-  TEST_INTERPRET("TRUE 0<>");
+  // Test 0!= with TRUE (should be true since TRUE is non-zero-like)
+  TEST_INTERPRET("TRUE 0!=");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
 
-// Test 0<> error conditions
+// Test 0!= error conditions
 TEST_FUNCTION(test_zero_not_equal_errors) {
-  // Test 0<> with non-numeric/non-boolean types
-  TEST_EXPECT_ERROR("\"string\" 0<>", "requires numeric");
-  TEST_EXPECT_ERROR("[] 0<>", "requires numeric");
-  TEST_EXPECT_ERROR("NULL 0<>", "requires numeric");
+  // Test 0!= with non-numeric/non-boolean types
+  TEST_EXPECT_ERROR("\"string\" 0!=", "requires numeric");
+  TEST_EXPECT_ERROR("[] 0!=", "requires numeric");
+  TEST_EXPECT_ERROR("NULL 0!=", "requires numeric");
 
-  // Test 0<> stack underflow
-  TEST_EXPECT_ERROR("0<>", "insufficient stack");
+  // Test 0!= stack underflow
+  TEST_EXPECT_ERROR("0!=", "insufficient stack");
 }
 
 // Test combinations and chains of zero comparisons
 // Test combinations and chains of zero comparisons
 TEST_FUNCTION(test_zero_comparison_combinations) {
-  // Test combination: x 0= NOT is equivalent to x 0<>
+  // Test combination: x 0= NOT is equivalent to x 0!=
   TEST_INTERPRET("42 0= NOT");
   TEST_STACK_DEPTH(1);
-  TEST_INTERPRET("42 0<>");
+  TEST_INTERPRET("42 0!=");
   TEST_STACK_DEPTH(2);
   TEST_INTERPRET("=");
   TEST_STACK_TOP_BOOLEAN(true);  // Should be equivalent
@@ -593,7 +593,7 @@ TEST_FUNCTION(test_zero_comparison_edge_cases) {
   TEST_INTERPRET("DROP");
 
   // Test precision near zero
-  TEST_INTERPRET("0.0000000001 0<>");
+  TEST_INTERPRET("0.0000000001 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
@@ -627,7 +627,7 @@ TEST_FUNCTION(test_zero_comparison_result_types) {
   TEST_STACK_TOP_INT(3);  // CELL_BOOLEAN
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("42 0<>");
+  TEST_INTERPRET("42 0!=");
   TEST_INTERPRET("CELL-TYPE");
   TEST_STACK_TOP_INT(3);  // CELL_BOOLEAN
   TEST_INTERPRET("DROP");

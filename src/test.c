@@ -15,6 +15,7 @@
 #include "test_comparison.h"
 #include "test_complex_arithmetic.h"
 #include "test_conversion.h"
+#include "test_logic.h"
 #include "test_memory_ops.h"
 #include "test_stack.h"
 #include "test_variables.h"
@@ -972,11 +973,11 @@ TEST_FUNCTION(zero_comparison_enhanced) {
   TEST_INTERPRET("1 0<=");
   TEST_STACK_TOP_BOOLEAN(false);
   TEST_INTERPRET("DROP");
-  // Test 0<>
-  TEST_INTERPRET("0 0<>");
+  // Test 0!=
+  TEST_INTERPRET("0 0!=");
   TEST_STACK_TOP_BOOLEAN(false);
   TEST_INTERPRET("DROP");
-  TEST_INTERPRET("5 0<>");
+  TEST_INTERPRET("5 0!=");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 }
@@ -1122,6 +1123,9 @@ void init_tests(void) {
 
   // Zero comparison tests
   register_zero_comparison_tests();
+
+  // Logic tests
+  register_logic_tests();
 }
 
 #endif  // TEST_ENABLED

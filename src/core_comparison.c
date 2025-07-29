@@ -211,7 +211,7 @@ static void native_zero_less_equal(context_t* ctx) {
 }
 
 static void native_zero_not_equal(context_t* ctx) {
-  require(ctx, 1, "0<>");
+  require(ctx, 1, "0!=");
 
   cell_t* top = data_peek(ctx, 0);
   bool result;
@@ -231,7 +231,7 @@ static void native_zero_not_equal(context_t* ctx) {
                    .boolean;  // true if non-zero (true), false if zero (false)
       break;
     default:
-      error(ctx, "0<> : requires numeric or boolean type");
+      error(ctx, "0!= : requires numeric or boolean type");
       return;
   }
 
@@ -259,6 +259,6 @@ void add_core_comparison_words(void) {
                   "( n -- flag ) Test if >= zero");
   add_native_word("0<=", native_zero_less_equal,
                   "( n -- flag ) Test if <= zero");
-  add_native_word("0<>", native_zero_not_equal,
+  add_native_word("0!=", native_zero_not_equal,
                   "( n -- flag ) Test if not zero");
 }
