@@ -19,8 +19,7 @@ void print_cell(const cell_t* cell) {
       break;
     case CELL_STRING:
       if (cell->payload.allocated_string) {
-        printf("%.*s", (int)cell->payload.allocated_string->string.length,
-               (char*)cell->payload.allocated_string->string.data);
+        printf("%.*s", (int)cell->payload.allocated_string->string.length, (char*)cell->payload.allocated_string->string.data);
       }
       break;
     case CELL_ARRAY: {
@@ -93,13 +92,10 @@ bool is_truthy(cell_t* cell) {
     case CELL_FLOAT:
       // Check for 0.0, -0.0, and NaN
       double val = cell->payload.f64;
-      return val != 0.0 &&
-             val == val;  // NaN != NaN, so val == val is false for NaN
+      return val != 0.0 && val == val;  // NaN != NaN, so val == val is false for NaN
 
     case CELL_STRING:
-      if (!cell->payload.allocated_string ||
-          !cell->payload.allocated_string->string.length)
-        return false;
+      if (!cell->payload.allocated_string || !cell->payload.allocated_string->string.length) return false;
     default:
       return true;
   }
@@ -128,8 +124,7 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
 
       case CELL_STRING: {
         // Handle null pointers
-        if (!a->payload.allocated_string && !b->payload.allocated_string)
-          return 0;
+        if (!a->payload.allocated_string && !b->payload.allocated_string) return 0;
         if (!a->payload.allocated_string) return -1;
         if (!b->payload.allocated_string) return 1;
 
@@ -160,10 +155,8 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
   }
 
   // Handle numeric type promotion
-  if ((a->type == CELL_INT32 || a->type == CELL_INT64 ||
-       a->type == CELL_FLOAT) &&
-      (b->type == CELL_INT32 || b->type == CELL_INT64 ||
-       b->type == CELL_FLOAT)) {
+  if ((a->type == CELL_INT32 || a->type == CELL_INT64 || a->type == CELL_FLOAT) &&
+      (b->type == CELL_INT32 || b->type == CELL_INT64 || b->type == CELL_FLOAT)) {
     // Convert both to the "highest" numeric type
     double a_val, b_val;
 
@@ -212,8 +205,7 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
 bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
   if (a->type != b->type) {
     // Different types are only equal if both are numeric and have same value
-    if ((a->type == CELL_INT32 || a->type == CELL_INT64) &&
-        (b->type == CELL_INT32 || b->type == CELL_INT64)) {
+    if ((a->type == CELL_INT32 || a->type == CELL_INT64) && (b->type == CELL_INT32 || b->type == CELL_INT64)) {
       int64_t a_val, b_val;
 
       switch (a->type) {
@@ -237,10 +229,8 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
       return a_val == b_val;
     }
 
-    if ((a->type == CELL_INT32 || a->type == CELL_INT64 ||
-         a->type == CELL_FLOAT) &&
-        (b->type == CELL_INT32 || b->type == CELL_INT64 ||
-         b->type == CELL_FLOAT)) {
+    if ((a->type == CELL_INT32 || a->type == CELL_INT64 || a->type == CELL_FLOAT) &&
+        (b->type == CELL_INT32 || b->type == CELL_INT64 || b->type == CELL_FLOAT)) {
       double a_val, b_val;
 
       switch (a->type) {
@@ -288,22 +278,7 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
       return a->payload.boolean == b->payload.boolean;
 
     case CELL_STRING:
-      // Check for interned strings first
-      if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
-        return a->payload.allocated_string == b->payload.allocated_string;
-      }
-      // Regular string comparison
-      if (!a->payload.allocated_string && !b->payload.allocated_string)
-        return true;
-      if (!a->payload.allocated_string || !b->payload.allocated_string)
-        return false;
-
-      const char* adata = a->payload.allocated_string->string.data;
-      const size_t alen = a->payload.allocated_string->string.length;
-      const char* bdata = b->payload.allocated_string->string.data;
-
-      return alen == b->payload.allocated_string->string.length &&
-             strncmp(adata, bdata, alen) == 0;
+      return cell_string_equal(ctx, a, b);
     case CELL_NULL:
     case CELL_UNDEFINED:
       return true;  // These are singletons

@@ -16,9 +16,6 @@ typedef struct intern {
 
 static intern_t* intern_list = NULL;
 
-// Create string from C string
-cell_t string_from_cstr(context_t* ctx, const char* cstr) { return new_string(ctx, cstr); }
-
 // Get string length (handles NULL payload)
 size_t string_length(context_t* ctx, cell_t* str) {
   require(ctx, str != NULL);
@@ -379,23 +376,16 @@ bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
 
   // Fast path: both interned means pointer comparison
   if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
-    // TODO: Will be implemented when internment is added
-    // return a->payload.interned_string == b->payload.interned_string;
-    return false;  // Placeholder for now
+    return a->payload.interned_string == b->payload.interned_string;
   }
 
-  // Slow path: byte-by-byte comparison
-  size_t alen, blen;
-  const uint8_t* adata;
-  const uint8_t* bdata;
-
-  string_view(ctx, a, &alen, &adata);
-  string_view(ctx, b, &blen, &bdata);
+  // Slow path: byte-by-byte comparison using views
+  string_view_t a_view = string_view(ctx, a);
+  string_view_t b_view = string_view(ctx, b);
 
   // Handle empty strings
-  if (alen == 0 && blen == 0) return true;
-  if (alen != blen) return false;
-  if (!adata || !bdata) return false;
+  if (a_view.length == 0 && b_view.length == 0) return true;
+  if (a_view.length != b_view.length) return false;
 
-  return memcmp(adata, bdata, alen) == 0;
+  return memcmp(a_view.data, b_view.data, a_view.length) == 0;
 }
