@@ -16,10 +16,7 @@ typedef struct intern {
 
 static intern_t* intern_list = NULL;
 
-static string_t* intern_lookup(context_t* ctx, const char* cstr) {
-  // Create temporary string using new_string (handles future encoding logic)
-  cell_t temp_cell = new_string(ctx, cstr);
-
+static string_t* intern_lookup(context_t* ctx, const cell_t* cell) {
   for (intern_t* node = intern_list; node; node = node->next) {
     // Create cell for the interned string
     cell_t interned_cell = {0};
@@ -27,15 +24,34 @@ static string_t* intern_lookup(context_t* ctx, const char* cstr) {
     interned_cell.flags = CELL_FLAG_INTERNED;
     interned_cell.payload.interned_string = node->string;
 
-    // Use existing comparison logic (handles future cross-encoding comparisons)
-    if (cell_string_equal(ctx, &temp_cell, &interned_cell)) {
-      release(&temp_cell);
+    // Use existing comparison logic
+    if (cell_string_equal(ctx, cell, &interned_cell)) {
       return node->string;
     }
   }
 
-  release(&temp_cell);
   return NULL;  // Not found
+}
+
+static string_t* intern_add(context_t* ctx, const cell_t* cell) {
+  string_view_t view = string_view(ctx, cell);
+
+  // Allocate just the string_t (no refcount needed for interned strings)
+  size_t total_size = sizeof(string_t) + view.length;
+  string_t* interned_str = metal_alloc(ctx, total_size);
+
+  // Copy string data
+  interned_str->encoding = view.encoding;
+  interned_str->length = view.length;
+  memcpy(interned_str->data, view.data, view.length);
+
+  // Add to intern table
+  intern_t* node = metal_alloc(ctx, sizeof(intern_t));
+  node->string = interned_str;
+  node->next = intern_list;
+  intern_list = node;
+
+  return interned_str;
 }
 
 // Get string length (handles NULL payload)
