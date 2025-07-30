@@ -14,38 +14,37 @@ cell_t string_append_char(context_t* ctx, cell_t* str, char c);
 void cell_to_cstr(cell_t* cell, char* buffer, size_t buffer_size);
 
 // String helper functions
-size_t string_length(cell_t* str);
-bool string_is_empty(cell_t* str);
+size_t string_length(context_t* ctx, cell_t* str);
+bool string_is_empty(context_t* ctx, cell_t* str);
 
 void add_string_words(void);
 
-// String builder for efficient incremental construction
+typedef struct string_view {
+  string_encoding_t encoding;
+  size_t length;
+  const uint8_t* data;  // Points to data, doesn't own it
+} string_view_t;
 
-typedef struct {
-  void* buffer;        // Points to the full allocation (prefix + data)
-  size_t length;       // Current data length
-  size_t capacity;     // Data capacity (excluding prefix)
-  size_t prefix_size;  // Size of reserved prefix space
-} string_builder_t;
+// String builder for efficient incremental construction
+// typedef struct {
+//   void* buffer;        // Points to the full allocation (prefix + data)
+//   size_t length;       // Current data length
+//   size_t capacity;     // Data capacity (excluding prefix)
+//   size_t prefix_size;  // Size of reserved prefix space
+// } string_builder_t;
 
 // String builder functions
-void stringbuilder_init(string_builder_t* builder, size_t prefix_size,
-                        size_t capacity_hint);
-void stringbuilder_append_string(string_builder_t* builder, const char* str,
-                                 size_t str_len);
-void stringbuilder_append_char(string_builder_t* builder, char c);
-char* stringbuilder_end(
-    string_builder_t* builder);  // Returns final allocated string
+// void stringbuilder_init(string_builder_t* builder, size_t prefix_size, size_t capacity_hint);
+// void stringbuilder_append_string(string_builder_t* builder, const char* str, size_t str_len);
+// void stringbuilder_append_char(string_builder_t* builder, char c);
+// char* stringbuilder_end(string_builder_t* builder);  // Returns final allocated string
 
 // Create string cell from pre-allocated buffer (takes ownership)
 cell_t new_preallocated_string(context_t* ctx, char* buffer, size_t length);
 
 // String utility functions (handle interned vs allocated)
-size_t cell_string_length(context_t* ctx, const cell_t* str);
-const uint8_t* cell_string_data(context_t* ctx, const cell_t* str);
-void cell_string_info(context_t* ctx, const cell_t* str, size_t* length,
-                      const uint8_t** data);
+const uint8_t* string_data(context_t* ctx, const cell_t* str);
+string_view_t string_view(context_t* ctx, const cell_t* str);
 bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b);
-bool cell_string_is_empty(context_t* ctx, const cell_t* str);
 
 #endif
