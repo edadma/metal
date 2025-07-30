@@ -16,6 +16,28 @@ typedef struct intern {
 
 static intern_t* intern_list = NULL;
 
+static string_t* intern_lookup(context_t* ctx, const char* cstr) {
+  // Create temporary string using new_string (handles future encoding logic)
+  cell_t temp_cell = new_string(ctx, cstr);
+
+  for (intern_t* node = intern_list; node; node = node->next) {
+    // Create cell for the interned string
+    cell_t interned_cell = {0};
+    interned_cell.type = CELL_STRING;
+    interned_cell.flags = CELL_FLAG_INTERNED;
+    interned_cell.payload.interned_string = node->string;
+
+    // Use existing comparison logic (handles future cross-encoding comparisons)
+    if (cell_string_equal(ctx, &temp_cell, &interned_cell)) {
+      release(&temp_cell);
+      return node->string;
+    }
+  }
+
+  release(&temp_cell);
+  return NULL;  // Not found
+}
+
 // Get string length (handles NULL payload)
 size_t string_length(context_t* ctx, cell_t* str) {
   require(ctx, str != NULL);

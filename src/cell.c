@@ -30,16 +30,16 @@ cell_t new_float(double value) {
   return cell;
 }
 
-cell_t new_string(context_t* ctx, const char* utf8) {
+cell_t new_string(context_t* ctx, const char* cstr) {
   cell_t cell = {0};
   cell.type = CELL_STRING;
 
-  size_t len = strlen(utf8);  // Input length (for now, UTF-8 from C strings)
+  size_t len = strlen(cstr);  // Input length (for now, UTF-8 from C strings)
   allocated_string_t* str = metal_alloc(ctx, sizeof(allocated_string_t) + len);
 
   str->refcount = 0;  // no owner yet
   str->string.length = len;
-  memcpy(str->string.data, utf8, len);
+  memcpy(str->string.data, cstr, len);
 
   cell.payload.allocated_string = str;
   return cell;
@@ -167,8 +167,7 @@ void retain(cell_t* cell) {
   switch (cell->type) {
     case CELL_STRING:
       cell->payload.allocated_string->refcount++;
-      debug("Retained string, refcount now %d",
-            cell->payload.allocated_string->refcount);
+      debug("Retained string, refcount now %d", cell->payload.allocated_string->refcount);
       break;
     case CELL_OBJECT:
     case CELL_CODE: {
@@ -195,9 +194,8 @@ void release(cell_t* cell) {
   switch (cell->type) {
     case CELL_STRING:
       cell->payload.allocated_string->refcount--;
-      debug("Released string, refcount now %d",
-            cell->payload.allocated_string->refcount);
-      if (cell->payload.allocated_string->refcount == 0) {
+      debug("Released string, refcount now %d", cell->payload.allocated_string->refcount);
+      if (cell->payload.allocated_string->refcount <= 0) {
         metal_free(cell->payload.ptr);
         cell->payload.ptr = NULL;
       }
@@ -206,7 +204,7 @@ void release(cell_t* cell) {
     case CELL_CODE: {
       cell->payload.array->refcount--;
       debug("Released code, refcount now %d", cell->payload.array->refcount);
-      if (cell->payload.array->refcount == 0) {
+      if (cell->payload.array->refcount <= 0) {
         // Release all elements first
         cell_array_t* data = cell->payload.array;
         for (size_t i = 0; i < data->length; i++) {
@@ -218,9 +216,8 @@ void release(cell_t* cell) {
     } break;
     case CELL_ARRAY: {
       cell->payload.array->refcount--;
-      debug("Released array cell, refcount now %d",
-            cell->payload.array->refcount);
-      if (cell->payload.array->refcount == 0) {
+      debug("Released array cell, refcount now %d", cell->payload.array->refcount);
+      if (cell->payload.array->refcount <= 0) {
         // Release all elements first
         cell_array_t* data = cell->payload.ptr;
         for (size_t i = 0; i < data->length; i++) {

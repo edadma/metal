@@ -80,12 +80,12 @@ typedef struct cell {
     cell_array_t* array;                   // Pointer to a cell array
     string_t* interned_string;             // Pointer to interned string
     allocated_string_t* allocated_string;  // Pointer to allocated string
-    char utf8_array[8];       // 0-8 UTF-8 characters (renamed from utf8)
-    uint16_t utf16_array[4];  // 0-4 UTF-16 characters (renamed from utf16)
-    uint32_t utf32_array[2];  // 0-2 UTF-32 characters (renamed from utf32)
-    object_t* object;         // Pointer to object (NEW)
-    struct cell* cell_ptr;    // Code pointer (using struct tag to avoid issues)
-    native_func_t native;     // Native function pointer
+    char utf8_array[8];                    // 0-8 UTF-8 characters (renamed from utf8)
+    uint16_t utf16_array[4];               // 0-4 UTF-16 characters (renamed from utf16)
+    uint32_t utf32_array[2];               // 0-2 UTF-32 characters (renamed from utf32)
+    object_t* object;                      // Pointer to object (NEW)
+    struct cell* cell_ptr;                 // Code pointer (using struct tag to avoid issues)
+    native_func_t native;                  // Native function pointer
     struct {
       uint8_t r, g, b;
     } rgb;  // RGB color
@@ -114,15 +114,11 @@ typedef struct cell {
 #define CELL_STR_LEN(cell) ((cell)->flags_and_len & 0x07)
 #define CELL_FLAGS(cell) (((cell)->flags_and_len >> 3) & 0x1F)
 
-#define CELL_SET_STR_LEN(cell, len) \
-  ((cell)->flags_and_len = ((cell)->flags_and_len & 0xF8) | ((len) & 0x07))
+#define CELL_SET_STR_LEN(cell, len) ((cell)->flags_and_len = ((cell)->flags_and_len & 0xF8) | ((len) & 0x07))
 
-#define CELL_SET_FLAGS(cell, flags) \
-  ((cell)->flags_and_len =          \
-       ((cell)->flags_and_len & 0x07) | (((flags) & 0x1F) << 3))
+#define CELL_SET_FLAGS(cell, flags) ((cell)->flags_and_len = ((cell)->flags_and_len & 0x07) | (((flags) & 0x1F) << 3))
 
-#define CELL_SET_FLAGS_AND_LEN(cell, flags, len) \
-  ((cell)->flags_and_len = (((flags) & 0x1F) << 3) | ((len) & 0x07))
+#define CELL_SET_FLAGS_AND_LEN(cell, flags, len) ((cell)->flags_and_len = (((flags) & 0x1F) << 3) | ((len) & 0x07))
 
 // Array data structure
 typedef struct cell_array {
@@ -150,7 +146,7 @@ typedef struct object {
 cell_t new_int32(int32_t value);
 cell_t new_int64(int64_t value);
 cell_t new_float(double value);
-cell_t new_string(context_t* ctx, const char* utf8);
+cell_t new_string(context_t* ctx, const char* cstr);
 cell_t new_empty_string(void);
 cell_t new_empty_object(void);
 cell_t new_empty_array(void);
