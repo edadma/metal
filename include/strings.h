@@ -40,4 +40,12 @@ char* stringbuilder_end(
 // Create string cell from pre-allocated buffer (takes ownership)
 cell_t new_preallocated_string(context_t* ctx, char* buffer, size_t length);
 
+// String utility functions (handle interned vs allocated)
+size_t cell_string_length(context_t* ctx, const cell_t* str);
+const uint8_t* cell_string_data(context_t* ctx, const cell_t* str);
+void cell_string_info(context_t* ctx, const cell_t* str, size_t* length,
+                      const uint8_t** data);
+bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b);
+bool cell_string_is_empty(context_t* ctx, const cell_t* str);
+
 #endif

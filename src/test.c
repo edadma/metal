@@ -451,7 +451,7 @@ static void native_test(context_t* ctx) {
 
 // REFCOUNT ( cell -- n ) Get reference count of allocated cell data
 static void native_refcount(context_t* ctx) {
-  require(ctx, 1, "REFCOUNT");
+  require_params(ctx, 1, "REFCOUNT");
   cell_t* cell = data_pop(ctx);
   int refcount = 0;
   // Only allocated types have refcounts
@@ -489,7 +489,7 @@ static void native_mem_reset(context_t* ctx) {
 
 // CELL-ADDR ( cell -- addr ) Get payload address for comparing sharing
 static void native_cell_addr(context_t* ctx) {
-  require(ctx, 1, "CELL-ADDR");
+  require_params(ctx, 1, "CELL-ADDR");
   cell_t* cell = data_pop(ctx);
   data_push(ctx, new_int64((int64_t)(uintptr_t)cell->payload.ptr));
   release(cell);
@@ -497,7 +497,7 @@ static void native_cell_addr(context_t* ctx) {
 
 // CELL-TYPE ( cell -- type ) Get cell type as integer
 static void native_cell_type(context_t* ctx) {
-  require(ctx, 1, "CELL-TYPE");
+  require_params(ctx, 1, "CELL-TYPE");
   cell_t* cell = data_pop(ctx);
   data_push(ctx, new_int32((int32_t)cell->type));
   release(cell);

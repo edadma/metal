@@ -6,6 +6,7 @@
 #include "dictionary.h"
 #include "error.h"
 #include "memory.h"
+#include "require.h"
 #include "stack.h"
 
 typedef struct intern {
@@ -330,4 +331,102 @@ void add_string_words(void) {
   // Add convenient aliases/definitions
   // add_definition("PRINTF", "FORMAT PRINT",
   //                "( args... format -- ) Format and print string");
+}
+
+// String utility functions to handle interned vs allocated strings
+// Add these to src/strings.c
+
+// Get string length regardless of storage type
+size_t cell_string_length(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+
+  if (str->flags & CELL_FLAG_INTERNED) {
+    // TODO: Will be implemented when internment is added
+    // return str->payload.interned_string->length;
+    return 0;  // Placeholder for now
+  } else {
+    // Current allocated string behavior
+    if (!str->payload.allocated_string) {
+      return 0;
+    }
+    return str->payload.allocated_string->string.length;
+  }
+}
+
+// Get string data pointer regardless of storage type
+const uint8_t* cell_string_data(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+
+  if (str->flags & CELL_FLAG_INTERNED) {
+    // TODO: Will be implemented when internment is added
+    // return str->payload.interned_string->data;
+    return NULL;  // Placeholder for now
+  } else {
+    // Current allocated string behavior
+    if (!str->payload.allocated_string) {
+      return NULL;
+    }
+    return str->payload.allocated_string->string.data;
+  }
+}
+
+// Get both length and data in one call (more efficient)
+void cell_string_info(context_t* ctx, const cell_t* str, size_t* length,
+                      const uint8_t** data) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+
+  if (str->flags & CELL_FLAG_INTERNED) {
+    // TODO: Will be implemented when internment is added
+    if (length) *length = 0;
+    if (data) *data = NULL;
+  } else {
+    // Current allocated string behavior
+    if (!str->payload.allocated_string) {
+      if (length) *length = 0;
+      if (data) *data = NULL;
+    } else {
+      if (length) *length = str->payload.allocated_string->string.length;
+      if (data) *data = str->payload.allocated_string->string.data;
+    }
+  }
+}
+
+// Fast string equality with interned string optimization
+bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
+  require(ctx, a != NULL);
+  require(ctx, b != NULL);
+  require(ctx, a->type == CELL_STRING);
+  require(ctx, b->type == CELL_STRING);
+
+  // Fast path: both interned means pointer comparison
+  if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
+    // TODO: Will be implemented when internment is added
+    // return a->payload.interned_string == b->payload.interned_string;
+    return false;  // Placeholder for now
+  }
+
+  // Slow path: byte-by-byte comparison
+  size_t alen, blen;
+  const uint8_t* adata;
+  const uint8_t* bdata;
+
+  cell_string_info(ctx, a, &alen, &adata);
+  cell_string_info(ctx, b, &blen, &bdata);
+
+  // Handle empty strings
+  if (alen == 0 && blen == 0) return true;
+  if (alen != blen) return false;
+  if (!adata || !bdata) return false;
+
+  return memcmp(adata, bdata, alen) == 0;
+}
+
+// Check if string is empty (more readable than checking length == 0)
+bool cell_string_is_empty(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+  return cell_string_length(ctx, str) == 0;
 }
