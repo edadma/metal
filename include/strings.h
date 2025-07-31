@@ -15,6 +15,7 @@ void cell_to_cstr(cell_t* cell, char* buffer, size_t buffer_size);
 // String helper functions
 size_t string_length(context_t* ctx, cell_t* str);
 bool string_is_empty(context_t* ctx, cell_t* str);
+bool string_equal(context_t* ctx, const string_t* a, const string_t* b);
 
 void add_string_words(void);
 

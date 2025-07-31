@@ -9,23 +9,17 @@
 #include "require.h"
 #include "stack.h"
 
+typedef struct intern intern_t;
 typedef struct intern {
-  string_t* string;  // Points directly to string_t
-  struct intern* next;
+  const string_t* string;
+  const intern_t* next;
 } intern_t;
 
 static intern_t* intern_list = NULL;
 
-static string_t* intern_lookup(context_t* ctx, const cell_t* cell) {
-  for (intern_t* node = intern_list; node; node = node->next) {
-    // Create cell for the interned string
-    cell_t interned_cell = {0};
-    interned_cell.type = CELL_STRING;
-    interned_cell.flags = CELL_FLAG_INTERNED;
-    interned_cell.payload.interned_string = node->string;
-
-    // Use existing comparison logic
-    if (cell_string_equal(ctx, cell, &interned_cell)) {
+static const string_t* intern_lookup(context_t* ctx, const string_t* str) {
+  for (const intern_t* node = intern_list; node; node = node->next) {
+    if (string_equal(ctx, str, node->string)) {
       return node->string;
     }
   }
@@ -33,25 +27,12 @@ static string_t* intern_lookup(context_t* ctx, const cell_t* cell) {
   return NULL;  // Not found
 }
 
-static string_t* intern_add(context_t* ctx, const cell_t* cell) {
-  string_view_t view = string_view(ctx, cell);
-
-  // Allocate just the string_t (no refcount needed for interned strings)
-  size_t total_size = sizeof(string_t) + view.length;
-  string_t* interned_str = metal_alloc(ctx, total_size);
-
-  // Copy string data
-  interned_str->encoding = view.encoding;
-  interned_str->length = view.length;
-  memcpy(interned_str->data, view.data, view.length);
-
+static void intern_add(context_t* ctx, const string_t* allocated_string) {
   // Add to intern table
   intern_t* node = metal_alloc(ctx, sizeof(intern_t));
-  node->string = interned_str;
+  node->string = allocated_string;
   node->next = intern_list;
   intern_list = node;
-
-  return interned_str;
 }
 
 // Get string length (handles NULL payload)
@@ -153,16 +134,16 @@ const string_t* new_string(context_t* ctx, char* cstr) {
 }
 
 // Get string data pointer regardless of storage type
-const uint8_t* string_data(context_t* ctx, const cell_t* str) {
-  require(ctx, str != NULL);
-  require(ctx, str->type == CELL_STRING);
-
-  if (!str->payload.ptr) return "";
-
-  if (str->flags & CELL_FLAG_INTERNED) return str->payload.interned_string->data;
-
-  return str->payload.allocated_string->string.data;
-}
+// const uint8_t* string_data(context_t* ctx, const cell_t* str) {
+//   require(ctx, str != NULL);
+//   require(ctx, str->type == CELL_STRING);
+//
+//   if (!str->payload.ptr) return "";
+//
+//   if (str->flags & CELL_FLAG_INTERNED) return str->payload.interned_string->data;
+//
+//   return str->payload.allocated_string->string.data;
+// }
 
 // Get both length and data in one call (more efficient)
 string_view_t string_view(context_t* ctx, const cell_t* str) {
