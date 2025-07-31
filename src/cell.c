@@ -205,11 +205,13 @@ void release(cell_t* cell) {
 
   switch (cell->type) {
     case CELL_STRING:
-      cell->payload.allocated_string->refcount--;
-      debug("Released string, refcount now %d", cell->payload.allocated_string->refcount);
-      if (cell->payload.allocated_string->refcount <= 0) {
-        metal_free(cell->payload.ptr);
-        cell->payload.ptr = NULL;
+      if (!(cell->flags & CELL_FLAG_INTERNED)) {
+        cell->payload.allocated_string->refcount--;
+        debug("Released string, refcount now %d", cell->payload.allocated_string->refcount);
+        if (cell->payload.allocated_string->refcount <= 0) {
+          metal_free(cell->payload.ptr);
+          cell->payload.ptr = NULL;
+        }
       }
       break;
     case CELL_OBJECT:
