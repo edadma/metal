@@ -122,8 +122,11 @@ cell_t string_concat(context_t* ctx, cell_t* a, cell_t* b) {
   new_str->string.length = alen + blen;
 
   // Copy both strings
-  memcpy(new_str->string.data, a->payload.allocated_string->string.data, alen);
-  memcpy(new_str->string.data + alen, b->payload.allocated_string->string.data, blen);
+  const uint8_t* adata = string_get_data(ctx, a);
+  const uint8_t* bdata = string_get_data(ctx, b);
+
+  memcpy(new_str->string.data, adata, alen);
+  memcpy(new_str->string.data + alen, bdata, blen);
 
   // Create result cell
   cell_t result = {0};

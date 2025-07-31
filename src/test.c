@@ -76,20 +76,17 @@ void test_equal(const char* file, int line, const char* expr, int a, int b) {
   if (a == b) {
     test_pass(file, line, expr);
   } else {
-    printf("FAIL: %s:%d - %s (got %d, expected %d)\n", get_filename(file), line,
-           expr, a, b);
+    printf("FAIL: %s:%d - %s (got %d, expected %d)\n", get_filename(file), line, expr, a, b);
     test_failed++;
   }
 }
 
-void test_not_equal(const char* file, int line, const char* expr, int a,
-                    int b) {
+void test_not_equal(const char* file, int line, const char* expr, int a, int b) {
   test_count++;
   if (a != b) {
     test_pass(file, line, expr);
   } else {
-    printf("FAIL: %s:%d - %s (both values are %d)\n", get_filename(file), line,
-           expr, a);
+    printf("FAIL: %s:%d - %s (both values are %d)\n", get_filename(file), line, expr, a);
     test_failed++;
   }
 }
@@ -99,8 +96,7 @@ void test_null(const char* file, int line, const char* expr, void* ptr) {
   if (ptr == NULL) {
     test_pass(file, line, expr);
   } else {
-    printf("FAIL: %s:%d - %s (got %p, expected NULL)\n", get_filename(file),
-           line, expr, ptr);
+    printf("FAIL: %s:%d - %s (got %p, expected NULL)\n", get_filename(file), line, expr, ptr);
     test_failed++;
   }
 }
@@ -114,14 +110,13 @@ void test_not_null(const char* file, int line, const char* expr, void* ptr) {
   }
 }
 
-void test_string_equal(const char* file, int line, const char* expr,
-                       const char* a, const char* b) {
+void test_string_equal(const char* file, int line, const char* expr, const char* a, const char* b) {
   test_count++;
   if (a && b && strcmp(a, b) == 0) {
     test_pass(file, line, expr);
   } else {
-    printf("FAIL: %s:%d - %s (got \"%s\", expected \"%s\")\n",
-           get_filename(file), line, expr, a ? a : "(null)", b ? b : "(null)");
+    printf("FAIL: %s:%d - %s (got \"%s\", expected \"%s\")\n", get_filename(file), line, expr, a ? a : "(null)",
+           b ? b : "(null)");
     test_failed++;
   }
 }
@@ -138,15 +133,13 @@ void test_interpret(const char* file, int line, const char* code) {
     printf("PASS: %s:%d - interpret(\"%s\")\n", get_filename(file), line, code);
     test_passed++;
   } else {
-    printf("FAIL: %s:%d - interpret(\"%s\") failed\n", get_filename(file), line,
-           code);
+    printf("FAIL: %s:%d - interpret(\"%s\") failed\n", get_filename(file), line, code);
     test_failed++;
   }
   debug("test_interpret: Completed");
 }
 
-void test_stack_depth(const char* file, int line, const char* expr,
-                      int expected) {
+void test_stack_depth(const char* file, int line, const char* expr, int expected) {
   test_count++;
   context_t* ctx = &test_context;
   int actual = data_depth(ctx);
@@ -154,20 +147,17 @@ void test_stack_depth(const char* file, int line, const char* expr,
   if (actual == expected) {
     test_pass(file, line, expr);
   } else {
-    printf("FAIL: %s:%d - %s (got depth %d, expected %d)\n", get_filename(file),
-           line, expr, actual, expected);
+    printf("FAIL: %s:%d - %s (got depth %d, expected %d)\n", get_filename(file), line, expr, actual, expected);
     test_failed++;
   }
 }
 
-void test_stack_top_int(const char* file, int line, const char* expr,
-                        int expected) {
+void test_stack_top_int(const char* file, int line, const char* expr, int expected) {
   test_count++;
   context_t* ctx = &test_context;
 
   if (is_data_empty(ctx)) {
-    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
-           expr);
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line, expr);
     test_failed++;
     return;
   }
@@ -176,18 +166,15 @@ void test_stack_top_int(const char* file, int line, const char* expr,
   if (top.type == CELL_INT32 && top.payload.i32 == expected) {
     test_pass(file, line, expr);
   } else if (top.type == CELL_INT32) {
-    printf("FAIL: %s:%d - %s (got %d, expected %d)\n", get_filename(file), line,
-           expr, top.payload.i32, expected);
+    printf("FAIL: %s:%d - %s (got %d, expected %d)\n", get_filename(file), line, expr, top.payload.i32, expected);
     test_failed++;
   } else {
-    printf("FAIL: %s:%d - %s (top is not int32, type=%d)\n", get_filename(file),
-           line, expr, top.type);
+    printf("FAIL: %s:%d - %s (top is not int32, type=%d)\n", get_filename(file), line, expr, top.type);
     test_failed++;
   }
 }
 
-void test_stack_top_int64(const char* file, int line, const char* expr,
-                          int64_t expected) {
+void test_stack_top_int64(const char* file, int line, const char* expr, int64_t expected) {
   test_count++;
   context_t* ctx = &test_context;
 
@@ -201,62 +188,52 @@ void test_stack_top_int64(const char* file, int line, const char* expr,
 
   if (top->type != CELL_INT64) {
     test_failed++;
-    printf("%s:%d FAIL: %s - Expected CELL_INT64, got type %d\n", file, line,
-           expr, top->type);
+    printf("%s:%d FAIL: %s - Expected CELL_INT64, got type %d\n", file, line, expr, top->type);
     return;
   }
 
   if (top->payload.i64 != expected) {
     test_failed++;
-    printf("%s:%d FAIL: %s - Expected %lld, got %lld\n", file, line, expr,
-           (long long)expected, (long long)top->payload.i64);
+    printf("%s:%d FAIL: %s - Expected %lld, got %lld\n", file, line, expr, (long long)expected, (long long)top->payload.i64);
     return;
   }
 
   test_pass(file, line, expr);
 }
 
-void test_stack_top_string(const char* file, int line, const char* expr,
-                           const char* expected) {
+void test_stack_top_string(const char* file, int line, const char* expr, const char* expected) {
   test_count++;
   context_t* ctx = &test_context;
 
   if (is_data_empty(ctx)) {
-    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
-           expr);
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line, expr);
     test_failed++;
     return;
   }
 
   cell_t top = data_peek_cell(ctx, 0);
   if (top.type == CELL_STRING) {
-    const char* actual = (const char*)top.payload.allocated_string->string.data;
-    const size_t len = top.payload.allocated_string->string.length;
+    char actual_buffer[256];
+    size_t actual_len = string_to_utf8(ctx, &top, actual_buffer, sizeof(actual_buffer));
 
-    if (actual && expected && len == strlen(expected) &&
-        strncmp(actual, expected, len) == 0) {
+    if (expected && actual_len == strlen(expected) && strncmp(actual_buffer, expected, actual_len) == 0) {
       test_pass(file, line, expr);
     } else {
-      printf("FAIL: %s:%d - %s (got \"%s\", expected \"%s\")\n",
-             get_filename(file), line, expr, actual ? actual : "(null)",
-             expected);
+      printf("FAIL: %s:%d - %s (got \"%s\", expected \"%s\")\n", get_filename(file), line, expr, actual_buffer, expected);
       test_failed++;
     }
   } else {
-    printf("FAIL: %s:%d - %s (top is not string, type=%d)\n",
-           get_filename(file), line, expr, top.type);
+    printf("FAIL: %s:%d - %s (top is not string, type=%d)\n", get_filename(file), line, expr, top.type);
     test_failed++;
   }
 }
 
-void test_stack_top_float(const char* file, int line, const char* expr,
-                          double expected) {
+void test_stack_top_float(const char* file, int line, const char* expr, double expected) {
   test_count++;
   context_t* ctx = &test_context;
 
   if (is_data_empty(ctx)) {
-    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
-           expr);
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line, expr);
     test_failed++;
     return;
   }
@@ -265,12 +242,10 @@ void test_stack_top_float(const char* file, int line, const char* expr,
   if (top.type == CELL_FLOAT && fabs(top.payload.f64 - expected) < 1e-10) {
     test_pass(file, line, expr);
   } else if (top.type == CELL_FLOAT) {
-    printf("FAIL: %s:%d - %s (got %g, expected %g)\n", get_filename(file), line,
-           expr, top.payload.f64, expected);
+    printf("FAIL: %s:%d - %s (got %g, expected %g)\n", get_filename(file), line, expr, top.payload.f64, expected);
     test_failed++;
   } else {
-    printf("FAIL: %s:%d - %s (top is not float, type=%d)\n", get_filename(file),
-           line, expr, top.type);
+    printf("FAIL: %s:%d - %s (top is not float, type=%d)\n", get_filename(file), line, expr, top.type);
     test_failed++;
   }
 }
@@ -281,8 +256,7 @@ static bool error_occurred = false;
 static char expected_error_pattern[256];
 
 // Test helper to expect an error
-void test_expect_error(const char* file, int line, const char* code,
-                       const char* error_pattern) {
+void test_expect_error(const char* file, int line, const char* code, const char* error_pattern) {
   test_count++;
   context_t* ctx = &test_context;
 
@@ -292,31 +266,26 @@ void test_expect_error(const char* file, int line, const char* code,
   if (result != METAL_OK) {
     // Error occurred - check if it matches what we expected
     if (ctx->error_msg && strstr(ctx->error_msg, error_pattern)) {
-      printf("PASS: %s:%d - expect_error(\"%s\", \"%s\")\n", get_filename(file),
-             line, code, error_pattern);
+      printf("PASS: %s:%d - expect_error(\"%s\", \"%s\")\n", get_filename(file), line, code, error_pattern);
       test_passed++;
     } else {
-      printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - wrong error: %s\n",
-             get_filename(file), line, code, error_pattern,
+      printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - wrong error: %s\n", get_filename(file), line, code, error_pattern,
              ctx->error_msg ? ctx->error_msg : "(null)");
       test_failed++;
     }
   } else {
     // No error occurred when we expected one
-    printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - no error occurred\n",
-           get_filename(file), line, code, error_pattern);
+    printf("FAIL: %s:%d - expect_error(\"%s\", \"%s\") - no error occurred\n", get_filename(file), line, code, error_pattern);
     test_failed++;
   }
 }
 
-void test_stack_top_boolean(const char* file, int line, const char* expr,
-                            bool expected) {
+void test_stack_top_boolean(const char* file, int line, const char* expr, bool expected) {
   test_count++;
   context_t* ctx = &test_context;
 
   if (is_data_empty(ctx)) {
-    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
-           expr);
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line, expr);
     test_failed++;
     return;
   }
@@ -325,26 +294,22 @@ void test_stack_top_boolean(const char* file, int line, const char* expr,
   if (top.type == CELL_BOOLEAN && top.payload.boolean == expected) {
     test_pass(file, line, expr);
   } else if (top.type == CELL_BOOLEAN) {
-    printf("FAIL: %s:%d - %s (got %s, expected %s)\n", get_filename(file), line,
-           expr, top.payload.boolean ? "true" : "false",
+    printf("FAIL: %s:%d - %s (got %s, expected %s)\n", get_filename(file), line, expr, top.payload.boolean ? "true" : "false",
            expected ? "true" : "false");
     test_failed++;
   } else {
-    printf("FAIL: %s:%d - %s (top is not boolean, type=%d)\n",
-           get_filename(file), line, expr, top.type);
+    printf("FAIL: %s:%d - %s (top is not boolean, type=%d)\n", get_filename(file), line, expr, top.type);
     test_failed++;
   }
 }
 
 // Helper to test if stack top is truthy (for any type)
-void test_stack_top_truthy(const char* file, int line, const char* expr,
-                           bool should_be_truthy) {
+void test_stack_top_truthy(const char* file, int line, const char* expr, bool should_be_truthy) {
   test_count++;
   context_t* ctx = &test_context;
 
   if (is_data_empty(ctx)) {
-    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line,
-           expr);
+    printf("FAIL: %s:%d - %s (stack is empty)\n", get_filename(file), line, expr);
     test_failed++;
     return;
   }
@@ -355,8 +320,7 @@ void test_stack_top_truthy(const char* file, int line, const char* expr,
   if (is_truthy_result == should_be_truthy) {
     test_pass(file, line, expr);
   } else {
-    printf("FAIL: %s:%d - %s (value is %s, expected %s)\n", get_filename(file),
-           line, expr, is_truthy_result ? "truthy" : "falsy",
+    printf("FAIL: %s:%d - %s (value is %s, expected %s)\n", get_filename(file), line, expr, is_truthy_result ? "truthy" : "falsy",
            should_be_truthy ? "truthy" : "falsy");
     test_failed++;
   }
@@ -392,20 +356,17 @@ void run_all_tests(void) {
 
   debug("run_all_tests: reset_test_stats completed");
 
-  debug("run_all_tests: About to iterate through %d tests",
-        registered_test_count);
+  debug("run_all_tests: About to iterate through %d tests", registered_test_count);
 
   for (int i = 0; i < registered_test_count; i++) {
     debug("run_all_tests: Starting test %d: %s", i, test_registry[i].name);
     printf("\n--- Test: %s ---\n", test_registry[i].name);
 
-    debug("run_all_tests: About to call test function %p",
-          (void*)test_registry[i].func);
+    debug("run_all_tests: About to call test function %p", (void*)test_registry[i].func);
     test_registry[i].func();
     debug("run_all_tests: Test function completed");
 
-    debug("run_all_tests: About to clear stack, current depth: %d",
-          data_depth(&test_context));
+    debug("run_all_tests: About to clear stack, current depth: %d", data_depth(&test_context));
 
     // Clear context stack after each test function
     int cleared_count = 0;
@@ -477,8 +438,7 @@ static void native_refcount(context_t* ctx) {
 static void native_mem_stats(context_t* ctx) {
   int allocs, frees;
   get_memory_stats(&allocs, &frees);
-  printf("Memory: %d allocs, %d frees, %d leaked\n", allocs, frees,
-         allocs - frees);
+  printf("Memory: %d allocs, %d frees, %d leaked\n", allocs, frees, allocs - frees);
 }
 
 // MEM-RESET ( -- ) Reset memory statistics
@@ -508,16 +468,11 @@ void add_test_words(void) {
   add_native_word("TEST", native_test, "( -- ) Run all unit tests");
 
   // Memory inspection words for testing
-  add_native_word("REFCOUNT", native_refcount,
-                  "( cell -- n ) Get reference count");
-  add_native_word("MEM-STATS", native_mem_stats,
-                  "( -- ) Show memory statistics");
-  add_native_word("MEM-RESET", native_mem_reset,
-                  "( -- ) Reset memory statistics");
-  add_native_word("CELL-ADDR", native_cell_addr,
-                  "( cell -- addr ) Get payload address");
-  add_native_word("CELL-TYPE", native_cell_type,
-                  "( cell -- type ) Get cell type as number");
+  add_native_word("REFCOUNT", native_refcount, "( cell -- n ) Get reference count");
+  add_native_word("MEM-STATS", native_mem_stats, "( -- ) Show memory statistics");
+  add_native_word("MEM-RESET", native_mem_reset, "( -- ) Reset memory statistics");
+  add_native_word("CELL-ADDR", native_cell_addr, "( cell -- addr ) Get payload address");
+  add_native_word("CELL-TYPE", native_cell_type, "( cell -- type ) Get cell type as number");
 }
 
 // Example test functions to demonstrate usage
@@ -635,8 +590,7 @@ TEST_FUNCTION(begin_again_accumulator) {
 
 // Test BEGIN/AGAIN with conditional EXIT
 TEST_FUNCTION(begin_again_conditional) {
-  TEST_INTERPRET(
-      "DEF find-even 0 BEGIN 1 + DUP 2 % 0 = IF EXIT THEN AGAIN END");
+  TEST_INTERPRET("DEF find-even 0 BEGIN 1 + DUP 2 % 0 = IF EXIT THEN AGAIN END");
   TEST_INTERPRET("find-even");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_INT(2);  // First even number after 1
@@ -723,8 +677,7 @@ TEST_FUNCTION(begin_until_immediate_exit) {
 
 // Test multiple accumulators with BEGIN/UNTIL
 TEST_FUNCTION(begin_until_double_counter) {
-  TEST_INTERPRET(
-      "DEF double-count 0 0 BEGIN SWAP 1 + SWAP 2 + DUP 10 >= UNTIL DROP END");
+  TEST_INTERPRET("DEF double-count 0 0 BEGIN SWAP 1 + SWAP 2 + DUP 10 >= UNTIL DROP END");
   TEST_INTERPRET("double-count");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_INT(5);  // Counter that increments by 1 while other goes by 2
@@ -732,8 +685,7 @@ TEST_FUNCTION(begin_until_double_counter) {
 
 // Test BEGIN/UNTIL with string comparison
 TEST_FUNCTION(begin_until_string_length) {
-  TEST_INTERPRET(
-      "DEF build-string \"\" BEGIN \"x\" + DUP LENGTH 4 >= UNTIL END");
+  TEST_INTERPRET("DEF build-string \"\" BEGIN \"x\" + DUP LENGTH 4 >= UNTIL END");
   TEST_INTERPRET("build-string");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_STRING("xxxx");
@@ -781,8 +733,7 @@ TEST_FUNCTION(begin_while_repeat_no_loop) {
   TEST_INTERPRET("DEF no-loop 10 BEGIN DUP 5 < WHILE 1 + REPEAT END");
   TEST_INTERPRET("no-loop");
   TEST_STACK_DEPTH(1);
-  TEST_STACK_TOP_INT(
-      10);  // Should not enter loop body, condition false from start
+  TEST_STACK_TOP_INT(10);  // Should not enter loop body, condition false from start
 }
 
 // Test BEGIN/WHILE/REPEAT with accumulator pattern
@@ -825,8 +776,7 @@ TEST_FUNCTION(begin_while_repeat_nested) {
 
 // Test BEGIN/WHILE/REPEAT with string building
 TEST_FUNCTION(begin_while_repeat_string) {
-  TEST_INTERPRET(
-      "DEF build-while \"\" BEGIN DUP LENGTH 3 < WHILE \"x\" + REPEAT END");
+  TEST_INTERPRET("DEF build-while \"\" BEGIN DUP LENGTH 3 < WHILE \"x\" + REPEAT END");
   TEST_INTERPRET("build-while");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_STRING("xxx");
@@ -907,8 +857,7 @@ TEST_FUNCTION(do_loop_i_access) {
 }
 
 TEST_FUNCTION(do_loop_unloop_exit) {
-  TEST_INTERPRET(
-      "DEF test-unloop 5 0 DO I DUP 2 = IF UNLOOP 99 EXIT THEN LOOP 77 END");
+  TEST_INTERPRET("DEF test-unloop 5 0 DO I DUP 2 = IF UNLOOP 99 EXIT THEN LOOP 77 END");
   TEST_INTERPRET("test-unloop");
   TEST_STACK_DEPTH(4);     // Should have 0, 1, 2, 99
   TEST_STACK_TOP_INT(99);  // Early exit when I=2
