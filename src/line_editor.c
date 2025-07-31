@@ -169,8 +169,7 @@ static void redraw_from_cursor(line_buffer_t *line) {
   terminal_clear_eol();
 
   // Print remaining characters from cursor position
-  printf("%.*s", (int)(line->length - line->cursor_pos),
-         line->buffer + line->cursor_pos);
+  printf("%.*s", (int)(line->length - line->cursor_pos), line->buffer + line->cursor_pos);
 
   // Move cursor back to original position
   size_t chars_printed = line->length - line->cursor_pos;
@@ -247,7 +246,7 @@ static void handle_delete(line_buffer_t *line) {
 static void handle_key_event(line_buffer_t *line, key_event_t event) {
   switch (event.type) {
     case KEY_NORMAL:
-      if (event.character >= 32 && event.character < 127) {
+      if (event.character >= 32) {
         // When user starts typing, reset history view
         history_reset_view(&command_history);
 
