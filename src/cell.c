@@ -176,8 +176,10 @@ void retain(cell_t* cell) {
   // Only allocated types need refcount management
   switch (cell->type) {
     case CELL_STRING:
-      cell->payload.allocated_string->refcount++;
-      debug("Retained string, refcount now %d", cell->payload.allocated_string->refcount);
+      if (!(cell->flags & CELL_FLAG_INTERNED)) {
+        cell->payload.allocated_string->refcount++;
+        debug("Retained string, refcount now %d", cell->payload.allocated_string->refcount);
+      }
       break;
     case CELL_OBJECT:
     case CELL_CODE: {
