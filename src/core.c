@@ -19,7 +19,7 @@ static void native_print(context_t* ctx) {
   require_params(ctx, 1, "PRINT");
 
   cell_t* cell = data_pop(ctx);
-  print_cell(cell);
+  print_cell(ctx, cell);
   release(cell);
 }
 
@@ -91,8 +91,7 @@ static void native_constant(context_t* ctx) {
   require_params(ctx, 1, "CONSTANT");
   // Parse next word as the constant name
   char word_buffer[MAX_NAME_LENGTH];
-  token_type_t token_type =
-      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
+  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
   if (token_type != TOKEN_WORD) {
     error(ctx, "CONSTANT: expected constant name");
   }
@@ -113,8 +112,7 @@ static void native_constant(context_t* ctx) {
 static void native_variable(context_t* ctx) {
   // Parse next word as the variable name
   char word_buffer[MAX_NAME_LENGTH];
-  token_type_t token_type =
-      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
+  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
   if (token_type != TOKEN_WORD) {
     error(ctx, "VARIABLE: expected variable name");
   }
@@ -350,8 +348,7 @@ static void native_loop_runtime(context_t* ctx) {
   int32_t limit = limit_cell->payload.i32;
   int32_t new_index = old_index + 1;
 
-  debug("LOOP: old_index=%d new_index=%d limit=%d", old_index, new_index,
-        limit);
+  debug("LOOP: old_index=%d new_index=%d limit=%d", old_index, new_index, limit);
 
   if (new_index >= limit) {
     // Exit loop - clean up return stack and skip the branch
@@ -391,8 +388,7 @@ static void native_plus_loop_runtime(context_t* ctx) {
   int32_t n = increment.payload.i32;
   int32_t new_index = old_index + n;
 
-  debug("+LOOP: old_index=%d increment=%d new_index=%d limit=%d", old_index, n,
-        new_index, limit);
+  debug("+LOOP: old_index=%d increment=%d new_index=%d limit=%d", old_index, n, new_index, limit);
 
   // ANS Forth boundary crossing logic
   bool terminate;
@@ -530,8 +526,7 @@ static void native_unloop(context_t* ctx) {
 // ' (tick) - Get code cell from dictionary
 static void native_tick(context_t* ctx) {
   char word_buffer[MAX_NAME_LENGTH];
-  token_type_t token_type =
-      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
+  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
 
   if (token_type != TOKEN_WORD) {
     error(ctx, "' : expected word name");
@@ -554,8 +549,7 @@ static void native_bracket_tick(context_t* ctx) {
   }
 
   char word_buffer[MAX_NAME_LENGTH];
-  token_type_t token_type =
-      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
+  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
 
   if (token_type != TOKEN_WORD) {
     error(ctx, "['] : expected word name");
@@ -652,8 +646,7 @@ static void native_plus_store(context_t* ctx) {
       } else if (value_cell->type == CELL_FLOAT) {
         // Promote to FLOAT
         target->type = CELL_FLOAT;
-        target->payload.f64 =
-            (double)target->payload.i32 + value_cell->payload.f64;
+        target->payload.f64 = (double)target->payload.i32 + value_cell->payload.f64;
       } else {
         error(ctx, "+! : incompatible types");
       }
@@ -667,8 +660,7 @@ static void native_plus_store(context_t* ctx) {
       } else if (value_cell->type == CELL_FLOAT) {
         // Promote to FLOAT
         target->type = CELL_FLOAT;
-        target->payload.f64 =
-            (double)target->payload.i64 + value_cell->payload.f64;
+        target->payload.f64 = (double)target->payload.i64 + value_cell->payload.f64;
       } else {
         error(ctx, "+! : incompatible types");
       }
@@ -761,38 +753,24 @@ static void native_one_minus_store(context_t* ctx) {
 }
 
 // Internal words - not in dictionary
-static const cell_t literal_cell = {.type = CELL_NATIVE,
-                                    .flags = 0,
-                                    .word_idx = -1,
-                                    .payload.native = native_literal};
+static const cell_t literal_cell = {.type = CELL_NATIVE, .flags = 0, .word_idx = -1, .payload.native = native_literal};
 
-static const cell_t do_runtime_cell = {.type = CELL_NATIVE,
-                                       .flags = 0,
-                                       .word_idx = -1,
-                                       .payload.native = native_do_runtime};
+static const cell_t do_runtime_cell = {.type = CELL_NATIVE, .flags = 0, .word_idx = -1, .payload.native = native_do_runtime};
 
-static const cell_t loop_runtime_cell = {.type = CELL_NATIVE,
-                                         .flags = 0,
-                                         .word_idx = -1,
-                                         .payload.native = native_loop_runtime};
+static const cell_t loop_runtime_cell = {.type = CELL_NATIVE, .flags = 0, .word_idx = -1, .payload.native = native_loop_runtime};
 
 static const cell_t plus_loop_runtime_cell = {
-    .type = CELL_NATIVE,
-    .flags = 0,
-    .word_idx = -1,
-    .payload.native = native_plus_loop_runtime};
+    .type = CELL_NATIVE, .flags = 0, .word_idx = -1, .payload.native = native_plus_loop_runtime};
 
 // Register all core words
 void add_core_words(void) {
   add_native_word("NULL", native_null, "( -- null ) Push null value");
-  add_native_word("UNDEFINED?", native_undefined_check,
-                  "( a -- bool ) Test if value is undefined");
+  add_native_word("UNDEFINED?", native_undefined_check, "( a -- bool ) Test if value is undefined");
 
   // I/O
   add_native_word("PRINT", native_print, "( a -- ) Print value to output");
 
-  add_native_word("@", native_fetch,
-                  "( ptr -- value ) Fetch value from pointer");
+  add_native_word("@", native_fetch, "( ptr -- value ) Fetch value from pointer");
   add_native_word("!", native_store, "( ptr value -- ) Store value at pointer");
 
   // Control flow (compilation only)
@@ -800,59 +778,38 @@ void add_core_words(void) {
   add_native_word_immediate("ELSE", native_else, "( -- ) Alternative branch");
   add_native_word_immediate("THEN", native_then, "( -- ) End conditional");
 
-  add_native_word("(", native_paren_comment,
-                  "( comment -- ) Parenthesis comment until )");
+  add_native_word("(", native_paren_comment, "( comment -- ) Parenthesis comment until )");
   add_native_word_immediate("BEGIN", native_begin, "( -- ) Mark start of loop");
-  add_native_word_immediate("AGAIN", native_again,
-                            "( -- ) Branch back to BEGIN");
-  add_native_word_immediate(
-      "UNTIL", native_until,
-      "( flag -- ) Branch back to BEGIN if flag is false");
-  add_native_word_immediate("WHILE", native_while,
-                            "( flag -- ) Continue loop if flag is true");
-  add_native_word_immediate("REPEAT", native_repeat,
-                            "( -- ) Jump back to BEGIN");
+  add_native_word_immediate("AGAIN", native_again, "( -- ) Branch back to BEGIN");
+  add_native_word_immediate("UNTIL", native_until, "( flag -- ) Branch back to BEGIN if flag is false");
+  add_native_word_immediate("WHILE", native_while, "( flag -- ) Continue loop if flag is true");
+  add_native_word_immediate("REPEAT", native_repeat, "( -- ) Jump back to BEGIN");
 
   // DO/LOOP constructs
-  add_native_word("(DO)", native_do_runtime,
-                  "( limit start -- ) Runtime: setup loop");
-  add_native_word("(LOOP)", native_loop_runtime,
-                  "( -- ) Runtime: increment and test");
-  add_native_word("(+LOOP)", native_plus_loop_runtime,
-                  "( n -- ) Runtime: increment by n");
-  add_native_word_immediate("DO", native_do,
-                            "( limit start -- ) Begin counted loop");
-  add_native_word_immediate("LOOP", native_loop,
-                            "( -- ) End loop, increment by 1");
-  add_native_word_immediate("+LOOP", native_plus_loop,
-                            "( n -- ) End loop, increment by n");
+  add_native_word("(DO)", native_do_runtime, "( limit start -- ) Runtime: setup loop");
+  add_native_word("(LOOP)", native_loop_runtime, "( -- ) Runtime: increment and test");
+  add_native_word("(+LOOP)", native_plus_loop_runtime, "( n -- ) Runtime: increment by n");
+  add_native_word_immediate("DO", native_do, "( limit start -- ) Begin counted loop");
+  add_native_word_immediate("LOOP", native_loop, "( -- ) End loop, increment by 1");
+  add_native_word_immediate("+LOOP", native_plus_loop, "( n -- ) End loop, increment by n");
   add_native_word("I", native_i, "( -- index ) Current loop index");
   add_native_word("J", native_j, "( -- outer_index ) Outer loop index");
   add_native_word("UNLOOP", native_unloop, "( -- ) Remove loop parameters");
 
   // Memory combination words
-  add_native_word("+!", native_plus_store,
-                  "( n addr -- ) Add n to memory location");
-  add_native_word("1+!", native_one_plus_store,
-                  "( addr -- ) Increment memory location");
-  add_native_word("1-!", native_one_minus_store,
-                  "( addr -- ) Decrement memory location");
+  add_native_word("+!", native_plus_store, "( n addr -- ) Add n to memory location");
+  add_native_word("1+!", native_one_plus_store, "( addr -- ) Increment memory location");
+  add_native_word("1-!", native_one_minus_store, "( addr -- ) Decrement memory location");
 
-  add_native_word("CONSTANT", native_constant,
-                  "( value -- ) <name> Define named constant");
+  add_native_word("CONSTANT", native_constant, "( value -- ) <name> Define named constant");
   add_native_word("VARIABLE", native_variable, "( -- ) <name> Define variable");
 
-  add_native_word("'", native_tick,
-                  "( -- code ) <name> Get code from dictionary");
-  add_native_word_immediate("[']", native_bracket_tick,
-                            "( -- code ) <name> Compile code from dictionary");
+  add_native_word("'", native_tick, "( -- code ) <name> Get code from dictionary");
+  add_native_word_immediate("[']", native_bracket_tick, "( -- code ) <name> Compile code from dictionary");
   add_native_word("EXECUTE", native_execute, "( code -- ) Execute code cell");
 
-  add_definition("MIN", "2DUP > IF SWAP THEN DROP",
-                 "( a b -- min ) Return minimum of two numbers");
-  add_definition("MAX", "2DUP < IF SWAP THEN DROP",
-                 "( a b -- max ) Return maximum of two numbers");
-  add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN",
-                 "( n -- -1|0|1 ) Return sign of number");
+  add_definition("MIN", "2DUP > IF SWAP THEN DROP", "( a b -- min ) Return minimum of two numbers");
+  add_definition("MAX", "2DUP < IF SWAP THEN DROP", "( a b -- max ) Return maximum of two numbers");
+  add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN", "( n -- -1|0|1 ) Return sign of number");
   add_definition("CONST", "CONSTANT", "( value -- ) Define constant");
 }

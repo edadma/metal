@@ -6,7 +6,7 @@
 
 #include "error.h"
 
-void print_cell(const cell_t* cell) {
+void print_cell(context_t* ctx, const cell_t* cell) {
   switch (cell->type) {
     case CELL_INT32:
       printf("%d", cell->payload.i32);
@@ -18,9 +18,10 @@ void print_cell(const cell_t* cell) {
       printf("%g", cell->payload.f64);
       break;
     case CELL_STRING:
-      if (cell->payload.allocated_string) {
-        printf("%.*s", (int)cell->payload.allocated_string->string.length, (char*)cell->payload.allocated_string->string.data);
-      }
+      char buffer[100];
+
+      string_to_utf8(ctx, cell, buffer, sizeof(buffer));
+      printf("%.s", buffer);
       break;
     case CELL_ARRAY: {
       const cell_array_t* array = cell->payload.array;
@@ -32,7 +33,7 @@ void print_cell(const cell_t* cell) {
 
         for (size_t i = 0; i < array->length; i++) {
           if (i > 0) printf(", ");
-          print_cell(&array->elements[i]);
+          print_cell(ctx, &array->elements[i]);
         }
 
         printf("]");
@@ -41,7 +42,7 @@ void print_cell(const cell_t* cell) {
     }
     case CELL_POINTER:
       printf("<pointer: ");
-      print_cell(cell->payload.cell_ptr);
+      print_cell(ctx, cell->payload.cell_ptr);
       printf(">");
       break;
     case CELL_OBJECT:

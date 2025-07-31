@@ -25,9 +25,7 @@ void data_push(context_t* ctx, cell_t cell) {
   retain(&cell);
 }
 
-void data_push_no_retain(context_t* ctx, cell_t cell) {
-  data_push_ptr_no_retain(ctx, &cell);
-}
+void data_push_no_retain(context_t* ctx, cell_t cell) { data_push_ptr_no_retain(ctx, &cell); }
 
 void data_push_ptr_no_retain(context_t* ctx, cell_t* cell) {
   if (ctx->data_stack_ptr >= DATA_STACK_SIZE) {
@@ -35,8 +33,7 @@ void data_push_ptr_no_retain(context_t* ctx, cell_t* cell) {
     return;
   }
 
-  debug("Pushing cell type %d to data stack (depth: %d)", cell->type,
-        ctx->data_stack_ptr);
+  debug("Pushing cell type %d to data stack (depth: %d)", cell->type, ctx->data_stack_ptr);
 
   ctx->data_stack[ctx->data_stack_ptr++] = *cell;
 }
@@ -61,8 +58,7 @@ cell_t* data_pop(context_t* ctx) {
   }
 
   cell_t* cell = &ctx->data_stack[--ctx->data_stack_ptr];
-  debug("Popped cell type %d from data stack (depth now: %d)", cell->type,
-        ctx->data_stack_ptr);
+  debug("Popped cell type %d from data stack (depth now: %d)", cell->type, ctx->data_stack_ptr);
 
   // Note: caller is responsible for the reference now
   return cell;
@@ -78,9 +74,7 @@ cell_t* data_peek(context_t* ctx, int depth) {
 
 cell_t data_pop_cell(context_t* ctx) { return *data_pop(ctx); }
 
-cell_t data_peek_cell(context_t* ctx, int depth) {
-  return *data_peek(ctx, depth);
-}
+cell_t data_peek_cell(context_t* ctx, int depth) { return *data_peek(ctx, depth); }
 
 int data_depth(context_t* ctx) { return ctx->data_stack_ptr; }
 
@@ -93,8 +87,7 @@ void return_push(context_t* ctx, cell_t cell) {
     return;
   }
 
-  debug("Pushing cell type %d to return stack (depth: %d)", cell.type,
-        ctx->return_stack_ptr);
+  debug("Pushing cell type %d to return stack (depth: %d)", cell.type, ctx->return_stack_ptr);
 
   // Retain reference if needed
   retain(&cell);
@@ -109,8 +102,7 @@ cell_t* return_pop(context_t* ctx) {
 
   cell_t* cell = &ctx->return_stack[--ctx->return_stack_ptr];
 
-  debug("Popped cell type %d from return stack (depth now: %d)", cell->type,
-        ctx->return_stack_ptr);
+  debug("Popped cell type %d from return stack (depth now: %d)", cell->type, ctx->return_stack_ptr);
 
   // Note: caller is responsible for the reference now
   return cell;
@@ -123,8 +115,7 @@ cell_t return_pop_cell(context_t* ctx) {
   }
 
   cell_t cell = ctx->return_stack[--ctx->return_stack_ptr];
-  debug("Popped cell type %d from return stack (depth now: %d)", cell.type,
-        ctx->return_stack_ptr);
+  debug("Popped cell type %d from return stack (depth now: %d)", cell.type, ctx->return_stack_ptr);
 
   // Note: caller is responsible for the reference now
   return cell;
@@ -146,7 +137,7 @@ void print_data_stack(context_t* ctx) {
   printf("Data Stack (%d): ", ctx->data_stack_ptr);
   for (int i = 0; i < ctx->data_stack_ptr; i++) {
     if (i > 0) printf(" ");
-    print_cell(&ctx->data_stack[i]);
+    print_cell(ctx, &ctx->data_stack[i]);
   }
   printf("\n");
 }
@@ -155,7 +146,7 @@ void print_return_stack(context_t* ctx) {
   printf("Return Stack (%d): ", ctx->return_stack_ptr);
   for (int i = 0; i < ctx->return_stack_ptr; i++) {
     if (i > 0) printf(" ");
-    print_cell(&ctx->return_stack[i]);
+    print_cell(ctx, &ctx->return_stack[i]);
   }
   printf("\n");
 }

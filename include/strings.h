@@ -52,4 +52,9 @@ const uint8_t* string_data(context_t* ctx, const cell_t* str);
 string_view_t string_view(context_t* ctx, const cell_t* str);
 bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b);
 
+const uint8_t* string_get_data(context_t* ctx, const cell_t* str);
+size_t string_get_length(context_t* ctx, const cell_t* str);
+string_encoding_t string_get_encoding(context_t* ctx, const cell_t* str);
+size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t buffer_size);
+
 #endif

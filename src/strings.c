@@ -240,6 +240,79 @@ bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
   return string_equal(ctx, a_str, b_str);
 }
 
+// Get string data pointer (handles interned vs allocated)
+const uint8_t* string_get_data(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+
+  if (!str->payload.ptr) return (const uint8_t*)"";  // empty string
+
+  if (str->flags & CELL_FLAG_INTERNED) {
+    return str->payload.interned_string->data;
+  } else {
+    return str->payload.allocated_string->string.data;
+  }
+}
+
+// Get string length (handles interned vs allocated)
+size_t string_get_length(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+
+  if (!str->payload.ptr) return 0;  // empty string
+
+  if (str->flags & CELL_FLAG_INTERNED) {
+    return str->payload.interned_string->length;
+  } else {
+    return str->payload.allocated_string->string.length;
+  }
+}
+
+// Get string encoding (handles interned vs allocated)
+string_encoding_t string_get_encoding(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+
+  if (!str->payload.ptr) return STRING_UTF8;  // empty string default
+
+  if (str->flags & CELL_FLAG_INTERNED) {
+    return str->payload.interned_string->encoding;
+  } else {
+    return str->payload.allocated_string->string.encoding;
+  }
+}
+
+// Convert string to UTF-8 for printing (for now assumes input is UTF-8)
+// Returns: number of bytes written to buffer (not including null terminator)
+size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t buffer_size) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+  require(ctx, buffer != NULL);
+  require(ctx, buffer_size > 0);
+
+  if (!str->payload.ptr) {
+    // Empty string
+    if (buffer_size > 0) buffer[0] = '\0';
+    return 0;
+  }
+
+  const uint8_t* data = string_get_data(ctx, str);
+  size_t length = string_get_length(ctx, str);
+  string_encoding_t encoding = string_get_encoding(ctx, str);
+
+  // For now, assume all strings are UTF-8
+  // TODO: Add actual UTF-16/32 to UTF-8 conversion
+  if (encoding != STRING_UTF8) {
+    error(ctx, "string_to_utf8: UTF-16/32 conversion not yet implemented");
+  }
+
+  size_t copy_len = (length < buffer_size - 1) ? length : buffer_size - 1;
+  memcpy(buffer, data, copy_len);
+  buffer[copy_len] = '\0';
+
+  return copy_len;
+}
+
 // static void native_format(context_t* ctx) {
 //   require(ctx, 1, "FORMAT");
 //   // Get format string
