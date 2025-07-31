@@ -28,8 +28,7 @@ void add_definition(const char* name, const char* source, const char* help) {
   bool saved_compilation_mode = compilation_mode;
   cell_array_t* saved_compiling_definition = compiling_definition;
   char saved_compiling_word_name[MAX_NAME_LENGTH];
-  strncpy(saved_compiling_word_name, compiling_word_name,
-          sizeof(saved_compiling_word_name));
+  strncpy(saved_compiling_word_name, compiling_word_name, sizeof(saved_compiling_word_name));
   // Set up compilation
   compilation_mode = true;
   compiling_definition = create_array_data(&main_context, 8);
@@ -56,16 +55,12 @@ void add_definition(const char* name, const char* source, const char* help) {
     error(&main_context, "add_definition: EXIT word not found");
   }
   if (compiling_definition->length >= compiling_definition->capacity) {
-    compiling_definition =
-        resize_array_data(&main_context, compiling_definition,
-                          compiling_definition->capacity * 2);
+    compiling_definition = resize_array_data(&main_context, compiling_definition, compiling_definition->capacity * 2);
     if (!compiling_definition) {
-      error(&main_context, "add_definition: failed to resize definition for %s",
-            name);
+      error(&main_context, "add_definition: failed to resize definition for %s", name);
     }
   }
-  compiling_definition->elements[compiling_definition->length] =
-      exit_word->definition;
+  compiling_definition->elements[compiling_definition->length] = exit_word->definition;
   compiling_definition->length++;
   retain(&exit_word->definition);
 
@@ -76,8 +71,7 @@ void add_definition(const char* name, const char* source, const char* help) {
   // Restore compilation state
   compilation_mode = saved_compilation_mode;
   compiling_definition = saved_compiling_definition;
-  strncpy(compiling_word_name, saved_compiling_word_name,
-          sizeof(compiling_word_name));
+  strncpy(compiling_word_name, saved_compiling_word_name, sizeof(compiling_word_name));
 }
 
 // Number parsing
@@ -235,11 +229,10 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
   token_type_t token_type;
 
   // Parse and execute tokens one at a time
-  while ((token_type = parse_next_token(ctx, &ctx->input_pos, token_buffer,
-                                        sizeof(token_buffer))) != TOKEN_EOF) {
+  while ((token_type = parse_next_token(ctx, &ctx->input_pos, token_buffer, sizeof(token_buffer))) != TOKEN_EOF) {
     if (token_type == TOKEN_STRING) {
       // String literal
-      cell_t string_cell = new_string(ctx, token_buffer);
+      cell_t string_cell = new_allocated_string(ctx, token_buffer);
 
       if (compilation_mode) {
         compile_cell(ctx, string_cell);
@@ -266,8 +259,7 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
 
       if (dict_word) {
         // Check if word is immediate (executes even during compilation)
-        bool is_immediate =
-            (dict_word->definition.flags & CELL_FLAG_IMMEDIATE) != 0;
+        bool is_immediate = (dict_word->definition.flags & CELL_FLAG_IMMEDIATE) != 0;
 
         if (compilation_mode && !is_immediate) {
           // Compile the word reference
@@ -312,8 +304,7 @@ void compile_cell(context_t* ctx, cell_t cell) {
   }
 
   if (target_definition->length >= target_definition->capacity) {
-    target_definition = resize_array_data(ctx, target_definition,
-                                          target_definition->capacity * 2);
+    target_definition = resize_array_data(ctx, target_definition, target_definition->capacity * 2);
     if (!target_definition) {
       error(ctx, "compile_cell: failed to resize definition");
       return;

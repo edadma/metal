@@ -112,88 +112,6 @@ cell_t string_concat(context_t* ctx, cell_t* a, cell_t* b) {
   return result;
 }
 
-// Append C string to Metal string
-// cell_t string_append_cstr(context_t* ctx, cell_t* str, const char* cstr) {
-//   if (str->type != CELL_STRING) {
-//     error(ctx, "string_append_cstr: first argument must be string");
-//   }
-//
-//   cell_t cstr_cell = string_from_cstr(ctx, cstr);
-//   cell_t result = string_concat(ctx, str, &cstr_cell);
-//   release(&cstr_cell);
-//   return result;
-// }
-//
-// // Append single character to string
-// cell_t string_append_char(context_t* ctx, cell_t* str, char c) {
-//   char char_str[2] = {c, '\0'};
-//   return string_append_cstr(ctx, str, char_str);
-// }
-
-// Convert cell to C string representation
-// void cell_to_cstr(cell_t* cell, char* buffer, size_t buffer_size) {
-//   if (!cell || !buffer || buffer_size == 0) {
-//     return;
-//   }
-//
-//   switch (cell->type) {
-//     case CELL_INT32:
-//       snprintf(buffer, buffer_size, "%d", cell->payload.i32);
-//       break;
-//
-//     case CELL_INT64:
-//       snprintf(buffer, buffer_size, "%lld", (long long)cell->payload.i64);
-//       break;
-//
-//     case CELL_FLOAT:
-//       snprintf(buffer, buffer_size, "%g", cell->payload.f64);
-//       break;
-//
-//     case CELL_STRING:
-//       if (!cell->payload.allocated_string) {
-//         buffer[0] = '\0';  // Empty string
-//       } else {
-//         size_t len = cell->payload.allocated_string->string.length;
-//         if (len >= buffer_size) len = buffer_size - 1;
-//         memcpy(buffer, cell->payload.allocated_string->string.data, len);
-//         buffer[len] = '\0';
-//       }
-//       break;
-//
-//     case CELL_BOOLEAN:
-//       snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
-//       break;
-//
-//     case CELL_ARRAY:
-//       if (!cell->payload.array) {
-//         snprintf(buffer, buffer_size, "[]");
-//       } else {
-//         snprintf(buffer, buffer_size, "[array:%d]", (int)cell->payload.array->length);
-//       }
-//       break;
-//
-//     case CELL_OBJECT:
-//       if (!cell->payload.object) {
-//         snprintf(buffer, buffer_size, "{}");
-//       } else {
-//         snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
-//       }
-//       break;
-//
-//     case CELL_NULL:
-//       snprintf(buffer, buffer_size, "null");
-//       break;
-//
-//     case CELL_UNDEFINED:
-//       snprintf(buffer, buffer_size, "undefined");
-//       break;
-//
-//     default:
-//       snprintf(buffer, buffer_size, "<type %d>", cell->type);
-//       break;
-//   }
-// }
-
 // String operations for Metal language
 
 static void native_string_empty_q(context_t* ctx) {
@@ -207,6 +125,103 @@ static void native_string_empty_q(context_t* ctx) {
   bool empty = string_is_empty(ctx, str);
   release(str);
   data_push(ctx, new_boolean(empty));
+}
+
+// Register all string words
+void add_string_words(void) {
+  add_native_word("STRING-EMPTY?", native_string_empty_q, "( string -- bool ) Test if string is empty");
+  // add_native_word(
+  //     "FORMAT", native_format,
+  //     "( args... format -- string ) Format string with {} placeholders");
+
+  // Add convenient aliases/definitions
+  // add_definition("PRINTF", "FORMAT PRINT",
+  //                "( args... format -- ) Format and print string");
+}
+
+// String utility functions to handle interned vs allocated strings
+// Add these to src/strings.c
+
+const string_t* new_string(context_t* ctx, char* cstr) {
+  const size_t len = strlen(cstr);
+  string_t* str = metal_alloc(ctx, sizeof(string_t) + len);
+
+  str->encoding = STRING_UTF8;
+  str->length = len;
+  memcpy(str->data, cstr, len);
+  return str;
+}
+
+// Get string data pointer regardless of storage type
+const uint8_t* string_data(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+
+  if (!str->payload.ptr) return "";
+
+  if (str->flags & CELL_FLAG_INTERNED) return str->payload.interned_string->data;
+
+  return str->payload.allocated_string->string.data;
+}
+
+// Get both length and data in one call (more efficient)
+string_view_t string_view(context_t* ctx, const cell_t* str) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+  string_view_t view = {0};
+  if (!str->payload.ptr) {
+    // Empty string
+    view.encoding = STRING_UTF8;  // Default encoding for empty strings
+    view.length = 0;
+    view.data = (const uint8_t*)"";
+    return view;
+  }
+
+  if (str->flags & CELL_FLAG_INTERNED) {
+    view.encoding = str->payload.interned_string->encoding;
+    view.length = str->payload.interned_string->length;
+    view.data = str->payload.interned_string->data;
+  } else {
+    view.encoding = str->payload.allocated_string->string.encoding;
+    view.length = str->payload.allocated_string->string.length;
+    view.data = str->payload.allocated_string->string.data;
+  }
+
+  return view;
+}
+
+bool string_equal(context_t* ctx, const string_t* a, const string_t* b) {
+  if (a->length != b->length) return false;
+  require_msg(ctx, a->encoding == b->encoding, "string_equal: encoding mismatch");
+
+  size_t len = a->length;
+
+  if (a->encoding == STRING_UTF16)
+    len <<= 1;
+  else if (a->encoding == STRING_UTF32)
+    len <<= 2;
+
+  return memcmp(a->data, b->data, len) == 0;
+}
+
+// Fast string equality with interned string optimization
+bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
+  require(ctx, a != NULL);
+  require(ctx, b != NULL);
+  require(ctx, a->type == CELL_STRING);
+  require(ctx, b->type == CELL_STRING);
+
+  // Fast path: both interned means pointer comparison
+  if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
+    return a->payload.interned_string == b->payload.interned_string;
+  }
+
+  if (a->payload.ptr == b->payload.ptr) return true;  // same allocated string, or both empty strings
+
+  string_t* a_str = a->flags & CELL_FLAG_INTERNED ? a->payload.interned_string : &a->payload.allocated_string->string;
+  string_t* b_str = b->flags & CELL_FLAG_INTERNED ? b->payload.interned_string : &b->payload.allocated_string->string;
+
+  return string_equal(ctx, a_str, b_str);
 }
 
 // static void native_format(context_t* ctx) {
@@ -352,78 +367,84 @@ static void native_string_empty_q(context_t* ctx) {
 //   return result;
 // }
 
-// Register all string words
-void add_string_words(void) {
-  add_native_word("STRING-EMPTY?", native_string_empty_q, "( string -- bool ) Test if string is empty");
-  // add_native_word(
-  //     "FORMAT", native_format,
-  //     "( args... format -- string ) Format string with {} placeholders");
+// Append C string to Metal string
+// cell_t string_append_cstr(context_t* ctx, cell_t* str, const char* cstr) {
+//   if (str->type != CELL_STRING) {
+//     error(ctx, "string_append_cstr: first argument must be string");
+//   }
+//
+//   cell_t cstr_cell = string_from_cstr(ctx, cstr);
+//   cell_t result = string_concat(ctx, str, &cstr_cell);
+//   release(&cstr_cell);
+//   return result;
+// }
+//
+// // Append single character to string
+// cell_t string_append_char(context_t* ctx, cell_t* str, char c) {
+//   char char_str[2] = {c, '\0'};
+//   return string_append_cstr(ctx, str, char_str);
+// }
 
-  // Add convenient aliases/definitions
-  // add_definition("PRINTF", "FORMAT PRINT",
-  //                "( args... format -- ) Format and print string");
-}
-
-// String utility functions to handle interned vs allocated strings
-// Add these to src/strings.c
-
-// Get string data pointer regardless of storage type
-const uint8_t* string_data(context_t* ctx, const cell_t* str) {
-  require(ctx, str != NULL);
-  require(ctx, str->type == CELL_STRING);
-
-  if (!str->payload.ptr) return "";
-
-  if (str->flags & CELL_FLAG_INTERNED) return str->payload.interned_string->data;
-
-  return str->payload.allocated_string->string.data;
-}
-
-// Get both length and data in one call (more efficient)
-string_view_t string_view(context_t* ctx, const cell_t* str) {
-  require(ctx, str != NULL);
-  require(ctx, str->type == CELL_STRING);
-  string_view_t view = {0};
-  if (!str->payload.ptr) {
-    // Empty string
-    view.encoding = STRING_UTF8;  // Default encoding for empty strings
-    view.length = 0;
-    view.data = (const uint8_t*)"";
-    return view;
-  }
-
-  if (str->flags & CELL_FLAG_INTERNED) {
-    view.encoding = str->payload.interned_string->encoding;
-    view.length = str->payload.interned_string->length;
-    view.data = str->payload.interned_string->data;
-  } else {
-    view.encoding = str->payload.allocated_string->string.encoding;
-    view.length = str->payload.allocated_string->string.length;
-    view.data = str->payload.allocated_string->string.data;
-  }
-
-  return view;
-}
-
-// Fast string equality with interned string optimization
-bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
-  require(ctx, a != NULL);
-  require(ctx, b != NULL);
-  require(ctx, a->type == CELL_STRING);
-  require(ctx, b->type == CELL_STRING);
-
-  // Fast path: both interned means pointer comparison
-  if ((a->flags & CELL_FLAG_INTERNED) && (b->flags & CELL_FLAG_INTERNED)) {
-    return a->payload.interned_string == b->payload.interned_string;
-  }
-
-  // Slow path: byte-by-byte comparison using views
-  string_view_t a_view = string_view(ctx, a);
-  string_view_t b_view = string_view(ctx, b);
-
-  // Handle empty strings
-  if (a_view.length == 0 && b_view.length == 0) return true;
-  if (a_view.length != b_view.length) return false;
-
-  return memcmp(a_view.data, b_view.data, a_view.length) == 0;
-}
+// Convert cell to C string representation
+// void cell_to_cstr(cell_t* cell, char* buffer, size_t buffer_size) {
+//   if (!cell || !buffer || buffer_size == 0) {
+//     return;
+//   }
+//
+//   switch (cell->type) {
+//     case CELL_INT32:
+//       snprintf(buffer, buffer_size, "%d", cell->payload.i32);
+//       break;
+//
+//     case CELL_INT64:
+//       snprintf(buffer, buffer_size, "%lld", (long long)cell->payload.i64);
+//       break;
+//
+//     case CELL_FLOAT:
+//       snprintf(buffer, buffer_size, "%g", cell->payload.f64);
+//       break;
+//
+//     case CELL_STRING:
+//       if (!cell->payload.allocated_string) {
+//         buffer[0] = '\0';  // Empty string
+//       } else {
+//         size_t len = cell->payload.allocated_string->string.length;
+//         if (len >= buffer_size) len = buffer_size - 1;
+//         memcpy(buffer, cell->payload.allocated_string->string.data, len);
+//         buffer[len] = '\0';
+//       }
+//       break;
+//
+//     case CELL_BOOLEAN:
+//       snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
+//       break;
+//
+//     case CELL_ARRAY:
+//       if (!cell->payload.array) {
+//         snprintf(buffer, buffer_size, "[]");
+//       } else {
+//         snprintf(buffer, buffer_size, "[array:%d]", (int)cell->payload.array->length);
+//       }
+//       break;
+//
+//     case CELL_OBJECT:
+//       if (!cell->payload.object) {
+//         snprintf(buffer, buffer_size, "{}");
+//       } else {
+//         snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
+//       }
+//       break;
+//
+//     case CELL_NULL:
+//       snprintf(buffer, buffer_size, "null");
+//       break;
+//
+//     case CELL_UNDEFINED:
+//       snprintf(buffer, buffer_size, "undefined");
+//       break;
+//
+//     default:
+//       snprintf(buffer, buffer_size, "<type %d>", cell->type);
+//       break;
+//   }
+// }

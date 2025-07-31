@@ -30,7 +30,7 @@ cell_t new_float(double value) {
   return cell;
 }
 
-cell_t new_string(context_t* ctx, const char* cstr) {
+cell_t new_allocated_string(context_t* ctx, const char* cstr) {
   cell_t cell = {0};
   cell.type = CELL_STRING;
 
