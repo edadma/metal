@@ -198,14 +198,6 @@ void execute_code(context_t* ctx) {
         break;
       }
         // All other cell types push themselves onto the stack
-      case CELL_INT32:
-      case CELL_INT64:
-      case CELL_FLOAT:
-      case CELL_STRING:
-      case CELL_ARRAY:
-      case CELL_NULL:
-      case CELL_UNDEFINED:
-      case CELL_BOOLEAN:
       default: {
         data_push(ctx, *cell);
         break;
