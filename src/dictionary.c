@@ -9,7 +9,7 @@
 #include "util.h"
 
 // Dictionary storage
-#define MAX_DICT_ENTRIES 256
+#define MAX_DICT_ENTRIES 500
 static dictionary_entry_t dictionary[MAX_DICT_ENTRIES];
 static int dict_size = 0;
 

@@ -20,6 +20,7 @@
 #include "test_conversion.h"
 #include "test_logic.h"
 #include "test_memory_ops.h"
+#include "test_refcount.h"
 #include "test_stack.h"
 #include "test_string.h"
 #include "test_variables.h"
@@ -418,17 +419,20 @@ static void native_refcount(context_t* ctx) {
   require_params(ctx, 1, "REFCOUNT");
   cell_t* cell = data_pop(ctx);
   int refcount = 0;
-  // Only allocated types have refcounts
+
   switch (cell->type) {
     case CELL_STRING:
-    case CELL_ARRAY:
-    case CELL_OBJECT:
-    case CELL_CODE: {
-      if (cell->payload.ptr) {
-        refcount = *cell->payload.refcount;
+      if (!(cell->flags & CELL_FLAG_INTERNED) && cell->payload.allocated_string) {
+        refcount = cell->payload.allocated_string->refcount;
       }
       break;
-    }
+    case CELL_ARRAY:
+    case CELL_OBJECT:
+    case CELL_CODE:
+      if (cell->payload.array) {
+        refcount = cell->payload.array->refcount;
+      }
+      break;
     default:
       refcount = 0;  // Immediate types don't have refcounts
   }
@@ -521,6 +525,9 @@ void add_test_words(void) {
   add_native_word("STRING-INTERNED?", native_string_interned_q, "( string -- bool ) Check if string is interned");
   add_native_word("STRING-SAME-PTR?", native_string_same_ptr_q, "( str1 str2 -- bool ) Compare payload pointers");
   add_native_word("INTERN-COUNT", native_intern_count, "( -- n ) Count total interned strings");
+
+  // Add specialized refcount testing words
+  add_refcount_test_words();
 }
 
 // Example test functions to demonstrate usage
@@ -1169,6 +1176,9 @@ void init_tests(void) {
 
   // Bitwise tests
   register_bitwise_tests();
+
+  // Reference counting tests
+  register_refcount_tests();
 }
 
 #endif  // TEST_ENABLED
