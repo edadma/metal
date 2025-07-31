@@ -7,9 +7,7 @@
 #include "strings.h"
 
 // Helper functions for mixed-type arithmetic
-static bool is_numeric_type(cell_type_t type) {
-  return type == CELL_INT32 || type == CELL_INT64 || type == CELL_FLOAT;
-}
+static bool is_numeric_type(cell_type_t type) { return type == CELL_INT32 || type == CELL_INT64 || type == CELL_FLOAT; }
 
 static cell_type_t get_promotion_type(cell_type_t a, cell_type_t b) {
   if (a == CELL_FLOAT || b == CELL_FLOAT) return CELL_FLOAT;
@@ -30,8 +28,7 @@ static double to_double(cell_t* cell) {
   }
 }
 
-static void store_numeric_result(cell_t* cell, double value,
-                                 cell_type_t result_type) {
+static void store_numeric_result(cell_t* cell, double value, cell_type_t result_type) {
   cell->type = result_type;
   switch (result_type) {
     case CELL_INT32:
@@ -60,27 +57,25 @@ static void native_add(context_t* ctx) {
   // Fast path 1: int32 + int32 (most common)
   if (a->type == CELL_INT32 && b->type == CELL_INT32) {
     a->payload.i32 += b->payload.i32;
-    release(b);
     return;
   }
 
   // Fast path 2: float + float (second most common)
   if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
     a->payload.f64 += b->payload.f64;
-    release(b);
     return;
   }
 
   // Fast path 3: int64 + int64 (least common numeric)
   if (a->type == CELL_INT64 && b->type == CELL_INT64) {
     a->payload.i64 += b->payload.i64;
-    release(b);
     return;
   }
 
   // String concatenation
   if (a->type == CELL_STRING && b->type == CELL_STRING) {
-    const cell_t result = string_concat(ctx, a, b);
+    cell_t result = string_concat(ctx, a, b);
+    retain(&result);
     release(a);
     *a = result;
     release(b);
@@ -268,20 +263,15 @@ static void native_modulo(context_t* ctx) {
   }
 
   // Mixed integer types - promotion to int64
-  if ((a->type == CELL_INT32 || a->type == CELL_INT64) &&
-      (b->type == CELL_INT32 || b->type == CELL_INT64)) {
-    int64_t a_val =
-        (a->type == CELL_INT32) ? (int64_t)a->payload.i32 : a->payload.i64;
-    int64_t b_val =
-        (b->type == CELL_INT32) ? (int64_t)b->payload.i32 : b->payload.i64;
+  if ((a->type == CELL_INT32 || a->type == CELL_INT64) && (b->type == CELL_INT32 || b->type == CELL_INT64)) {
+    int64_t a_val = (a->type == CELL_INT32) ? (int64_t)a->payload.i32 : a->payload.i64;
+    int64_t b_val = (b->type == CELL_INT32) ? (int64_t)b->payload.i32 : b->payload.i64;
     if (b_val == 0) {
       error(ctx, "% : division by zero");
     }
     int64_t result = a_val % b_val;
     // Result type matches the larger input type
-    cell_type_t result_type = (a->type == CELL_INT64 || b->type == CELL_INT64)
-                                  ? CELL_INT64
-                                  : CELL_INT32;
+    cell_type_t result_type = (a->type == CELL_INT64 || b->type == CELL_INT64) ? CELL_INT64 : CELL_INT32;
 
     if (result_type == CELL_INT64) {
       a->type = CELL_INT64;
@@ -481,17 +471,11 @@ static void native_slash_mod(context_t* ctx) {
     data_push(ctx, new_int32(remainder));
     data_push(ctx, new_int32(quotient));
 
-  } else if ((dividend_cell->type == CELL_INT32 ||
-              dividend_cell->type == CELL_INT64) &&
-             (divisor_cell->type == CELL_INT32 ||
-              divisor_cell->type == CELL_INT64)) {
+  } else if ((dividend_cell->type == CELL_INT32 || dividend_cell->type == CELL_INT64) &&
+             (divisor_cell->type == CELL_INT32 || divisor_cell->type == CELL_INT64)) {
     // Promote both to INT64
-    int64_t dividend = (dividend_cell->type == CELL_INT32)
-                           ? (int64_t)dividend_cell->payload.i32
-                           : dividend_cell->payload.i64;
-    int64_t divisor = (divisor_cell->type == CELL_INT32)
-                          ? (int64_t)divisor_cell->payload.i32
-                          : divisor_cell->payload.i64;
+    int64_t dividend = (dividend_cell->type == CELL_INT32) ? (int64_t)dividend_cell->payload.i32 : dividend_cell->payload.i64;
+    int64_t divisor = (divisor_cell->type == CELL_INT32) ? (int64_t)divisor_cell->payload.i32 : divisor_cell->payload.i64;
 
     if (divisor == 0) {
       error(ctx, "/MOD : division by zero");
@@ -519,8 +503,7 @@ static void native_star_slash(context_t* ctx) {
   cell_t* multiplicand_cell = data_pop(ctx);
 
   // Use wider intermediate type to prevent overflow
-  if (multiplicand_cell->type == CELL_INT32 &&
-      multiplier_cell->type == CELL_INT32 && divisor_cell->type == CELL_INT32) {
+  if (multiplicand_cell->type == CELL_INT32 && multiplier_cell->type == CELL_INT32 && divisor_cell->type == CELL_INT32) {
     int32_t multiplicand = multiplicand_cell->payload.i32;
     int32_t multiplier = multiplier_cell->payload.i32;
     int32_t divisor = divisor_cell->payload.i32;
@@ -539,22 +522,15 @@ static void native_star_slash(context_t* ctx) {
 
     data_push(ctx, new_int32(result));
 
-  } else if ((multiplicand_cell->type == CELL_INT32 ||
-              multiplicand_cell->type == CELL_INT64) &&
-             (multiplier_cell->type == CELL_INT32 ||
-              multiplier_cell->type == CELL_INT64) &&
-             (divisor_cell->type == CELL_INT32 ||
-              divisor_cell->type == CELL_INT64)) {
+  } else if ((multiplicand_cell->type == CELL_INT32 || multiplicand_cell->type == CELL_INT64) &&
+             (multiplier_cell->type == CELL_INT32 || multiplier_cell->type == CELL_INT64) &&
+             (divisor_cell->type == CELL_INT32 || divisor_cell->type == CELL_INT64)) {
     // Promote all to INT64 and use double precision for intermediate
-    int64_t multiplicand = (multiplicand_cell->type == CELL_INT32)
-                               ? (int64_t)multiplicand_cell->payload.i32
-                               : multiplicand_cell->payload.i64;
-    int64_t multiplier = (multiplier_cell->type == CELL_INT32)
-                             ? (int64_t)multiplier_cell->payload.i32
-                             : multiplier_cell->payload.i64;
-    int64_t divisor = (divisor_cell->type == CELL_INT32)
-                          ? (int64_t)divisor_cell->payload.i32
-                          : divisor_cell->payload.i64;
+    int64_t multiplicand =
+        (multiplicand_cell->type == CELL_INT32) ? (int64_t)multiplicand_cell->payload.i32 : multiplicand_cell->payload.i64;
+    int64_t multiplier =
+        (multiplier_cell->type == CELL_INT32) ? (int64_t)multiplier_cell->payload.i32 : multiplier_cell->payload.i64;
+    int64_t divisor = (divisor_cell->type == CELL_INT32) ? (int64_t)divisor_cell->payload.i32 : divisor_cell->payload.i64;
 
     if (divisor == 0) {
       error(ctx, "*/ : division by zero");
@@ -570,15 +546,11 @@ static void native_star_slash(context_t* ctx) {
 
     data_push(ctx, new_int64(result));
 
-  } else if ((multiplicand_cell->type == CELL_FLOAT ||
-              multiplicand_cell->type == CELL_INT32 ||
+  } else if ((multiplicand_cell->type == CELL_FLOAT || multiplicand_cell->type == CELL_INT32 ||
               multiplicand_cell->type == CELL_INT64) &&
-             (multiplier_cell->type == CELL_FLOAT ||
-              multiplier_cell->type == CELL_INT32 ||
+             (multiplier_cell->type == CELL_FLOAT || multiplier_cell->type == CELL_INT32 ||
               multiplier_cell->type == CELL_INT64) &&
-             (divisor_cell->type == CELL_FLOAT ||
-              divisor_cell->type == CELL_INT32 ||
-              divisor_cell->type == CELL_INT64)) {
+             (divisor_cell->type == CELL_FLOAT || divisor_cell->type == CELL_INT32 || divisor_cell->type == CELL_INT64)) {
     // Convert all to double
     double multiplicand, multiplier, divisor;
 
@@ -652,8 +624,7 @@ static void native_star_slash_mod(context_t* ctx) {
   cell_t* multiplicand_cell = data_pop(ctx);
 
   // Only works with integers (like /MOD)
-  if (multiplicand_cell->type == CELL_INT32 &&
-      multiplier_cell->type == CELL_INT32 && divisor_cell->type == CELL_INT32) {
+  if (multiplicand_cell->type == CELL_INT32 && multiplier_cell->type == CELL_INT32 && divisor_cell->type == CELL_INT32) {
     int32_t multiplicand = multiplicand_cell->payload.i32;
     int32_t multiplier = multiplier_cell->payload.i32;
     int32_t divisor = divisor_cell->payload.i32;
@@ -675,22 +646,15 @@ static void native_star_slash_mod(context_t* ctx) {
     data_push(ctx, new_int32(remainder));
     data_push(ctx, new_int32(quotient));
 
-  } else if ((multiplicand_cell->type == CELL_INT32 ||
-              multiplicand_cell->type == CELL_INT64) &&
-             (multiplier_cell->type == CELL_INT32 ||
-              multiplier_cell->type == CELL_INT64) &&
-             (divisor_cell->type == CELL_INT32 ||
-              divisor_cell->type == CELL_INT64)) {
+  } else if ((multiplicand_cell->type == CELL_INT32 || multiplicand_cell->type == CELL_INT64) &&
+             (multiplier_cell->type == CELL_INT32 || multiplier_cell->type == CELL_INT64) &&
+             (divisor_cell->type == CELL_INT32 || divisor_cell->type == CELL_INT64)) {
     // Promote all to INT64
-    int64_t multiplicand = (multiplicand_cell->type == CELL_INT32)
-                               ? (int64_t)multiplicand_cell->payload.i32
-                               : multiplicand_cell->payload.i64;
-    int64_t multiplier = (multiplier_cell->type == CELL_INT32)
-                             ? (int64_t)multiplier_cell->payload.i32
-                             : multiplier_cell->payload.i64;
-    int64_t divisor = (divisor_cell->type == CELL_INT32)
-                          ? (int64_t)divisor_cell->payload.i32
-                          : divisor_cell->payload.i64;
+    int64_t multiplicand =
+        (multiplicand_cell->type == CELL_INT32) ? (int64_t)multiplicand_cell->payload.i32 : multiplicand_cell->payload.i64;
+    int64_t multiplier =
+        (multiplier_cell->type == CELL_INT32) ? (int64_t)multiplier_cell->payload.i32 : multiplier_cell->payload.i64;
+    int64_t divisor = (divisor_cell->type == CELL_INT32) ? (int64_t)divisor_cell->payload.i32 : divisor_cell->payload.i64;
 
     if (divisor == 0) {
       error(ctx, "*/MOD : division by zero");
@@ -717,18 +681,15 @@ static void native_star_slash_mod(context_t* ctx) {
 // Register all core arithmetic words
 void add_core_arithmetic_words(void) {
   // Arithmetic
-  add_native_word("+", native_add,
-                  "( a b -- c ) Add numbers or concatenate strings");
+  add_native_word("+", native_add, "( a b -- c ) Add numbers or concatenate strings");
   add_native_word("-", native_subtract, "( a b -- c ) Subtract two numbers");
   add_native_word("*", native_multiply, "( a b -- c ) Multiply two numbers");
   add_native_word("/", native_divide, "( a b -- c ) Divide two numbers");
   add_native_word("%", native_modulo, "( a b -- c ) Modulo of two integers");
 
   // Type conversions
-  add_native_word("INT32", native_to_int32,
-                  "( a -- int32 ) Convert to 32-bit integer");
-  add_native_word("INT64", native_to_int64,
-                  "( a -- int64 ) Convert to 64-bit integer");
+  add_native_word("INT32", native_to_int32, "( a -- int32 ) Convert to 32-bit integer");
+  add_native_word("INT64", native_to_int64, "( a -- int64 ) Convert to 64-bit integer");
   add_native_word("FLOAT", native_to_float, "( a -- float ) Convert to float");
 
   // Efficient arithmetic combination words
@@ -739,11 +700,7 @@ void add_core_arithmetic_words(void) {
   add_native_word("NEGATE", native_negate, "( n -- -n ) Change sign");
 
   // Arithmetic combination words
-  add_native_word("/MOD", native_slash_mod,
-                  "( n1 n2 -- remainder quotient ) Divide with remainder");
-  add_native_word("*/", native_star_slash,
-                  "( n1 n2 n3 -- n1*n2/n3 ) Multiply then divide");
-  add_native_word(
-      "*/MOD", native_star_slash_mod,
-      "( n1 n2 n3 -- rem quot ) Multiply then divide with remainder");
+  add_native_word("/MOD", native_slash_mod, "( n1 n2 -- remainder quotient ) Divide with remainder");
+  add_native_word("*/", native_star_slash, "( n1 n2 n3 -- n1*n2/n3 ) Multiply then divide");
+  add_native_word("*/MOD", native_star_slash_mod, "( n1 n2 n3 -- rem quot ) Multiply then divide with remainder");
 }

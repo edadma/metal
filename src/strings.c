@@ -106,11 +106,10 @@ cell_t string_concat(context_t* ctx, cell_t* a, cell_t* b) {
 
   // If one is empty, return copy of the other
   if (alen == 0) {
-    retain(b);
     return *b;
   }
+
   if (blen == 0) {
-    retain(a);
     return *a;
   }
 
