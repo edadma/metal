@@ -58,4 +58,6 @@ size_t string_get_length(context_t* ctx, const cell_t* str);
 string_encoding_t string_get_encoding(context_t* ctx, const cell_t* str);
 size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t buffer_size);
 
+int get_intern_count(void);
+
 #endif

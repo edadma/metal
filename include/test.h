@@ -7,6 +7,8 @@
 
 #ifdef TEST_ENABLED
 
+extern context_t test_context;
+
 // Test statistics
 extern int test_count;
 extern int test_passed;
@@ -17,45 +19,34 @@ extern int test_failed;
 
 #define TEST_EQUAL(a, b) test_equal(__FILE__, __LINE__, #a " == " #b, (a), (b))
 
-#define TEST_NOT_EQUAL(a, b) \
-  test_not_equal(__FILE__, __LINE__, #a " != " #b, (a), (b))
+#define TEST_NOT_EQUAL(a, b) test_not_equal(__FILE__, __LINE__, #a " != " #b, (a), (b))
 
 #define TEST_NULL(ptr) test_null(__FILE__, __LINE__, #ptr, (ptr))
 
 #define TEST_NOT_NULL(ptr) test_not_null(__FILE__, __LINE__, #ptr, (ptr))
 
-#define TEST_STRING_EQUAL(a, b) \
-  test_string_equal(__FILE__, __LINE__, #a " == " #b, (a), (b))
+#define TEST_STRING_EQUAL(a, b) test_string_equal(__FILE__, __LINE__, #a " == " #b, (a), (b))
 
 // Metal language testing macros
 #define TEST_INTERPRET(code) test_interpret(__FILE__, __LINE__, code)
 
-#define TEST_STACK_DEPTH(expected) \
-  test_stack_depth(__FILE__, __LINE__, #expected, (expected))
+#define TEST_STACK_DEPTH(expected) test_stack_depth(__FILE__, __LINE__, #expected, (expected))
 
-#define TEST_STACK_TOP_INT(expected) \
-  test_stack_top_int(__FILE__, __LINE__, #expected, (expected))
+#define TEST_STACK_TOP_INT(expected) test_stack_top_int(__FILE__, __LINE__, #expected, (expected))
 
-#define TEST_STACK_TOP_INT64(expected) \
-  test_stack_top_int64(__FILE__, __LINE__, #expected, (expected))
+#define TEST_STACK_TOP_INT64(expected) test_stack_top_int64(__FILE__, __LINE__, #expected, (expected))
 
 // In the function declarations section:
-void test_stack_top_int64(const char* file, int line, const char* expr,
-                          int64_t expected);
-#define TEST_STACK_TOP_FLOAT(expected) \
-  test_stack_top_float(__FILE__, __LINE__, #expected, (expected))
+void test_stack_top_int64(const char* file, int line, const char* expr, int64_t expected);
+#define TEST_STACK_TOP_FLOAT(expected) test_stack_top_float(__FILE__, __LINE__, #expected, (expected))
 
-#define TEST_EXPECT_ERROR(code, pattern) \
-  test_expect_error(__FILE__, __LINE__, code, pattern)
+#define TEST_EXPECT_ERROR(code, pattern) test_expect_error(__FILE__, __LINE__, code, pattern)
 
-#define TEST_STACK_TOP_STRING(expected) \
-  test_stack_top_string(__FILE__, __LINE__, #expected, (expected))
+#define TEST_STACK_TOP_STRING(expected) test_stack_top_string(__FILE__, __LINE__, #expected, (expected))
 
-#define TEST_STACK_TOP_BOOLEAN(expected) \
-  test_stack_top_boolean(__FILE__, __LINE__, #expected, (expected))
+#define TEST_STACK_TOP_BOOLEAN(expected) test_stack_top_boolean(__FILE__, __LINE__, #expected, (expected))
 
-#define TEST_STACK_TOP_TRUTHY(expected) \
-  test_stack_top_truthy(__FILE__, __LINE__, #expected, (expected))
+#define TEST_STACK_TOP_TRUTHY(expected) test_stack_top_truthy(__FILE__, __LINE__, #expected, (expected))
 
 // Test function registration
 #define TEST_FUNCTION(name) static void test_##name(void)
@@ -67,27 +58,18 @@ void test_equal(const char* file, int line, const char* expr, int a, int b);
 void test_not_equal(const char* file, int line, const char* expr, int a, int b);
 void test_null(const char* file, int line, const char* expr, void* ptr);
 void test_not_null(const char* file, int line, const char* expr, void* ptr);
-void test_string_equal(const char* file, int line, const char* expr,
-                       const char* a, const char* b);
+void test_string_equal(const char* file, int line, const char* expr, const char* a, const char* b);
 
 // Metal language testing functions
 void test_interpret(const char* file, int line, const char* code);
-void test_stack_depth(const char* file, int line, const char* expr,
-                      int expected);
-void test_stack_top_int(const char* file, int line, const char* expr,
-                        int expected);
-void test_stack_top_int64(const char* file, int line, const char* expr,
-                          int64_t expected);
-void test_stack_top_float(const char* file, int line, const char* expr,
-                          double expected);
-void test_expect_error(const char* file, int line, const char* code,
-                       const char* error_pattern);
-void test_stack_top_string(const char* file, int line, const char* expr,
-                           const char* expected);
-void test_stack_top_boolean(const char* file, int line, const char* expr,
-                            bool expected);
-void test_stack_top_truthy(const char* file, int line, const char* expr,
-                           bool should_be_truthy);
+void test_stack_depth(const char* file, int line, const char* expr, int expected);
+void test_stack_top_int(const char* file, int line, const char* expr, int expected);
+void test_stack_top_int64(const char* file, int line, const char* expr, int64_t expected);
+void test_stack_top_float(const char* file, int line, const char* expr, double expected);
+void test_expect_error(const char* file, int line, const char* code, const char* error_pattern);
+void test_stack_top_string(const char* file, int line, const char* expr, const char* expected);
+void test_stack_top_boolean(const char* file, int line, const char* expr, bool expected);
+void test_stack_top_truthy(const char* file, int line, const char* expr, bool should_be_truthy);
 
 // Test management
 void register_test(const char* name, void (*test_func)(void));

@@ -8,6 +8,7 @@
 #include "context.h"
 #include "debug.h"
 #include "dictionary.h"
+#include "error.h"
 #include "interpreter.h"
 #include "stack.h"
 #include "strings.h"
@@ -20,6 +21,7 @@
 #include "test_logic.h"
 #include "test_memory_ops.h"
 #include "test_stack.h"
+#include "test_string.h"
 #include "test_variables.h"
 #include "test_zero_comparison.h"
 #include "util.h"
@@ -464,6 +466,45 @@ static void native_cell_type(context_t* ctx) {
   release(cell);
 }
 
+// CELL-FLAGS ( cell -- flags ) Get cell flags as integer
+static void native_cell_flags(context_t* ctx) {
+  require_params(ctx, 1, "CELL-FLAGS");
+  cell_t* cell = data_pop(ctx);
+  data_push(ctx, new_int32((int32_t)cell->flags));
+  release(cell);
+}
+
+// STRING-INTERNED? ( string -- bool ) Check if string has interned flag
+static void native_string_interned_q(context_t* ctx) {
+  require_params(ctx, 1, "STRING-INTERNED?");
+  cell_t* cell = data_pop(ctx);
+  if (cell->type != CELL_STRING) {
+    error(ctx, "STRING-INTERNED?: argument must be string");
+  }
+  bool is_interned = (cell->flags & CELL_FLAG_INTERNED) != 0;
+  data_push(ctx, new_boolean(is_interned));
+  release(cell);
+}
+
+// STRING-SAME-PTR? ( str1 str2 -- bool ) Compare payload pointers for identity
+static void native_string_same_ptr_q(context_t* ctx) {
+  require_params(ctx, 2, "STRING-SAME-PTR?");
+  cell_t* str2 = data_pop(ctx);
+  cell_t* str1 = data_pop(ctx);
+
+  if (str1->type != CELL_STRING || str2->type != CELL_STRING) {
+    error(ctx, "STRING-SAME-PTR?: arguments must be strings");
+  }
+
+  bool same_ptr = (str1->payload.ptr == str2->payload.ptr);
+  data_push(ctx, new_boolean(same_ptr));
+  release(str1);
+  release(str2);
+}
+
+// INTERN-COUNT ( -- n ) Count total interned strings
+static void native_intern_count(context_t* ctx) { data_push(ctx, new_int32(get_intern_count())); }
+
 // Add test words to dictionary
 void add_test_words(void) {
   add_native_word("TEST", native_test, "( -- ) Run all unit tests");
@@ -474,6 +515,12 @@ void add_test_words(void) {
   add_native_word("MEM-RESET", native_mem_reset, "( -- ) Reset memory statistics");
   add_native_word("CELL-ADDR", native_cell_addr, "( cell -- addr ) Get payload address");
   add_native_word("CELL-TYPE", native_cell_type, "( cell -- type ) Get cell type as number");
+
+  // String internment testing words
+  add_native_word("CELL-FLAGS", native_cell_flags, "( cell -- flags ) Get cell flags as number");
+  add_native_word("STRING-INTERNED?", native_string_interned_q, "( string -- bool ) Check if string is interned");
+  add_native_word("STRING-SAME-PTR?", native_string_same_ptr_q, "( str1 str2 -- bool ) Compare payload pointers");
+  add_native_word("INTERN-COUNT", native_intern_count, "( -- n ) Count total interned strings");
 }
 
 // Example test functions to demonstrate usage
@@ -1092,6 +1139,9 @@ void init_tests(void) {
 
   // Type conversion tests
   register_conversion_tests();
+
+  // String tests
+  register_string_tests();
 
   // Arithmetic combination tests
   register_arithmetic_combo_tests();

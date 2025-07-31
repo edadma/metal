@@ -347,6 +347,14 @@ size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t bu
   return copy_len;
 }
 
+int get_intern_count(void) {
+  int count = 0;
+  for (const intern_t* node = intern_list; node; node = node->next) {
+    count++;
+  }
+  return count;
+}
+
 // static void native_format(context_t* ctx) {
 //   require(ctx, 1, "FORMAT");
 //   // Get format string
