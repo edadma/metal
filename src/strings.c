@@ -119,6 +119,7 @@ cell_t string_concat(context_t* ctx, cell_t* a, cell_t* b) {
 
   // Initialize the new string
   new_str->refcount = 1;
+  new_str->string.encoding = STRING_UTF8;
   new_str->string.length = alen + blen;
 
   // Copy both strings
