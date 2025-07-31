@@ -234,8 +234,8 @@ bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
   if (!a->payload.ptr || !b->payload.ptr) return false;
 
   // Now safe to extract string_t pointers
-  string_t* a_str = a->flags & CELL_FLAG_INTERNED ? a->payload.interned_string : &a->payload.allocated_string->string;
-  string_t* b_str = b->flags & CELL_FLAG_INTERNED ? b->payload.interned_string : &b->payload.allocated_string->string;
+  const string_t* a_str = a->flags & CELL_FLAG_INTERNED ? a->payload.interned_string : &a->payload.allocated_string->string;
+  const string_t* b_str = b->flags & CELL_FLAG_INTERNED ? b->payload.interned_string : &b->payload.allocated_string->string;
 
   return string_equal(ctx, a_str, b_str);
 }
