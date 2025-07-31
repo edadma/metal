@@ -10,6 +10,7 @@
 #include "dictionary.h"
 #include "interpreter.h"
 #include "stack.h"
+#include "strings.h"
 #include "test_arithmetic_combo.h"
 #include "test_arithmetic_mixing.h"
 #include "test_bitwise.h"

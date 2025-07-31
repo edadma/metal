@@ -15,6 +15,7 @@
 #include "memory.h"
 #include "parser.h"
 #include "stack.h"
+#include "strings.h"
 #include "util.h"
 
 #define MAX_TOKEN_SIZE 256

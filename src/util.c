@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "error.h"
+#include "strings.h"
 
 void print_cell(context_t* ctx, const cell_t* cell) {
   switch (cell->type) {

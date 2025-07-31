@@ -5,6 +5,7 @@
 #include "dictionary.h"
 #include "error.h"
 #include "stack.h"
+#include "strings.h"
 
 // Array words
 
