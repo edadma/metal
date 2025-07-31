@@ -39,10 +39,11 @@ static void native_fetch(context_t* ctx) {
     error(ctx, "@ : null pointer");
   }
 
-  // Push the pointed-to cell directly (no copying!)
-  data_push_ptr(ctx, pointer_cell->payload.cell_ptr);
+  cell_t* target_value = pointer_cell->payload.cell_ptr;
 
-  release(pointer_cell);
+  release(pointer_cell);  // Safe to release now
+
+  data_push_ptr(ctx, target_value);  // Push the copied value
 }
 
 static void native_store(context_t* ctx) {
@@ -70,10 +71,8 @@ static void native_store(context_t* ctx) {
   // Release the old value and store the new one
   release(pointer_cell->payload.cell_ptr);
   *pointer_cell->payload.cell_ptr = *value_cell;
-  retain(value_cell);  // The pointed-to location now owns this reference
 
   release(pointer_cell);
-  release(value_cell);
 }
 
 // Comment word

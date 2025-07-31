@@ -22,7 +22,7 @@ void print_cell(context_t* ctx, const cell_t* cell) {
       char buffer[100];
 
       string_to_utf8(ctx, cell, buffer, sizeof(buffer));
-      printf("%.s", buffer);
+      printf("%s", buffer);
       break;
     case CELL_ARRAY: {
       const cell_array_t* array = cell->payload.array;
@@ -273,4 +273,37 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b) {
     default:
       error(ctx, "Cannot compare values of this type");
   }
+}
+
+void dump(const void* data, size_t size) {
+  const unsigned char* bytes = (const unsigned char*)data;
+  size_t i;
+
+  printf("Address   : 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F | ASCII\n");
+  printf("----------+------------------------------------------------+------------------\n");
+
+  for (i = 0; i < size; i += 16) {
+    // Print address
+    printf("%08zX  : ", i);
+
+    // Print hex bytes
+    for (size_t j = 0; j < 16; j++) {
+      if (i + j < size) {
+        printf("%02X ", bytes[i + j]);
+      } else {
+        printf("   ");
+      }
+    }
+
+    printf("| ");
+
+    // Print ASCII representation
+    for (size_t j = 0; j < 16 && (i + j) < size; j++) {
+      unsigned char c = bytes[i + j];
+      printf("%c", isprint(c) ? c : '.');
+    }
+
+    printf("\n");
+  }
+  printf("\n");
 }

@@ -29,9 +29,9 @@ static void native_bye(UNUSED context_t* ctx) {
 static void native_words(UNUSED context_t* ctx) {
   printf("Dictionary (%d words):\n", get_dictionary_size());
 
-  int words_per_line = 8;  // Adjust for readability
+  int words_per_line = 7;  // Adjust for readability
   for (int i = 0; i < get_dictionary_size(); i++) {
-    printf("%-12s",
+    printf("%-30s",
            get_dictionary_entry(i)->name);  // Left-aligned, 12 chars wide
 
     if ((i + 1) % words_per_line == 0 || i == get_dictionary_size() - 1) {
@@ -57,8 +57,7 @@ static void native_help(context_t* ctx) {
   }
   // Try to get next word
   char word_buffer[MAX_NAME_LENGTH];
-  token_type_t token_type =
-      parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
+  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
 
   if (token_type == TOKEN_WORD) {
     // Show help for specific word

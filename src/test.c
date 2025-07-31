@@ -417,20 +417,21 @@ static void native_test(context_t* ctx) {
 // REFCOUNT ( cell -- n ) Get reference count of allocated cell data
 static void native_refcount(context_t* ctx) {
   require_params(ctx, 1, "REFCOUNT");
-  cell_t* cell = data_pop(ctx);
+  cell_t cell = data_pop_cell(ctx);
+
   int refcount = 0;
 
-  switch (cell->type) {
+  switch (cell.type) {
     case CELL_STRING:
-      if (!(cell->flags & CELL_FLAG_INTERNED) && cell->payload.allocated_string) {
-        refcount = cell->payload.allocated_string->refcount;
+      if (!(cell.flags & CELL_FLAG_INTERNED) && cell.payload.allocated_string) {
+        refcount = cell.payload.allocated_string->refcount;
       }
       break;
     case CELL_ARRAY:
     case CELL_OBJECT:
     case CELL_CODE:
-      if (cell->payload.array) {
-        refcount = cell->payload.array->refcount;
+      if (cell.payload.array) {
+        refcount = cell.payload.array->refcount;
       }
       break;
     default:
@@ -438,7 +439,7 @@ static void native_refcount(context_t* ctx) {
   }
 
   data_push(ctx, new_int32(refcount));
-  release(cell);
+  release(&cell);
 }
 
 // MEM-STATS ( -- ) Show memory allocation statistics
@@ -1140,34 +1141,24 @@ static void register_tests(void) {
 // Call this from main.c when TEST_ENABLED
 void init_tests(void) {
   register_tests();
-
   // Stack manipulation tests
   register_stack_tests();
-
   // Type conversion tests
   register_conversion_tests();
-
   // String tests
   register_string_tests();
-
   // Arithmetic combination tests
   register_arithmetic_combo_tests();
-
   // Arithmetic type mixing tests
   register_arithmetic_mixing_tests();
-
   // Complex arithmetic tests
   register_complex_arithmetic_tests();
-
   // Comparison tests
   register_comparison_tests();
-
   // Memory operations tests
   register_memory_ops_tests();
-
   // Variables and constants tests
   register_variables_tests();
-
   // Zero comparison tests
   register_zero_comparison_tests();
 

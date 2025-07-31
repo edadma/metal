@@ -14,4 +14,6 @@ bool cells_equal(context_t* ctx, cell_t* a, cell_t* b);
 
 void require(context_t* ctx, cell_t* a, cell_t* b);
 
+void dump(const void* data, size_t size);
+
 #endif  // UTIL_H

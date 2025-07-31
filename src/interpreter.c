@@ -248,7 +248,7 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
           compile_cell(ctx, new_interned_string(newly_interned));
         }
       } else {
-        data_push(ctx, new_allocated_string(ctx, local_str));
+        data_push(ctx, local_str->length == 0 ? new_empty_string() : new_allocated_string(ctx, local_str));
       }
     } else if (token_type == TOKEN_WORD) {
       char* word = token_buffer;

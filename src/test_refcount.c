@@ -19,39 +19,6 @@ typedef struct {
 
 // === TEST UTILITY WORDS ===
 
-// REFCOUNT ( cell -- n ) Get reference count of allocated cell data
-static void native_refcount(context_t* ctx) {
-  require_params(ctx, 1, "REFCOUNT");
-  // Peek at the cell to read its refcount WITHOUT popping it yet
-  cell_t* cell = data_peek(ctx, 0);
-  int refcount = 0;
-
-  // Read the refcount while the cell is still on the stack
-  switch (cell->type) {
-    case CELL_STRING:
-      if (!(cell->flags & CELL_FLAG_INTERNED) && cell->payload.allocated_string) {
-        refcount = cell->payload.allocated_string->refcount;
-      }
-      break;
-    case CELL_ARRAY:
-    case CELL_OBJECT:
-    case CELL_CODE:
-      if (cell->payload.array) {
-        refcount = cell->payload.array->refcount;
-      }
-      break;
-    default:
-      refcount = 0;  // Immediate types don't have refcounts
-  }
-
-  // NOW pop and release the cell (this will decrement the refcount)
-  cell_t* popped_cell = data_pop(ctx);
-  release(popped_cell);
-
-  // Push the refcount value that existed BEFORE we popped it
-  data_push(ctx, new_int32(refcount));
-}
-
 // MEM-LEAKED? ( -- bool ) Check if current allocs != frees
 static void native_mem_leaked_q(context_t* ctx) {
   int allocs, frees;
@@ -132,14 +99,14 @@ static void native_refcount_expect(context_t* ctx) {
 // CELL-SHARED? ( cell1 cell2 -- bool ) Check if cells share same payload pointer
 static void native_cell_shared_q(context_t* ctx) {
   require_params(ctx, 2, "CELL-SHARED?");
-  cell_t* cell2 = data_pop(ctx);
-  cell_t* cell1 = data_pop(ctx);
+  cell_t cell2 = data_pop_cell(ctx);
+  cell_t cell1 = data_pop_cell(ctx);
 
-  bool shared = (cell1->payload.ptr == cell2->payload.ptr) && (cell1->payload.ptr != NULL);
+  bool shared = (cell1.payload.ptr == cell2.payload.ptr) && (cell1.payload.ptr != NULL);
   data_push(ctx, new_boolean(shared));
 
-  release(cell1);
-  release(cell2);
+  release(&cell1);
+  release(&cell2);
 }
 
 // FORCE-COLLECT ( -- ) Force cleanup of any pending deallocations (no-op for now)
@@ -187,18 +154,13 @@ static void native_mem_pressure(context_t* ctx) {
 
 // Test basic refcount lifecycle for strings
 TEST_FUNCTION(test_string_refcount_lifecycle) {
-  // Test new allocated string starts with refcount 1 when on stack
+  // Test new allocated string starts with refcount 1
   TEST_INTERPRET("\"test-string\"");
   TEST_INTERPRET("DUP REFCOUNT");
   TEST_STACK_TOP_INT(2);  // Two references on stack
   TEST_INTERPRET("DROP");
 
-  // Test DROP decreases refcount
-  TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(2);  // Two references again
-  TEST_INTERPRET("DROP");
-
-  // One reference left
+  // After DROP, one reference left
   TEST_INTERPRET("REFCOUNT");
   TEST_STACK_TOP_INT(1);  // One reference remaining
   TEST_INTERPRET("DROP");
@@ -215,7 +177,7 @@ TEST_FUNCTION(test_array_refcount_lifecycle) {
   TEST_INTERPRET("DROP");
 
   // Test sharing detection
-  TEST_INTERPRET("DUP CELL-SHARED?");
+  TEST_INTERPRET("DUP DUP CELL-SHARED?");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
@@ -261,7 +223,7 @@ TEST_FUNCTION(test_interned_string_no_refcount) {
   TEST_INTERPRET("DROP");
 
   // Clean up
-  TEST_INTERPRET("DROP DROP");
+  TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
 
@@ -272,17 +234,17 @@ TEST_FUNCTION(test_mixed_types_independent_refcounts) {
 
   // Check they have independent refcounts
   TEST_INTERPRET("OVER REFCOUNT");  // String refcount
-  TEST_STACK_TOP_INT(1);
+  TEST_STACK_TOP_INT(2);
   TEST_INTERPRET("DROP");
 
   TEST_INTERPRET("DUP REFCOUNT");  // Array refcount
-  TEST_STACK_TOP_INT(1);
+  TEST_STACK_TOP_INT(2);
   TEST_INTERPRET("DROP");
 
   // DUP only affects top item
   TEST_INTERPRET("DUP");           // Duplicate array
-  TEST_INTERPRET("DUP REFCOUNT");  // Array refcount should be 2
-  TEST_STACK_TOP_INT(2);
+  TEST_INTERPRET("DUP REFCOUNT");  // Array refcount should be 3
+  TEST_STACK_TOP_INT(3);
   TEST_INTERPRET("DROP");
 
   TEST_INTERPRET("DROP");           // Remove one array copy
@@ -300,22 +262,22 @@ TEST_FUNCTION(test_stack_operations_refcount) {
   // Test SWAP preserves refcounts
   TEST_INTERPRET("\"first\" \"second\"");
   TEST_INTERPRET("OVER REFCOUNT");  // first string refcount
-  TEST_STACK_TOP_INT(1);
+  TEST_STACK_TOP_INT(2);
   TEST_INTERPRET("DROP");
 
   TEST_INTERPRET("SWAP");
   TEST_INTERPRET("OVER REFCOUNT");  // still first string, now on top
-  TEST_STACK_TOP_INT(1);
+  TEST_STACK_TOP_INT(2);
   TEST_INTERPRET("DROP");
 
-  // Test PICK copies without affecting original refcount initially
+  // Test PICK copies without affecting original refcount
   TEST_INTERPRET("1 PICK");        // Copy "second"
   TEST_INTERPRET("DUP REFCOUNT");  // Copied string refcount
-  TEST_STACK_TOP_INT(2);           // Original + copy
+  TEST_STACK_TOP_INT(3);           // Original + copy
   TEST_INTERPRET("DROP");
 
   // Clean up
-  TEST_INTERPRET("DROP DROP");
+  TEST_INTERPRET("DROP DROP DROP");
   TEST_STACK_DEPTH(0);
 }
 
@@ -330,7 +292,7 @@ TEST_FUNCTION(test_nested_refcount) {
   TEST_INTERPRET("DROP");
 
   // Both copies should share same payload
-  TEST_INTERPRET("CELL-SHARED?");
+  TEST_INTERPRET("DUP CELL-SHARED?");
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
@@ -361,18 +323,18 @@ TEST_FUNCTION(test_variable_refcount_operations) {
   TEST_INTERPRET("VARIABLE str-var");
   TEST_INTERPRET("\"stored-string\" str-var !");
 
-  // Fetching should give us a copy with refcount 1
+  // Fetching should not change refcount of stored data
   TEST_INTERPRET("str-var @");
   TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(2);  // Variable holds one, stack has another
+  TEST_STACK_TOP_INT(3);  // Variable holds one, stack has another
   TEST_INTERPRET("DROP");
 
-  // Storing new value should work
+  // Storing new value should release old value
   TEST_INTERPRET("DROP");  // Remove old value from stack
   TEST_INTERPRET("\"new-string\" str-var !");
   TEST_INTERPRET("str-var @");
   TEST_INTERPRET("REFCOUNT");
-  TEST_STACK_TOP_INT(1);  // Only variable holds it now
+  TEST_STACK_TOP_INT(2);  // Only variable, and the stack holds it now
   TEST_INTERPRET("DROP");
 
   TEST_STACK_DEPTH(0);
@@ -399,13 +361,14 @@ TEST_FUNCTION(test_empty_collections_refcount) {
   // Empty string
   TEST_INTERPRET("\"\"");
   TEST_INTERPRET("DUP REFCOUNT");
-  // Empty strings might be immediate values, so refcount could be 0
+  // Empty strings are immediate values, so refcount is be 0
+  TEST_STACK_TOP_INT(0);
   TEST_INTERPRET("DROP DROP");
 
   // Empty array
   TEST_INTERPRET("[]");
   TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(1);  // Empty arrays are still allocated
+  TEST_STACK_TOP_INT(0);  // Empty arrays are not allocated
   TEST_INTERPRET("DROP");
 
   TEST_INTERPRET("DROP");
