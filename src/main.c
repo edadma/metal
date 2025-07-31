@@ -1,8 +1,12 @@
 #include <stdio.h>
 
+#include "test.h"
+
 #ifdef TARGET_PICO
 #include "pico/stdlib.h"
 #endif
+
+#include <string.h>
 
 #include "cell.h"
 #include "context.h"
@@ -43,7 +47,12 @@ void populate_dictionary(void) {
 #endif
 }
 
+#ifdef TARGET_PICO
 int main(void) {
+#else
+int main(int argc, char* argv[]) {
+#endif
+
 #ifdef TARGET_PICO
   stdio_init_all();
 
@@ -68,6 +77,14 @@ int main(void) {
   init_context(&main_context, "main");
   init_dictionary();
   populate_dictionary();
+
+#ifdef TARGET_LINUX
+  if (argc > 1 && strcmp(argv[1], "test") == 0) {
+    run_all_tests();
+    return 0;
+  }
+#endif
+
   repl(&main_context);
   return 0;
 }
