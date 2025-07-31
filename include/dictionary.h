@@ -3,7 +3,7 @@
 
 #include "cell.h"
 
-#define MAX_NAME_LENGTH 31
+#define MAX_NAME_LENGTH 62
 
 typedef struct {
   char name[MAX_NAME_LENGTH];  // Word name
@@ -14,8 +14,7 @@ typedef struct {
 // Dictionary management
 void init_dictionary(void);
 void add_native_word(const char* name, native_func_t func, const char* help);
-void add_native_word_immediate(const char* name, native_func_t func,
-                               const char* help);
+void add_native_word_immediate(const char* name, native_func_t func, const char* help);
 void add_cell(const char* name, cell_t def, const char* help);
 dictionary_entry_t* find_word(const char* name);
 

@@ -5,6 +5,7 @@
 
 #include "debug.h"
 #include "error.h"
+#include "utf8.h"
 #include "util.h"
 
 // Dictionary storage
@@ -23,7 +24,7 @@ void init_dictionary(void) {
 void add_cell(const char* name, cell_t def, const char* help) {
   check_dictionary();
 
-  strncpy(dictionary[dict_size].name, name, 31);
+  utf8_strncpy_safe(dictionary[dict_size].name, name, MAX_NAME_LENGTH - 1);
   dictionary[dict_size].name[MAX_NAME_LENGTH - 1] = '\0';
 
   dictionary[dict_size].definition = def;
@@ -46,8 +47,7 @@ void check_dictionary(void) {
   }
 }
 
-void add_native_word_immediate(const char* name, native_func_t func,
-                               const char* help) {
+void add_native_word_immediate(const char* name, native_func_t func, const char* help) {
   cell_t def = {0};
   def.type = CELL_NATIVE;
   def.flags = CELL_FLAG_IMMEDIATE;  // Mark as immediate
