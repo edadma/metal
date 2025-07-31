@@ -118,6 +118,88 @@ static void native_index(context_t* ctx) {
   release(&index_cell);
 }
 
+// INDEX@ ( array index -- value ) Safe array element fetch
+static void native_index_fetch(context_t* ctx) {
+  require_params(ctx, 2, "INDEX@");
+  cell_t index_cell = data_pop_cell(ctx);
+  cell_t array_cell = data_pop_cell(ctx);
+
+  if (index_cell.type != CELL_INT32) {
+    error(ctx, "INDEX@: index must be integer");
+    return;
+  }
+
+  int32_t index = index_cell.payload.i32;
+
+  if (array_cell.type != CELL_ARRAY) {
+    error(ctx, "INDEX@: not an array");
+    return;
+  }
+
+  if (array_cell.type == CELL_ARRAY && !array_cell.payload.array) {
+    error(ctx, "INDEX@: index out of bounds");
+    return;
+  }
+
+  cell_array_t* data = array_cell.payload.array;
+
+  if (index < 0 || index >= data->length) {
+    error(ctx, "INDEX@: index out of bounds");
+    return;
+  }
+
+  // Get the element and push it (data_push will retain it)
+  cell_t element = data->elements[index];
+  data_push(ctx, element);
+
+  release(&array_cell);
+  release(&index_cell);
+}
+
+// INDEX! ( value array index -- ) Safe array element store
+static void native_index_store(context_t* ctx) {
+  require_params(ctx, 3, "INDEX!");
+
+  cell_t index_cell = data_pop_cell(ctx);
+  cell_t array_cell = data_pop_cell(ctx);
+  cell_t value_cell = data_pop_cell(ctx);
+
+  if (index_cell.type != CELL_INT32) {
+    error(ctx, "INDEX!: index must be integer");
+    return;
+  }
+
+  int32_t index = index_cell.payload.i32;
+
+  if (array_cell.type != CELL_ARRAY) {
+    error(ctx, "INDEX!: not an array");
+    return;
+  }
+
+  if (array_cell.type == CELL_ARRAY && !array_cell.payload.array) {
+    error(ctx, "INDEX!: index out of bounds");
+    return;
+  }
+
+  cell_array_t* data = array_cell.payload.array;
+
+  if (index < 0 || index >= data->length) {
+    error(ctx, "INDEX!: index out of bounds");
+    return;
+  }
+
+  // Release the old value at this position
+  release(&data->elements[index]);
+
+  // Store the new value and retain it
+  data->elements[index] = value_cell;
+  retain(&value_cell);
+
+  release(&array_cell);
+  release(&index_cell);
+  release(&value_cell);  // Release our local copy
+}
+
 // Register all core array words
 void add_core_array_words(void) {
   // Array operations
@@ -125,4 +207,6 @@ void add_core_array_words(void) {
   add_native_word(",", native_comma, "( array item -- array ) Append item to array");
   add_native_word("LENGTH", native_length, "( array|string -- n ) Get array or string length");
   add_native_word("INDEX", native_index, "( array n -- ptr ) Get pointer to array element");
+  add_native_word("INDEX@", native_index_fetch, "( array n -- value ) Fetch array element safely");
+  add_native_word("INDEX!", native_index_store, "( value array n -- ) Store array element safely");
 }
