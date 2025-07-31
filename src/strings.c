@@ -17,7 +17,7 @@ typedef struct intern {
 
 static intern_t* intern_list = NULL;
 
-static const string_t* intern_lookup(context_t* ctx, const string_t* str) {
+const string_t* intern_lookup(context_t* ctx, const string_t* str) {
   for (const intern_t* node = intern_list; node; node = node->next) {
     if (string_equal(ctx, str, node->string)) {
       return node->string;
@@ -27,12 +27,52 @@ static const string_t* intern_lookup(context_t* ctx, const string_t* str) {
   return NULL;  // Not found
 }
 
-static void intern_add(context_t* ctx, const string_t* allocated_string) {
-  // Add to intern table
+const string_t* intern_add(context_t* ctx, const string_t* str) {
+  // Calculate size needed for string_t + its data
+  size_t data_size = str->length;
+  if (str->encoding == STRING_UTF16)
+    data_size *= 2;
+  else if (str->encoding == STRING_UTF32)
+    data_size *= 4;
+
+  size_t total_size = sizeof(string_t) + data_size;
+
+  // Allocate permanent copy of the string_t
+  string_t* permanent_str = metal_alloc(ctx, total_size);
+
+  // Copy the header
+  permanent_str->encoding = str->encoding;
+  permanent_str->length = str->length;
+
+  // Copy the data
+  memcpy(permanent_str->data, str->data, data_size);
+
+  // Allocate and link the intern_t node
   intern_t* node = metal_alloc(ctx, sizeof(intern_t));
-  node->string = allocated_string;
+  node->string = permanent_str;
   node->next = intern_list;
   intern_list = node;
+
+  return permanent_str;  // Return the permanent copy
+}
+
+cell_t new_interned_string(const string_t* interned_str) {
+  cell_t cell = {0};
+  cell.type = CELL_STRING;
+  cell.flags = CELL_FLAG_INTERNED;
+  cell.payload.interned_string = interned_str;
+  return cell;
+}
+
+void string_from_cstr(const char* cstr, string_t* out_str) {
+  size_t len = strlen(cstr);
+
+  // For now, simple UTF-8 copy (future: handle encoding conversion)
+  out_str->encoding = STRING_UTF8;
+  out_str->length = len;
+
+  // Copy string data into the flexible array
+  memcpy(out_str->data, cstr, len);
 }
 
 // Get string length (handles NULL payload)
@@ -122,16 +162,6 @@ void add_string_words(void) {
 
 // String utility functions to handle interned vs allocated strings
 // Add these to src/strings.c
-
-const string_t* new_string(context_t* ctx, char* cstr) {
-  const size_t len = strlen(cstr);
-  string_t* str = metal_alloc(ctx, sizeof(string_t) + len);
-
-  str->encoding = STRING_UTF8;
-  str->length = len;
-  memcpy(str->data, cstr, len);
-  return str;
-}
 
 // Get string data pointer regardless of storage type
 // const uint8_t* string_data(context_t* ctx, const cell_t* str) {

@@ -78,7 +78,7 @@ typedef struct cell {
     int64_t i64;                           // 64-bit integer
     double f64;                            // Double precision float
     cell_array_t* array;                   // Pointer to a cell array
-    string_t* interned_string;             // Pointer to interned string
+    const string_t* interned_string;       // Pointer to interned string
     allocated_string_t* allocated_string;  // Pointer to allocated string
     char utf8_array[8];                    // 0-8 UTF-8 characters (renamed from utf8)
     uint16_t utf16_array[4];               // 0-4 UTF-16 characters (renamed from utf16)
@@ -146,7 +146,7 @@ typedef struct object {
 cell_t new_int32(int32_t value);
 cell_t new_int64(int64_t value);
 cell_t new_float(double value);
-cell_t new_allocated_string(context_t* ctx, const char* cstr);
+cell_t new_allocated_string(context_t* ctx, const string_t* str);
 cell_t new_empty_string(void);
 cell_t new_empty_object(void);
 cell_t new_empty_array(void);

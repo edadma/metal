@@ -17,6 +17,13 @@
 #include "stack.h"
 #include "util.h"
 
+#define MAX_TOKEN_SIZE 256
+
+typedef union {
+  char buffer[sizeof(string_t) + MAX_TOKEN_SIZE * 4];
+  string_t string;
+} string_buffer_t;
+
 // Global compilation state
 bool compilation_mode = false;
 cell_array_t* compiling_definition = NULL;
@@ -225,21 +232,34 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
   ctx->input_start = input;
   ctx->input_pos = input;
 
-  char token_buffer[256];
+  char token_buffer[MAX_TOKEN_SIZE];
   token_type_t token_type;
 
   // Parse and execute tokens one at a time
   while ((token_type = parse_next_token(ctx, &ctx->input_pos, token_buffer, sizeof(token_buffer))) != TOKEN_EOF) {
     if (token_type == TOKEN_STRING) {
       // String literal
-      cell_t string_cell = new_allocated_string(ctx, token_buffer);
 
+      // Convert C string to stack string_t
+      string_buffer_t string_buf;
+      string_t* local_str = &string_buf.string;
+
+      string_from_cstr(token_buffer, local_str);
+
+      // Use for either interned or allocated strings
       if (compilation_mode) {
-        compile_cell(ctx, string_cell);
-      } else {
-        data_push(ctx, string_cell);
-      }
+        // Try to intern
+        const string_t* existing = intern_lookup(ctx, local_str);
+        if (existing) {
+          compile_cell(ctx, new_interned_string(existing));
+        } else {
+          const string_t* newly_interned = intern_add(ctx, local_str);
 
+          compile_cell(ctx, new_interned_string(newly_interned));
+        }
+      } else {
+        data_push(ctx, new_allocated_string(ctx, local_str));
+      }
     } else if (token_type == TOKEN_WORD) {
       char* word = token_buffer;
 

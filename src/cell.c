@@ -30,18 +30,28 @@ cell_t new_float(double value) {
   return cell;
 }
 
-cell_t new_allocated_string(context_t* ctx, const char* cstr) {
+cell_t new_allocated_string(context_t* ctx, const string_t* str) {
   cell_t cell = {0};
   cell.type = CELL_STRING;
 
-  size_t len = strlen(cstr);  // Input length (for now, UTF-8 from C strings)
-  allocated_string_t* str = metal_alloc(ctx, sizeof(allocated_string_t) + len);
+  // Calculate data size based on encoding
+  size_t data_size = str->length;
+  if (str->encoding == STRING_UTF16)
+    data_size *= 2;
+  else if (str->encoding == STRING_UTF32)
+    data_size *= 4;
 
-  str->refcount = 0;  // no owner yet
-  str->string.length = len;
-  memcpy(str->string.data, cstr, len);
+  // Allocate space for allocated_string_t + data
+  allocated_string_t* allocated_str = metal_alloc(ctx, sizeof(allocated_string_t) + data_size);
 
-  cell.payload.allocated_string = str;
+  allocated_str->refcount = 0;  // no owner yet
+  allocated_str->string.encoding = str->encoding;
+  allocated_str->string.length = str->length;
+
+  // Copy the string data
+  memcpy(allocated_str->string.data, str->data, data_size);
+
+  cell.payload.allocated_string = allocated_str;
   return cell;
 }
 
