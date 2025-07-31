@@ -64,26 +64,20 @@ static void native_length(context_t* ctx) {
     return;
   }
 
-  cell_t array_cell = data_pop_cell(ctx);
+  cell_t cell = data_pop_cell(ctx);
 
-  if (array_cell.type == CELL_ARRAY && !array_cell.payload.array) {
+  if (cell.type == CELL_ARRAY && !cell.payload.array) {
     data_push(ctx, new_int32(0));
-  } else if (array_cell.type == CELL_ARRAY) {
-    cell_array_t* data = array_cell.payload.array;
+  } else if (cell.type == CELL_ARRAY) {
+    cell_array_t* data = cell.payload.array;
     data_push(ctx, new_int32(data->length));
-  } else if (array_cell.type == CELL_STRING) {
-    const allocated_string_t* str = array_cell.payload.allocated_string;
-
-    if (!str) {
-      data_push(ctx, new_int32(0));  // null string has length 0
-    } else {
-      data_push(ctx, new_int32((int32_t)str->string.length));
-    }
+  } else if (cell.type == CELL_STRING) {
+    data_push(ctx, new_int32(string_length(ctx, &cell)));  // null string has length 0
   } else {
     error(ctx, "LENGTH: not an array or string");
   }
 
-  release(&array_cell);
+  release(&cell);
 }
 
 static void native_index(context_t* ctx) {
@@ -127,10 +121,7 @@ static void native_index(context_t* ctx) {
 void add_core_array_words(void) {
   // Array operations
   add_native_word("[]", native_nil, "( -- array ) Create empty array");
-  add_native_word(",", native_comma,
-                  "( array item -- array ) Append item to array");
-  add_native_word("LENGTH", native_length,
-                  "( array|string -- n ) Get array or string length");
-  add_native_word("INDEX", native_index,
-                  "( array n -- ptr ) Get pointer to array element");
+  add_native_word(",", native_comma, "( array item -- array ) Append item to array");
+  add_native_word("LENGTH", native_length, "( array|string -- n ) Get array or string length");
+  add_native_word("INDEX", native_index, "( array n -- ptr ) Get pointer to array element");
 }
