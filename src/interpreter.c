@@ -19,11 +19,6 @@
 
 #define MAX_TOKEN_SIZE 256
 
-typedef union {
-  char buffer[sizeof(string_t) + MAX_TOKEN_SIZE * 4];
-  string_t string;
-} string_buffer_t;
-
 // Global compilation state
 bool compilation_mode = false;
 cell_array_t* compiling_definition = NULL;
@@ -233,8 +228,9 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
       // String literal
 
       // Convert C string to stack string_t
-      string_buffer_t string_buf;
-      string_t* local_str = &string_buf.string;
+      string_t string_buf;
+      char data_storage[MAX_TOKEN_SIZE * 4];
+      string_t* local_str = &string_buf;
 
       string_from_cstr(token_buffer, local_str);
 
