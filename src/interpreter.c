@@ -241,9 +241,7 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
         if (existing) {
           compile_cell(ctx, new_interned_string(existing));
         } else {
-          printf("%.*s", (int)local_str->length, local_str->data);
           const string_t* newly_interned = intern_add(ctx, local_str);
-          printf("%.*s %d", (int)newly_interned->length, newly_interned->data, newly_interned->encoding);
 
           compile_cell(ctx, new_interned_string(newly_interned));
         }
