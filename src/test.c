@@ -315,7 +315,7 @@ void test_stack_top_truthy(const char* file, int line, const char* expr, bool sh
   }
 
   cell_t top = data_peek_cell(ctx, 0);
-  bool is_truthy_result = is_truthy(&top);
+  bool is_truthy_result = is_truthy(ctx, &top);
 
   if (is_truthy_result == should_be_truthy) {
     test_pass(file, line, expr);

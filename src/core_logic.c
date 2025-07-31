@@ -19,7 +19,7 @@ static void native_and(context_t* ctx) {
   require_params(ctx, 2, "AND");
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
-  bool result = is_truthy(a) && is_truthy(b);
+  bool result = is_truthy(ctx, a) && is_truthy(ctx, b);
   release(a);
   release(b);
   data_push(ctx, new_boolean(result));
@@ -29,7 +29,7 @@ static void native_or(context_t* ctx) {
   require_params(ctx, 2, "OR");
   cell_t* b = data_pop(ctx);
   cell_t* a = data_pop(ctx);
-  bool result = is_truthy(a) || is_truthy(b);
+  bool result = is_truthy(ctx, a) || is_truthy(ctx, b);
   release(a);
   release(b);
   data_push(ctx, new_boolean(result));
@@ -38,7 +38,7 @@ static void native_or(context_t* ctx) {
 static void native_not(context_t* ctx) {
   require_params(ctx, 1, "NOT");
   cell_t* a = data_pop(ctx);
-  bool result = !is_truthy(a);
+  bool result = !is_truthy(ctx, a);
 
   release(a);
 

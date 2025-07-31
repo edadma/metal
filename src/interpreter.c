@@ -169,7 +169,7 @@ void execute_code(context_t* ctx) {
 
         cell_t* condition = data_pop(ctx);
 
-        if (!is_truthy(condition)) {
+        if (!is_truthy(ctx, condition)) {
           // Jump: ip += offset
           ctx->ip += cell->payload.i32;
         }

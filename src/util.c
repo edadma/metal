@@ -79,7 +79,7 @@ int stricmp(const char* s1, const char* s2) {
   return tolower((unsigned char)*s1) - tolower((unsigned char)*s2);
 }
 
-bool is_truthy(cell_t* cell) {
+bool is_truthy(context_t* ctx, cell_t* cell) {
   switch (cell->type) {
     case CELL_BOOLEAN:
       return cell->payload.boolean;
@@ -96,7 +96,7 @@ bool is_truthy(cell_t* cell) {
       return val != 0.0 && val == val;  // NaN != NaN, so val == val is false for NaN
 
     case CELL_STRING:
-      if (!cell->payload.allocated_string || !cell->payload.allocated_string->string.length) return false;
+      return !string_is_empty(ctx, cell);
     default:
       return true;
   }
@@ -124,31 +124,17 @@ int compare_cells(context_t* ctx, cell_t* a, cell_t* b) {
         return 0;
 
       case CELL_STRING: {
-        // Handle null pointers
-        if (!a->payload.allocated_string && !b->payload.allocated_string) return 0;
-        if (!a->payload.allocated_string) return -1;
-        if (!b->payload.allocated_string) return 1;
+        // Handle empty strings
+        if (!a->payload.ptr && !b->payload.ptr) return 0;
+        if (!a->payload.ptr) return -1;
+        if (!b->payload.ptr) return 1;
 
-        // Get string data and lengths
-        const uint8_t* adata = a->payload.allocated_string->string.data;
-        const uint8_t* bdata = b->payload.allocated_string->string.data;
-        const size_t alen = a->payload.allocated_string->string.length;
-        const size_t blen = b->payload.allocated_string->string.length;
+        // Extract string_t pointers properly
+        const string_t* a_str = a->flags & CELL_FLAG_INTERNED ? a->payload.interned_string : &a->payload.allocated_string->string;
+        const string_t* b_str = b->flags & CELL_FLAG_INTERNED ? b->payload.interned_string : &b->payload.allocated_string->string;
 
-        // Compare the actual string contents
-        size_t min_len = (alen < blen) ? alen : blen;
-        int result = memcmp(adata, bdata, min_len);
-
-        if (result != 0) {
-          return (result < 0) ? -1 : 1;
-        }
-
-        // If common prefix is equal, shorter string comes first
-        if (alen < blen) return -1;
-        if (alen > blen) return 1;
-        return 0;
+        return string_compare(ctx, a_str, b_str);
       }
-
       default:
         error(ctx, "Cannot compare values of this type");
         return 0;

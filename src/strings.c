@@ -218,6 +218,37 @@ bool string_equal(context_t* ctx, const string_t* a, const string_t* b) {
   return memcmp(a->data, b->data, len) == 0;
 }
 
+// String comparison for ordering (like strcmp)
+// Returns: -1 if a < b, 0 if a == b, 1 if a > b
+int string_compare(context_t* ctx, const string_t* a, const string_t* b) {
+  require_msg(ctx, a->encoding == b->encoding, "string_compare: encoding mismatch");
+
+  // Calculate byte lengths based on encoding
+  size_t alen = a->length;
+  size_t blen = b->length;
+
+  if (a->encoding == STRING_UTF16) {
+    alen <<= 1;
+    blen <<= 1;
+  } else if (a->encoding == STRING_UTF32) {
+    alen <<= 2;
+    blen <<= 2;
+  }
+
+  // Compare the actual string contents
+  size_t min_len = (alen < blen) ? alen : blen;
+  int result = memcmp(a->data, b->data, min_len);
+
+  if (result != 0) {
+    return (result < 0) ? -1 : 1;
+  }
+
+  // Same content up to min_len, decide by length
+  if (alen < blen) return -1;
+  if (alen > blen) return 1;
+  return 0;
+}
+
 // Fast string equality with interned string optimization
 bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
   require(ctx, a != NULL);

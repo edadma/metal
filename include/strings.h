@@ -51,6 +51,7 @@ cell_t new_preallocated_string(context_t* ctx, char* buffer, size_t length);
 const uint8_t* string_data(context_t* ctx, const cell_t* str);
 string_view_t string_view(context_t* ctx, const cell_t* str);
 bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b);
+int string_compare(context_t* ctx, const string_t* a, const string_t* b);
 
 const uint8_t* string_get_data(context_t* ctx, const cell_t* str);
 size_t string_get_length(context_t* ctx, const cell_t* str);
