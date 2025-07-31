@@ -216,8 +216,13 @@ bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
     return a->payload.interned_string == b->payload.interned_string;
   }
 
-  if (a->payload.ptr == b->payload.ptr) return true;  // same allocated string, or both empty strings
+  // Same pointer optimization (covers both empty strings AND same allocated string)
+  if (a->payload.ptr == b->payload.ptr) return true;
 
+  // One empty, one not empty
+  if (!a->payload.ptr || !b->payload.ptr) return false;
+
+  // Now safe to extract string_t pointers
   string_t* a_str = a->flags & CELL_FLAG_INTERNED ? a->payload.interned_string : &a->payload.allocated_string->string;
   string_t* b_str = b->flags & CELL_FLAG_INTERNED ? b->payload.interned_string : &b->payload.allocated_string->string;
 
