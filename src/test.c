@@ -419,7 +419,7 @@ static void native_refcount(context_t* ctx) {
   require_params(ctx, 1, "REFCOUNT");
   cell_t cell = data_pop_cell(ctx);
 
-  int refcount = 0;
+  int refcount = -1;
 
   switch (cell.type) {
     case CELL_STRING:
@@ -435,7 +435,7 @@ static void native_refcount(context_t* ctx) {
       }
       break;
     default:
-      refcount = 0;  // Immediate types don't have refcounts
+      refcount = -1;  // Immediate types don't have refcounts
   }
 
   data_push(ctx, new_int32(refcount));

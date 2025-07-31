@@ -375,6 +375,163 @@ TEST_FUNCTION(test_empty_collections_refcount) {
   TEST_STACK_DEPTH(0);
 }
 
+// Test deep nesting memory reclamation - arrays containing arrays containing strings
+TEST_FUNCTION(test_deep_nested_memory_reclaim) {
+  // Take snapshot before creating deep structure
+  TEST_INTERPRET("MEM-SNAPSHOT");
+
+  // Create deeply nested structure: [["a", "b"], ["c", "d"], ["e", "f"]]
+  TEST_INTERPRET("[] [] \"a\" , \"b\" , , [] \"c\" , \"d\" , , [] \"e\" , \"f\" , ,");
+  // Verify the structure was created properly
+  TEST_INTERPRET("DUP LENGTH");
+  TEST_STACK_TOP_INT(3);  // Should have 3 sub-arrays
+  TEST_INTERPRET("DROP");
+
+  // Drop the entire structure - should cascade release all nested strings and arrays
+  TEST_INTERPRET("DROP");
+
+  // Check no leaks occurred - all nested strings and arrays should be released
+  TEST_INTERPRET("MEM-COMPARE");
+  TEST_STACK_TOP_INT(0);  // Should be 0 leaks
+  TEST_INTERPRET("DROP");
+
+  TEST_STACK_DEPTH(0);
+}
+
+// Test large collection memory reclamation
+TEST_FUNCTION(test_large_collection_memory_reclaim) {
+  // Take snapshot before creating large collection
+  TEST_INTERPRET("MEM-SNAPSHOT");
+
+  // Create array with many string elements
+  TEST_INTERPRET("[]");
+  TEST_INTERPRET("0 BEGIN DUP 50 < WHILE");     // Loop 50 times
+  TEST_INTERPRET("  DUP \" -item\" + OVER ,");  // Add "N-item" to array
+  TEST_INTERPRET("  1 +");
+  TEST_INTERPRET("REPEAT DROP");
+
+  // Verify array was created with correct size
+  TEST_INTERPRET("DUP LENGTH");
+  TEST_STACK_TOP_INT(50);  // Should have 50 elements
+  TEST_INTERPRET("DROP");
+
+  // Drop the entire array - should release all 50 string elements
+  TEST_INTERPRET("DROP");
+
+  // Check no leaks occurred
+  TEST_INTERPRET("MEM-COMPARE");
+  TEST_STACK_TOP_INT(0);  // Should be 0 leaks
+  TEST_INTERPRET("DROP");
+
+  TEST_STACK_DEPTH(0);
+}
+
+// Test complex variable storage memory reclamation
+TEST_FUNCTION(test_complex_variable_storage_reclaim) {
+  // Take snapshot before operations
+  TEST_INTERPRET("MEM-SNAPSHOT");
+
+  TEST_INTERPRET("VARIABLE complex-var");
+
+  // Store a complex nested structure in variable
+  TEST_INTERPRET("[] [] \"nested-a\" , \"nested-b\" , , \"top-level\" , complex-var !");
+
+  // Verify storage worked
+  TEST_INTERPRET("complex-var @ LENGTH");
+  TEST_STACK_TOP_INT(2);  // Should have array and string
+  TEST_INTERPRET("DROP");
+
+  // Overwrite with a new complex structure - old structure should be fully released
+  TEST_INTERPRET("[] [] \"new-nested-x\" , \"new-nested-y\" , , [] \"another-array\" , , complex-var !");
+
+  // Verify new storage
+  TEST_INTERPRET("complex-var @ LENGTH");
+  TEST_STACK_TOP_INT(2);  // Should have two arrays
+  TEST_INTERPRET("DROP");
+
+  // Clear the variable - should release the current structure
+  TEST_INTERPRET("NULL complex-var !");
+
+  // Check no leaks occurred
+  TEST_INTERPRET("MEM-COMPARE");
+  TEST_STACK_TOP_INT(0);  // Should be 0 leaks
+  TEST_INTERPRET("DROP");
+
+  TEST_STACK_DEPTH(0);
+}
+
+// Test mixed content array memory reclamation
+TEST_FUNCTION(test_mixed_content_array_reclaim) {
+  // Take snapshot before creating mixed structure
+  TEST_INTERPRET("MEM-SNAPSHOT");
+
+  // Create array with mixed allocated types: strings, sub-arrays, numbers
+  TEST_INTERPRET("[]");
+  TEST_INTERPRET("\"string-item\" ,");      // Add string
+  TEST_INTERPRET("[] 1 , 2 , ,");           // Add sub-array with numbers
+  TEST_INTERPRET("42 ,");                   // Add immediate number
+  TEST_INTERPRET("\"another-string\" ,");   // Add another string
+  TEST_INTERPRET("[] \"nested-str\" , ,");  // Add array with string
+
+  // Verify mixed array structure TEST_INTERPRET("DUP LENGTH");
+  TEST_STACK_TOP_INT(5);  // Should have 5 mixed elements
+  TEST_INTERPRET("DROP");
+
+  // Drop entire mixed array - should selectively release only allocated items
+  TEST_INTERPRET("DROP");
+
+  // Check no leaks occurred
+  TEST_INTERPRET("MEM-COMPARE");
+  TEST_STACK_TOP_INT(0);  // Should be 0 leaks
+  TEST_INTERPRET("DROP");
+
+  TEST_STACK_DEPTH(0);
+}
+
+// Test cascading reference drops with shared structures
+TEST_FUNCTION(test_cascading_reference_drops) {
+  // Take snapshot for leak detection
+  TEST_INTERPRET("MEM-SNAPSHOT");
+
+  // Create shared sub-array with content (so it's allocated, not immediate)
+  TEST_INTERPRET("[] \"shared-a\" , \"shared-b\" ,");
+
+  // Create two parent arrays that share the same sub-array
+  TEST_INTERPRET("DUP [] SWAP , \"parent1-item\" ,");   // parent1 contains shared array
+  TEST_INTERPRET("SWAP [] SWAP , \"parent2-item\" ,");  // parent2 contains shared array
+
+  // Now stack is: [parent1_array, parent2_array]
+  // The shared array should have refcount 2 (referenced by both parents)
+
+  // Access the shared array from parent1 to check its refcount
+  TEST_INTERPRET("OVER 0 @");  // Get first element (shared array) from parent1
+  TEST_INTERPRET("REFCOUNT");
+  TEST_STACK_TOP_INT(2);  // Should be 2 (parent1 + parent2)
+  TEST_INTERPRET("DROP");
+
+  // Drop parent1 - shared array refcount should drop to 1
+  TEST_INTERPRET("DROP");  // Remove parent1, stack: [parent2_array]
+
+  // Access shared array from parent2 to check refcount
+  TEST_INTERPRET("DUP 0 @");  // Get first element (shared array) from parent2
+  TEST_INTERPRET("REFCOUNT");
+  TEST_STACK_TOP_INT(1);  // Should be 1 (just parent2)
+  TEST_INTERPRET("DROP");
+
+  // Drop parent2 - shared array should be deallocated
+  TEST_INTERPRET("DROP");  // Remove parent2
+
+  // Stack should now just have the snapshot
+  TEST_STACK_DEPTH(1);
+
+  // Check no leaks occurred
+  TEST_INTERPRET("MEM-COMPARE");
+  TEST_STACK_TOP_INT(0);  // Should be 0 leaks
+  TEST_INTERPRET("DROP");
+
+  TEST_STACK_DEPTH(0);
+}
+
 // Register all reference counting test words
 void add_refcount_test_words(void) {
   // Memory leak detection
@@ -404,6 +561,12 @@ void register_refcount_tests(void) {
   REGISTER_TEST(test_variable_refcount_operations);
   REGISTER_TEST(test_memory_pressure_refcount);
   REGISTER_TEST(test_empty_collections_refcount);
+
+  REGISTER_TEST(test_deep_nested_memory_reclaim);
+  REGISTER_TEST(test_large_collection_memory_reclaim);
+  REGISTER_TEST(test_complex_variable_storage_reclaim);
+  REGISTER_TEST(test_mixed_content_array_reclaim);
+  REGISTER_TEST(test_cascading_reference_drops);
 }
 
 #endif  // TEST_ENABLED
