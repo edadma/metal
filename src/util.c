@@ -308,62 +308,73 @@ void dump(const void* data, size_t size) {
   printf("\n");
 }
 
+int join(context_t* ctx, cell_t cell[], size_t length, const char* sep, char* buffer, size_t buffer_size) {
+  if (!buffer || buffer_size == 0) {
+    return 0;
+  }
+
+  int size = 0;
+
+  if (length == 0) {
+    return size;
+  }
+
+  for (size_t i = 0; i < length; i++) {
+    if (i > 0) size += snprintf(buffer + size, buffer_size - size, "%s", sep);
+    size += cell_to_cstr(ctx, &cell[i], buffer + size, buffer_size - size);
+  }
+
+  return size;
+}
+
 // Convert cell to C string representation
-void cell_to_cstr(context_t* ctx, cell_t* cell, char* buffer, size_t buffer_size) {
+int cell_to_cstr(context_t* ctx, cell_t* cell, char* buffer, size_t buffer_size) {
   if (!cell || !buffer || buffer_size == 0) {
-    return;
+    return 0;
   }
 
   switch (cell->type) {
     case CELL_INT32:
-      snprintf(buffer, buffer_size, "%d", cell->payload.i32);
-      break;
+      return snprintf(buffer, buffer_size, "%d", cell->payload.i32);
 
     case CELL_INT64:
-      snprintf(buffer, buffer_size, "%lld", (long long)cell->payload.i64);
-      break;
+      return snprintf(buffer, buffer_size, "%lld", (long long)cell->payload.i64);
 
     case CELL_FLOAT:
-      snprintf(buffer, buffer_size, "%g", cell->payload.f64);
-      break;
+      return snprintf(buffer, buffer_size, "%g", cell->payload.f64);
 
     case CELL_STRING:
       char buf[100];
 
       string_to_utf8(ctx, cell, buf, sizeof(buf));
-      snprintf(buffer, buffer_size, "%s", buf);
-      break;
+      return snprintf(buffer, buffer_size, "%s", buf);
 
     case CELL_BOOLEAN:
-      snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
-      break;
+      return snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
 
     case CELL_ARRAY:
-      if (!cell->payload.array) {
-        snprintf(buffer, buffer_size, "[]");
-      } else {
-        snprintf(buffer, buffer_size, "[array:%d]", (int)cell->payload.array->length);
-      }
-      break;
+      int size = snprintf(buffer, buffer_size, "[", 1);
+
+      size += join(ctx, cell->payload.array->elements, cell->payload.array->length, ", ", buffer + size, buffer_size - size);
+      return size + snprintf(buffer + size, buffer_size - size, "]");
 
     case CELL_OBJECT:
       if (!cell->payload.object) {
-        snprintf(buffer, buffer_size, "{}");
-      } else {
-        snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
+        return snprintf(buffer, buffer_size, "{}");
       }
-      break;
+
+      return snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
+
+    case CELL_POINTER:
+      return cell_to_cstr(ctx, cell->payload.cell_ptr, buffer, buffer_size);
 
     case CELL_NULL:
-      snprintf(buffer, buffer_size, "null");
-      break;
+      return snprintf(buffer, buffer_size, "null");
 
     case CELL_UNDEFINED:
-      snprintf(buffer, buffer_size, "undefined");
-      break;
+      return snprintf(buffer, buffer_size, "undefined");
 
     default:
-      snprintf(buffer, buffer_size, "<type %d>", cell->type);
-      break;
+      return snprintf(buffer, buffer_size, "<type %d>", cell->type);
   }
 }
