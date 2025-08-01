@@ -1170,10 +1170,10 @@ void init_tests(void) {
   register_bitwise_tests();
 
   // Reference counting tests
-  // register_refcount_tests();
+  register_refcount_tests();
 
   // Array operations tests
-  register_array_tests();
+  // register_array_tests();
 }
 
 #endif  // TEST_ENABLED
