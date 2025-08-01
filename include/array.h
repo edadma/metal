@@ -7,7 +7,7 @@
 
 // Array data management
 cell_array_t* create_array_data(context_t* ctx, size_t initial_capacity);
-cell_array_t* resize_array_data(context_t* ctx, cell_array_t* data,
-                                size_t new_capacity);
+cell_array_t* resize_array_data(context_t* ctx, cell_array_t* data, size_t new_capacity);
+cell_t new_empty_array(context_t* ctx);
 
 #endif  // ARRAY_H
