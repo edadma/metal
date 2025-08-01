@@ -404,7 +404,7 @@ TEST_FUNCTION(test_large_collection_memory_reclaim) {
   TEST_INTERPRET("MEM-SNAPSHOT");
 
   // Create array with many string elements
-  TEST_INTERPRET("DEF T [] 0 BEGIN DUP 50 < WHILE DUP \" -item\" + OVER , 1 + REPEAT DROP END T");  // Loop 50 times
+  TEST_INTERPRET("DEF T [] 0 BEGIN DUP 50 < WHILE OVER OVER \" -item\" + OVER , 1 + REPEAT DROP END T");  // Loop 50 times
 
   // Verify array was created with correct size
   TEST_INTERPRET("DUP LENGTH");

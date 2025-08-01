@@ -307,3 +307,63 @@ void dump(const void* data, size_t size) {
   }
   printf("\n");
 }
+
+// Convert cell to C string representation
+void cell_to_cstr(context_t* ctx, cell_t* cell, char* buffer, size_t buffer_size) {
+  if (!cell || !buffer || buffer_size == 0) {
+    return;
+  }
+
+  switch (cell->type) {
+    case CELL_INT32:
+      snprintf(buffer, buffer_size, "%d", cell->payload.i32);
+      break;
+
+    case CELL_INT64:
+      snprintf(buffer, buffer_size, "%lld", (long long)cell->payload.i64);
+      break;
+
+    case CELL_FLOAT:
+      snprintf(buffer, buffer_size, "%g", cell->payload.f64);
+      break;
+
+    case CELL_STRING:
+      char buf[100];
+
+      string_to_utf8(ctx, cell, buf, sizeof(buf));
+      snprintf(buffer, buffer_size, "%s", buf);
+      break;
+
+    case CELL_BOOLEAN:
+      snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
+      break;
+
+    case CELL_ARRAY:
+      if (!cell->payload.array) {
+        snprintf(buffer, buffer_size, "[]");
+      } else {
+        snprintf(buffer, buffer_size, "[array:%d]", (int)cell->payload.array->length);
+      }
+      break;
+
+    case CELL_OBJECT:
+      if (!cell->payload.object) {
+        snprintf(buffer, buffer_size, "{}");
+      } else {
+        snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
+      }
+      break;
+
+    case CELL_NULL:
+      snprintf(buffer, buffer_size, "null");
+      break;
+
+    case CELL_UNDEFINED:
+      snprintf(buffer, buffer_size, "undefined");
+      break;
+
+    default:
+      snprintf(buffer, buffer_size, "<type %d>", cell->type);
+      break;
+  }
+}
