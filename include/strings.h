@@ -9,9 +9,6 @@ cell_t string_concat(context_t* ctx, cell_t* a, cell_t* b);
 // cell_t string_append_cstr(context_t* ctx, cell_t* str, const char* cstr);
 // cell_t string_append_char(context_t* ctx, cell_t* str, char c);
 
-// String conversion utilities
-void cell_to_cstr(cell_t* cell, char* buffer, size_t buffer_size);
-
 // String helper functions
 size_t string_length(context_t* ctx, cell_t* str);
 bool string_is_empty(context_t* ctx, cell_t* str);

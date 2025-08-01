@@ -2,68 +2,14 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "error.h"
 #include "strings.h"
 
 void print_cell(context_t* ctx, const cell_t* cell) {
-  switch (cell->type) {
-    case CELL_INT32:
-      printf("%d", cell->payload.i32);
-      break;
-    case CELL_INT64:
-      printf("%lld", (long long)cell->payload.i64);
-      break;
-    case CELL_FLOAT:
-      printf("%g", cell->payload.f64);
-      break;
-    case CELL_STRING:
-      char buffer[100];
-
-      string_to_utf8(ctx, cell, buffer, sizeof(buffer));
-      printf("%s", buffer);
-      break;
-    case CELL_ARRAY: {
-      const cell_array_t* array = cell->payload.array;
-
-      if (!array) {
-        printf("[]");
-      } else {
-        printf("[");
-
-        for (size_t i = 0; i < array->length; i++) {
-          if (i > 0) printf(", ");
-          print_cell(ctx, &array->elements[i]);
-        }
-
-        printf("]");
-      }
-      break;
-    }
-    case CELL_POINTER:
-      printf("<pointer: ");
-      print_cell(ctx, cell->payload.cell_ptr);
-      printf(">");
-      break;
-    case CELL_OBJECT:
-      if (!cell->payload.object) {
-        printf("{}");
-      }
-      break;
-    case CELL_BOOLEAN:
-      printf("%s", cell->payload.boolean ? "true" : "false");
-      break;
-    case CELL_NULL:
-      printf("null");
-      break;
-    case CELL_UNDEFINED:
-      printf("undefined");
-      break;
-    default:
-      printf("<type %d>", cell->type);
-      break;
-  }
+  char buffer[200];
+  cell_to_cstr(ctx, (cell_t*)cell, false, buffer, sizeof(buffer));
+  printf("%s", buffer);
 }
 
 // Case-insensitive string comparison
@@ -321,14 +267,14 @@ int join(context_t* ctx, cell_t cell[], size_t length, const char* sep, char* bu
 
   for (size_t i = 0; i < length; i++) {
     if (i > 0) size += snprintf(buffer + size, buffer_size - size, "%s", sep);
-    size += cell_to_cstr(ctx, &cell[i], buffer + size, buffer_size - size);
+    size += cell_to_cstr(ctx, &cell[i], true, buffer + size, buffer_size - size);
   }
 
   return size;
 }
 
 // Convert cell to C string representation
-int cell_to_cstr(context_t* ctx, cell_t* cell, char* buffer, size_t buffer_size) {
+int cell_to_cstr(context_t* ctx, cell_t* cell, bool display, char* buffer, size_t buffer_size) {
   if (!cell || !buffer || buffer_size == 0) {
     return 0;
   }
@@ -347,13 +293,13 @@ int cell_to_cstr(context_t* ctx, cell_t* cell, char* buffer, size_t buffer_size)
       char buf[100];
 
       string_to_utf8(ctx, cell, buf, sizeof(buf));
-      return snprintf(buffer, buffer_size, "%s", buf);
+      return snprintf(buffer, buffer_size, display ? "\"%s\"" : "%s", buf);
 
     case CELL_BOOLEAN:
       return snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
 
     case CELL_ARRAY:
-      int size = snprintf(buffer, buffer_size, "[", 1);
+      int size = snprintf(buffer, buffer_size, "[");
 
       size += join(ctx, cell->payload.array->elements, cell->payload.array->length, ", ", buffer + size, buffer_size - size);
       return size + snprintf(buffer + size, buffer_size - size, "]");
@@ -366,7 +312,7 @@ int cell_to_cstr(context_t* ctx, cell_t* cell, char* buffer, size_t buffer_size)
       return snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
 
     case CELL_POINTER:
-      return cell_to_cstr(ctx, cell->payload.cell_ptr, buffer, buffer_size);
+      return cell_to_cstr(ctx, cell->payload.cell_ptr, false, buffer, buffer_size);
 
     case CELL_NULL:
       return snprintf(buffer, buffer_size, "null");

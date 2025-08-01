@@ -85,7 +85,7 @@ endif ()
 # Platform-specific settings
 if (TARGET_PLATFORM STREQUAL "pico")
     target_compile_definitions(metal PRIVATE TARGET_PICO=1)
-    target_link_libraries(metal pico_stdlib hardware_gpio hardware_rtc)
+    target_link_libraries(metal pico_stdlib pico_float hardware_gpio hardware_rtc)
     pico_enable_stdio_usb(metal 1)
     pico_enable_stdio_uart(metal 0)
     pico_add_extra_outputs(metal)
@@ -101,7 +101,7 @@ if (TARGET_PLATFORM STREQUAL "pico")
     endif ()
 elseif (TARGET_PLATFORM STREQUAL "linux")
     target_compile_definitions(metal PRIVATE TARGET_LINUX=1)
-    target_link_libraries(metal pthread)
+    target_link_libraries(metal m pthread)
 
     # Copy Linux executable to repository root
     if (COPY_EXECUTABLES_TO_ROOT)

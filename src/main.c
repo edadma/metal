@@ -19,6 +19,7 @@
 #include "core_stack.h"
 #include "debug.h"
 #include "dictionary.h"
+#include "float.h"
 #include "memory.h"
 #include "repl.h"
 #include "test.h"
@@ -34,6 +35,7 @@ void populate_dictionary(void) {
   add_core_array_words();       // Array operations
   add_core_words();             // Core language features
   add_tools_words();            // Development tools
+  add_float_words();            // Floating-point words
 
   // Debug words (only when debug support compiled in)
 #ifdef DEBUG_ENABLED
