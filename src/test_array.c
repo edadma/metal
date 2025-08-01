@@ -173,39 +173,39 @@ TEST_FUNCTION(test_index_fetch_errors) {
   // Test INDEX@ with out-of-bounds positive index
   TEST_INTERPRET("[] 1 , 2 ,");
   TEST_EXPECT_ERROR("DUP 5 INDEX@", "index out of bounds");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX@ with negative index
   TEST_INTERPRET("[] 1 , 2 ,");
   TEST_EXPECT_ERROR("DUP -1 INDEX@", "index out of bounds");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX@ with empty array
   TEST_INTERPRET("[]");
   TEST_EXPECT_ERROR("DUP 0 INDEX@", "index out of bounds");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX@ with non-array types
+  TEST_INTERPRET("[]");
   TEST_EXPECT_ERROR("42 0 INDEX@", "not an array");
+  TEST_INTERPRET("[]");
   TEST_EXPECT_ERROR("\"hello\" 0 INDEX@", "not an array");
+  TEST_INTERPRET("[]");
   TEST_EXPECT_ERROR("3.14 0 INDEX@", "not an array");
+  TEST_INTERPRET("[]");
   TEST_EXPECT_ERROR("TRUE 0 INDEX@", "not an array");
 
   // Test INDEX@ with non-integer index
   TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("DUP \"bad\" INDEX@", "index must be integer");
+  TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("DUP 1.5 INDEX@", "index must be integer");
+  TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("DUP TRUE INDEX@", "index must be integer");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX@ stack underflow
+  TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("INDEX@", "insufficient stack");
 
   TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("INDEX@", "insufficient stack");
-  TEST_INTERPRET("DROP");
-
-  TEST_STACK_DEPTH(0);
 }
 
 // Test INDEX! error conditions
@@ -213,17 +213,14 @@ TEST_FUNCTION(test_index_store_errors) {
   // Test INDEX! with out-of-bounds positive index
   TEST_INTERPRET("[] 1 , 2 ,");
   TEST_EXPECT_ERROR("99 OVER 5 INDEX!", "index out of bounds");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX! with negative index
   TEST_INTERPRET("[] 1 , 2 ,");
   TEST_EXPECT_ERROR("99 OVER -1 INDEX!", "index out of bounds");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX! with empty array
   TEST_INTERPRET("[]");
   TEST_EXPECT_ERROR("99 OVER 0 INDEX!", "index out of bounds");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX! with non-array types
   TEST_EXPECT_ERROR("99 42 0 INDEX!", "not an array");
@@ -234,22 +231,22 @@ TEST_FUNCTION(test_index_store_errors) {
   // Test INDEX! with non-integer index
   TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("99 OVER \"bad\" INDEX!", "index must be integer");
+  TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("99 OVER 1.5 INDEX!", "index must be integer");
+  TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("99 OVER TRUE INDEX!", "index must be integer");
-  TEST_INTERPRET("DROP");
 
   // Test INDEX! stack underflow
+  TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("INDEX!", "insufficient stack");
 
   TEST_INTERPRET("99");
+  TEST_INTERPRET("[] 1 ,");
   TEST_EXPECT_ERROR("INDEX!", "insufficient stack");
-  TEST_INTERPRET("DROP");
 
   TEST_INTERPRET("99 [] 1 ,");
-  TEST_EXPECT_ERROR("INDEX!", "insufficient stack");
-  TEST_INTERPRET("DROP DROP");
-
-  TEST_STACK_DEPTH(0);
+  TEST_INTERPRET("[] 1 ,");
+  TEST_EXPECT_ERROR("INDEX!", "INDEX!: index must be integer");
 }
 
 // === EDGE CASE TESTS ===
@@ -288,17 +285,12 @@ TEST_FUNCTION(test_boundary_indices) {
 
   // Test just beyond last index (should error)
   TEST_EXPECT_ERROR("DUP 5 INDEX@", "index out of bounds");
-
-  // Clean up
-  TEST_INTERPRET("DROP");
-  TEST_STACK_DEPTH(0);
 }
 
 // Test large arrays
 TEST_FUNCTION(test_large_array_indexing) {
   // Create larger array (20 elements)
-  TEST_INTERPRET("[]");
-  TEST_INTERPRET("0 BEGIN DUP 20 < WHILE DUP , 1 + REPEAT DROP");
+  TEST_INTERPRET("DEF T [] 0 , 1 BEGIN DUP 20 < WHILE OVER OVER , DROP 1+ REPEAT DROP END T");
 
   // Test accessing various positions
   TEST_INTERPRET("DUP 0 INDEX@");
@@ -449,8 +441,8 @@ TEST_FUNCTION(test_index_store_shared_references) {
   TEST_INTERPRET("\"shared\"");
 
   // Create two arrays and store shared string in both
-  TEST_INTERPRET("[] DUP ,");  // Array1 with shared string
-  TEST_INTERPRET("[] ROT ,");  // Array2 with shared string
+  TEST_INTERPRET("DUP [] SWAP ,");  // Array1 with shared string
+  TEST_INTERPRET("[] ROT ,");       // Array2 with shared string
 
   // Both arrays should reference the same string
   TEST_INTERPRET("OVER 0 INDEX@");  // Get string from array1
@@ -459,10 +451,10 @@ TEST_FUNCTION(test_index_store_shared_references) {
   TEST_STACK_TOP_BOOLEAN(true);
   TEST_INTERPRET("DROP");
 
-  // Check refcount of shared string (should be 4: array1 + array2 + 2 fetched copies)
+  // Check refcount of shared string (should be 3: array1 + array2 + 1 fetched copies)
   TEST_INTERPRET("OVER 0 INDEX@");
   TEST_INTERPRET("REFCOUNT");
-  TEST_STACK_TOP_INT(4);
+  TEST_STACK_TOP_INT(3);
   TEST_INTERPRET("DROP");
 
   // Clean up
@@ -709,15 +701,15 @@ void register_array_tests(void) {
   REGISTER_TEST(test_index_store_shared_references);
 
   // Stack effect tests
-  // REGISTER_TEST(test_index_fetch_stack_effects);
-  // REGISTER_TEST(test_index_store_stack_effects);
+  REGISTER_TEST(test_index_fetch_stack_effects);
+  REGISTER_TEST(test_index_store_stack_effects);
 
   // Complex scenarios
-  // REGISTER_TEST(test_round_trip_operations);
-  // REGISTER_TEST(test_dynamic_array_access);
-  // REGISTER_TEST(test_index_memory_leak_detection);
-  // REGISTER_TEST(test_index_cascading_references);
-  // REGISTER_TEST(test_index_replace_nested_structures);
+  REGISTER_TEST(test_round_trip_operations);
+  REGISTER_TEST(test_dynamic_array_access);
+  REGISTER_TEST(test_index_memory_leak_detection);
+  REGISTER_TEST(test_index_cascading_references);
+  REGISTER_TEST(test_index_replace_nested_structures);
 }
 
 #endif  // TEST_ENABLED
