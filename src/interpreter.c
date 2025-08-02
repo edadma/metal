@@ -323,3 +323,19 @@ void compile_cell(context_t* ctx, cell_t cell) {
   target_definition->length++;
   retain(&cell);
 }
+
+void reset_interpreter_state(void) {
+  compilation_mode = false;
+
+  // Clean up any incomplete compilation
+  if (compiling_definition) {
+    // Release all cells in the definition
+    for (size_t i = 0; i < compiling_definition->length; i++) {
+      release(&compiling_definition->elements[i]);
+    }
+    metal_free(compiling_definition);
+    compiling_definition = NULL;
+  }
+
+  compiling_word_name[0] = '\0';
+}

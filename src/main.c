@@ -83,6 +83,8 @@ int main(int argc, char* argv[]) {
 
 #ifdef TARGET_LINUX
   if (argc > 1 && strcmp(argv[1], "test") == 0) {
+    // intentionally run the tests twice
+    run_all_tests();
     run_all_tests();
     return 0;
   }

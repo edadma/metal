@@ -1,5 +1,6 @@
 #include "strings.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -14,14 +15,25 @@
 typedef struct intern intern_t;
 typedef struct intern {
   const string_t* string;
-  const intern_t* next;
+  intern_t* next;
 } intern_t;
+
+typedef struct {
+  int width;      // minimum width (0 = no width specified)
+  int precision;  // decimal places (-1 = not specified)
+  bool hex;       // use hex formatting
+  enum {
+    ALIGN_LEFT,   // default (no prefix)
+    ALIGN_RIGHT,  // > prefix
+    ALIGN_CENTER  // ^ prefix
+  } alignment;
+} format_spec_t;
 
 static intern_t* intern_list = NULL;
 
 const string_t* intern_lookup(context_t* ctx, const string_t* str) {
   for (const intern_t* node = intern_list; node; node = node->next) {
-    if (string_equal(ctx, str, node->string)) {
+    if (string_equal(str, node->string)) {
       return node->string;
     }
   }
@@ -66,6 +78,23 @@ cell_t new_interned_string(const string_t* interned_str) {
   return cell;
 }
 
+// Add this function to src/strings.c
+void clear_intern_table(void) {
+  // Free all intern_t nodes and their permanent string copies
+  while (intern_list) {
+    const intern_t* current = intern_list;
+    intern_list = current->next;
+
+    // Free the permanent string copy (allocated with metal_alloc)
+    metal_free((void*)current->string);
+
+    // Free the intern_t node itself
+    metal_free((void*)current);
+  }
+
+  intern_list = NULL;
+}
+
 void string_from_cstr(const char* cstr, string_t* out_str) {
   size_t len = strlen(cstr);
 
@@ -91,52 +120,6 @@ size_t string_length(context_t* ctx, cell_t* str) {
 
 // Check if string is empty
 bool string_is_empty(context_t* ctx, cell_t* str) { return string_length(ctx, str) == 0; }
-
-// Concatenate two strings (handles empty strings with NULL payloads)
-cell_t string_concat(context_t* ctx, cell_t* a, cell_t* b) {
-  if (a->type != CELL_STRING || b->type != CELL_STRING) {
-    error(ctx, "string_concat: both arguments must be strings");
-  }
-
-  size_t alen = string_length(ctx, a);
-  size_t blen = string_length(ctx, b);
-
-  // If both empty, return empty string
-  if (alen == 0 && blen == 0) {
-    return new_empty_string();
-  }
-
-  // If one is empty, return copy of the other
-  if (alen == 0) {
-    return *b;
-  }
-
-  if (blen == 0) {
-    return *a;
-  }
-
-  // Both have content - allocate new string
-  allocated_string_t* new_str = metal_alloc(ctx, sizeof(allocated_string_t) + alen + blen);
-
-  // Initialize the new string
-  new_str->refcount = 1;
-  new_str->string.encoding = STRING_UTF8;
-  new_str->string.length = alen + blen;
-
-  // Copy both strings
-  const uint8_t* adata = string_get_data(ctx, a);
-  const uint8_t* bdata = string_get_data(ctx, b);
-
-  memcpy(new_str->string.data, adata, alen);
-  memcpy(new_str->string.data + alen, bdata, blen);
-
-  // Create result cell
-  cell_t result = {0};
-  result.type = CELL_STRING;
-  result.payload.allocated_string = new_str;
-
-  return result;
-}
 
 // String operations for Metal language
 
@@ -181,9 +164,9 @@ string_view_t string_view(context_t* ctx, const cell_t* str) {
   return view;
 }
 
-bool string_equal(context_t* ctx, const string_t* a, const string_t* b) {
+bool string_equal(const string_t* a, const string_t* b) {
   if (a->length != b->length) return false;
-  require_msg(ctx, a->encoding == b->encoding, "string_equal: encoding mismatch");
+  if (a->encoding != b->encoding) return false;
 
   size_t len = a->length;
 
@@ -248,7 +231,7 @@ bool cell_string_equal(context_t* ctx, const cell_t* a, const cell_t* b) {
   const string_t* a_str = a->flags & CELL_FLAG_INTERNED ? a->payload.interned_string : &a->payload.allocated_string->string;
   const string_t* b_str = b->flags & CELL_FLAG_INTERNED ? b->payload.interned_string : &b->payload.allocated_string->string;
 
-  return string_equal(ctx, a_str, b_str);
+  return string_equal(a_str, b_str);
 }
 
 // Get string data pointer (handles interned vs allocated)

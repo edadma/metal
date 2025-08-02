@@ -10,6 +10,7 @@
 #include "dictionary.h"
 #include "error.h"
 #include "interpreter.h"
+#include "memory.h"
 #include "stack.h"
 #include "strings.h"
 #include "test_arithmetic_combo.h"
@@ -386,6 +387,12 @@ void run_all_tests(void) {
   // Restore dictionary state after tests
   restore_dictionary_size(saved_dict_size);
   debug("run_all_tests: Dictionary restored to original size");
+
+  clear_intern_table();       // Clear string internment table
+  reset_memory_stats();       // Reset memory allocation tracking
+  reset_interpreter_state();  // Reset compilation state
+
+  debug("run_all_tests: Complete state reset completed");
 
   debug("run_all_tests: All tests completed, clearing test_context");
 

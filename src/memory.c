@@ -6,6 +6,7 @@
 #include "debug.h"
 #include "error.h"
 #include "interpreter.h"
+#include "memory.h"
 
 #ifdef TARGET_PICO
 #include "pico/mutex.h"

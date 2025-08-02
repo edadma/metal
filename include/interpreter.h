@@ -23,4 +23,6 @@ void execute_code(context_t* ctx);
 bool try_parse_number(context_t* ctx, const char* token, cell_t* result);
 void compile_cell(context_t* ctx, cell_t cell);
 
+void reset_interpreter_state(void);
+
 #endif  // INTERPRETER_H
