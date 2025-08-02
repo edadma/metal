@@ -751,6 +751,101 @@ static void native_one_minus_store(context_t* ctx) {
   release(addr_cell);
 }
 
+// CASE ( -- case-sys ) Begin case construct
+static void native_case(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "CASE: only valid during compilation");
+  }
+  // Push marker (-1) to track start of CASE construct
+  return_push(ctx, new_int32(-1));
+}
+
+// OF ( x1 x2 -- | x1 ) Compare and branch if equal
+static void native_of(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "OF: only valid during compilation");
+  }
+  // Compile: OVER = IF DROP
+  // We need to compile the actual native calls and branch instructions
+
+  // Compile OVER
+  dictionary_entry_t* over = find_word("OVER");
+  compile_cell(ctx, over->definition);
+
+  // Compile =
+  dictionary_entry_t* equal = find_word("=");
+  compile_cell(ctx, equal->definition);
+
+  // Compile BRANCH_IF_FALSE (like IF does)
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH_IF_FALSE;
+  branch_cell.payload.i32 = 0;  // Placeholder for back-patching
+  int branch_location = compiling_definition->length;
+  compile_cell(ctx, branch_cell);
+
+  // Compile DROP
+  dictionary_entry_t* drop = find_word("DROP");
+  compile_cell(ctx, drop->definition);
+
+  // Push branch location for ENDOF to patch
+  return_push(ctx, new_int32(branch_location));
+}
+
+// ENDOF ( -- ) End case clause
+static void native_endof(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "ENDOF: only valid during compilation");
+  }
+
+  if (is_return_empty(ctx)) {
+    error(ctx, "ENDOF: no matching OF");
+  }
+
+  // Compile unconditional BRANCH (jumps to ENDCASE)
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH;
+  branch_cell.payload.i32 = 0;  // Placeholder for back-patching
+  int else_location = compiling_definition->length;
+  compile_cell(ctx, branch_cell);
+
+  // Back-patch the OF's branch to jump HERE (after the unconditional branch)
+  cell_t* of_cell = return_pop(ctx);
+  int of_location = of_cell->payload.i32;
+  int offset = compiling_definition->length - (of_location + 1);
+  compiling_definition->elements[of_location].payload.i32 = offset;
+
+  // Push ENDOF location for ENDCASE to patch later
+  return_push(ctx, new_int32(else_location));
+  release(of_cell);
+}
+
+// ENDCASE ( case-sys -- ) End case construct
+static void native_endcase(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "ENDCASE: only valid during compilation");
+  }
+
+  // Compile DROP to clean up remaining selector value
+  dictionary_entry_t* drop = find_word("DROP");
+  compile_cell(ctx, drop->definition);
+
+  // Back-patch all pending branches until we hit the CASE marker
+  while (!is_return_empty(ctx)) {
+    cell_t cell = return_peek(ctx, 0);
+    if (cell.payload.i32 == -1) {  // CASE marker
+      return_pop(ctx);
+      break;
+    }
+
+    // Back-patch this branch
+    cell_t* branch_cell = return_pop(ctx);
+    int branch_location = branch_cell->payload.i32;
+    int offset = compiling_definition->length - (branch_location + 1);
+    compiling_definition->elements[branch_location].payload.i32 = offset;
+    release(branch_cell);
+  }
+}
+
 // Internal words - not in dictionary
 static const cell_t literal_cell = {.type = CELL_NATIVE, .flags = 0, .word_idx = -1, .payload.native = native_literal};
 
@@ -783,6 +878,11 @@ void add_core_words(void) {
   add_native_word_immediate("UNTIL", native_until, "( flag -- ) Branch back to BEGIN if flag is false");
   add_native_word_immediate("WHILE", native_while, "( flag -- ) Continue loop if flag is true");
   add_native_word_immediate("REPEAT", native_repeat, "( -- ) Jump back to BEGIN");
+
+  add_native_word_immediate("CASE", native_case, "( -- case-sys ) Begin case construct");
+  add_native_word_immediate("OF", native_of, "( x1 x2 -- | x1 ) Compare and branch if equal");
+  add_native_word_immediate("ENDOF", native_endof, "( -- ) End case clause");
+  add_native_word_immediate("ENDCASE", native_endcase, "( case-sys -- ) End case construct");
 
   // DO/LOOP constructs
   add_native_word("(DO)", native_do_runtime, "( limit start -- ) Runtime: setup loop");
