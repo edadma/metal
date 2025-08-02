@@ -19,7 +19,7 @@ static void native_print(context_t* ctx) {
   require_params(ctx, 1, "PRINT");
 
   cell_t* cell = data_pop(ctx);
-  print_cell(ctx, cell);
+  print_cell(ctx, cell, false);
   release(cell);
 }
 

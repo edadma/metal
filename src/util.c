@@ -41,10 +41,10 @@ void print_codepoint(context_t* ctx, uint32_t codepoint) {
     error(ctx, "Invalid Unicode code point");
 }
 
-void print_cell(context_t* ctx, const cell_t* cell) {
+void print_cell(context_t* ctx, const cell_t* cell, bool display) {
   string_builder_t builder;
   stringbuilder_init(ctx, &builder, 64);
-  stringbuilder_append_cell(ctx, &builder, (cell_t*)cell);
+  stringbuilder_append_cell(ctx, &builder, (cell_t*)cell, display);
 
   string_t* result_str = stringbuilder_finalize(ctx, &builder);
 

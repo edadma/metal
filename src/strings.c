@@ -399,7 +399,7 @@ void native_format(context_t* ctx) {
 
         // Peek at next argument and append it
         cell_t* arg = data_peek(ctx, args_used);
-        stringbuilder_append_cell(ctx, &builder, arg);
+        stringbuilder_append_cell(ctx, &builder, arg, false);
         args_used++;
         pos++;  // Skip the }
       } else {

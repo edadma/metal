@@ -140,7 +140,7 @@ void print_data_stack(context_t* ctx) {
     printf("Data Stack (%d): ", ctx->data_stack_ptr);
     for (int i = 0; i < ctx->data_stack_ptr; i++) {
       if (i > 0) printf(", ");
-      print_cell(ctx, &ctx->data_stack[i]);
+      print_cell(ctx, &ctx->data_stack[i], true);
     }
     printf("\n");
   }
@@ -150,7 +150,7 @@ void print_return_stack(context_t* ctx) {
   printf("Return Stack (%d): ", ctx->return_stack_ptr);
   for (int i = 0; i < ctx->return_stack_ptr; i++) {
     if (i > 0) printf(", ");
-    print_cell(ctx, &ctx->return_stack[i]);
+    print_cell(ctx, &ctx->return_stack[i], true);
   }
   printf("\n");
 }

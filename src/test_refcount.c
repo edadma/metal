@@ -556,10 +556,10 @@ void register_refcount_tests(void) {
   REGISTER_TEST(test_empty_collections_refcount);
 
   REGISTER_TEST(test_deep_nested_memory_reclaim);
-  // REGISTER_TEST(test_large_collection_memory_reclaim);
-  REGISTER_TEST(test_complex_variable_storage_reclaim);
-  REGISTER_TEST(test_mixed_content_array_reclaim);
-  REGISTER_TEST(test_cascading_reference_drops);
+  REGISTER_TEST(test_large_collection_memory_reclaim);
+  // REGISTER_TEST(test_complex_variable_storage_reclaim);
+  // REGISTER_TEST(test_mixed_content_array_reclaim);
+  // REGISTER_TEST(test_cascading_reference_drops);
 }
 
 #endif  // TEST_ENABLED

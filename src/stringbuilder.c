@@ -49,7 +49,7 @@ void stringbuilder_append_cstr(context_t* ctx, string_builder_t* builder, const 
 }
 
 // Append any cell by converting to string representation
-void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t* cell) {
+void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t* cell, bool display) {
   if (!cell) return;
 
   switch (cell->type) {
@@ -87,6 +87,8 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
       break;
 
     case CELL_STRING: {
+      if (display) stringbuilder_append_codepoint(ctx, builder, '"');
+
       // Convert existing string to UTF-32 and append
       if (!cell->payload.ptr) break;  // Empty string
 
@@ -99,9 +101,12 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
 
       // For now, simple conversion assuming UTF-8/ASCII (future: proper decode)
       stringbuilder_ensure_capacity(ctx, builder, builder->length + str->length);
+
       for (size_t i = 0; i < str->length; i++) {
         builder->utf32[builder->length++] = (uint32_t)str->data[i];
       }
+
+      if (display) stringbuilder_append_codepoint(ctx, builder, '"');
       break;
     }
 
@@ -110,7 +115,7 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
       if (cell->payload.array) {
         for (size_t i = 0; i < cell->payload.array->length; i++) {
           if (i > 0) stringbuilder_append_cstr(ctx, builder, ", ");
-          stringbuilder_append_cell(ctx, builder, &cell->payload.array->elements[i]);
+          stringbuilder_append_cell(ctx, builder, &cell->payload.array->elements[i], true);
         }
       }
       stringbuilder_append_cstr(ctx, builder, "]");
@@ -123,7 +128,7 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
 
     case CELL_POINTER:
       if (cell->payload.cell_ptr) {
-        stringbuilder_append_cell(ctx, builder, cell->payload.cell_ptr);
+        stringbuilder_append_cell(ctx, builder, cell->payload.cell_ptr, display);
       } else {
         stringbuilder_append_cstr(ctx, builder, "<null pointer>");
       }

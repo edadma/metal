@@ -4,7 +4,7 @@
 #include "cell.h"
 
 // Cell printing utility
-void print_cell(context_t* ctx, const cell_t* cell);
+void print_cell(context_t* ctx, const cell_t* cell, bool display);
 
 int stricmp(const char* s1, const char* s2);
 
