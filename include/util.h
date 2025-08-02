@@ -17,4 +17,7 @@ void require(context_t* ctx, cell_t* a, cell_t* b);
 void dump(const void* data, size_t size);
 int cell_to_cstr(context_t* ctx, cell_t* cell, bool display, char* buffer, size_t buffer_size);
 
+void print_codepoint(context_t* ctx, uint32_t codepoint);
+void print_string(context_t* ctx, const string_t* str);
+
 #endif  // UTIL_H

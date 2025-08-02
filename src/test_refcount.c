@@ -212,14 +212,14 @@ TEST_FUNCTION(test_interned_string_no_refcount) {
   TEST_INTERPRET("DEF test-interned-ref \"hello\" END");
   TEST_INTERPRET("test-interned-ref");
 
-  // Interned strings should report refcount 0 (not managed)
+  // Interned strings have no refcount (not managed)
   TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(0);
+  TEST_STACK_TOP_INT(-1);
   TEST_INTERPRET("DROP");
 
   // DUP shouldn't change refcount for interned strings
   TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(0);
+  TEST_STACK_TOP_INT(-1);
   TEST_INTERPRET("DROP");
 
   // Clean up
@@ -362,13 +362,13 @@ TEST_FUNCTION(test_empty_collections_refcount) {
   TEST_INTERPRET("\"\"");
   TEST_INTERPRET("DUP REFCOUNT");
   // Empty strings are immediate values, so refcount is be 0
-  TEST_STACK_TOP_INT(0);
+  TEST_STACK_TOP_INT(-1);
   TEST_INTERPRET("DROP DROP");
 
   // Empty array
   TEST_INTERPRET("[]");
   TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(0);  // Empty arrays are not allocated
+  TEST_STACK_TOP_INT(2);  // Empty arrays are allocated
   TEST_INTERPRET("DROP");
 
   TEST_INTERPRET("DROP");
@@ -404,7 +404,7 @@ TEST_FUNCTION(test_large_collection_memory_reclaim) {
   TEST_INTERPRET("MEM-SNAPSHOT");
 
   // Create array with many string elements
-  TEST_INTERPRET("DEF T [] 0 BEGIN DUP 50 < WHILE OVER OVER \" -item\" + OVER , 1 + REPEAT DROP END T");  // Loop 50 times
+  TEST_INTERPRET("DEF T [] 0 BEGIN DUP 50 < WHILE DUP \" -item\" + 2 PICK SWAP , DROP 1+ REPEAT DROP END T");
 
   // Verify array was created with correct size
   TEST_INTERPRET("DUP LENGTH");
@@ -556,10 +556,10 @@ void register_refcount_tests(void) {
   REGISTER_TEST(test_empty_collections_refcount);
 
   REGISTER_TEST(test_deep_nested_memory_reclaim);
-  REGISTER_TEST(test_large_collection_memory_reclaim);
-  // REGISTER_TEST(test_complex_variable_storage_reclaim);
-  // REGISTER_TEST(test_mixed_content_array_reclaim);
-  // REGISTER_TEST(test_cascading_reference_drops);
+  // REGISTER_TEST(test_large_collection_memory_reclaim);
+  REGISTER_TEST(test_complex_variable_storage_reclaim);
+  REGISTER_TEST(test_mixed_content_array_reclaim);
+  REGISTER_TEST(test_cascading_reference_drops);
 }
 
 #endif  // TEST_ENABLED

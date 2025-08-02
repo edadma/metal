@@ -4,12 +4,54 @@
 #include <stdio.h>
 
 #include "error.h"
+#include "memory.h"
+#include "stringbuilder.h"
 #include "strings.h"
 
+// Helper function to output one UTF-8 byte at a time from any string encoding
+void print_string(context_t* ctx, const string_t* str) {
+  for (size_t i = 0; i < str->length; i++) {
+    uint32_t codepoint = string_char_at(ctx, str, i);
+
+    print_codepoint(ctx, codepoint);
+  }
+}
+
+// Convert a Unicode code point to UTF-8 bytes and output with putchar
+void print_codepoint(context_t* ctx, uint32_t codepoint) {
+  if (codepoint <= 0x7F) {
+    // 1-byte UTF-8
+    putchar((char)codepoint);
+  } else if (codepoint <= 0x7FF) {
+    // 2-byte UTF-8
+    putchar((char)(0xC0 | (codepoint >> 6)));
+    putchar((char)(0x80 | (codepoint & 0x3F)));
+  } else if (codepoint <= 0xFFFF) {
+    // 3-byte UTF-8
+    putchar((char)(0xE0 | (codepoint >> 12)));
+    putchar((char)(0x80 | ((codepoint >> 6) & 0x3F)));
+    putchar((char)(0x80 | (codepoint & 0x3F)));
+  } else if (codepoint <= 0x10FFFF) {
+    // 4-byte UTF-8
+    putchar((char)(0xF0 | (codepoint >> 18)));
+    putchar((char)(0x80 | ((codepoint >> 12) & 0x3F)));
+    putchar((char)(0x80 | ((codepoint >> 6) & 0x3F)));
+    putchar((char)(0x80 | (codepoint & 0x3F)));
+  } else
+    error(ctx, "Invalid Unicode code point");
+}
+
 void print_cell(context_t* ctx, const cell_t* cell) {
-  char buffer[200];
-  cell_to_cstr(ctx, (cell_t*)cell, false, buffer, sizeof(buffer));
-  printf("%s", buffer);
+  string_builder_t builder;
+  stringbuilder_init(ctx, &builder, 64);
+  stringbuilder_append_cell(ctx, &builder, (cell_t*)cell);
+
+  string_t* result_str = stringbuilder_finalize(ctx, &builder);
+
+  // Output string in any encoding as UTF-8
+  print_string(ctx, result_str);
+
+  metal_free(result_str);
 }
 
 // Case-insensitive string comparison
