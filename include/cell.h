@@ -125,7 +125,7 @@ typedef struct cell_array {
   uint32_t refcount;
   size_t length;
   size_t capacity;
-  cell_t elements[];
+  cell_t* elements;
 } cell_array_t;
 
 // Object key-value pair

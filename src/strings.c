@@ -420,6 +420,7 @@ void native_format(context_t* ctx) {
   // Release format string and push result
   release(format_cell);
   data_push(ctx, new_allocated_string(ctx, result_str));
+  metal_free(result_str);
 }
 
 // Register all string words

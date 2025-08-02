@@ -12,15 +12,18 @@
 cell_array_t* create_array_data(context_t* ctx, size_t initial_capacity) {
   if (initial_capacity == 0) initial_capacity = 1;
 
-  size_t alloc_size = sizeof(cell_array_t) + (initial_capacity * sizeof(cell_t));
-  cell_array_t* data = metal_alloc(ctx, alloc_size);
+  cell_array_t* array = metal_alloc(ctx, sizeof(cell_array_t));
 
-  if (data) {
-    data->refcount = 0;  // no owner yet
-    data->length = 0;
-    data->capacity = initial_capacity;
-    debug("Created array data with capacity %zu, refcount %d", initial_capacity, data->refcount);
-    return data;
+  if (array) {
+    array->refcount = 0;
+    array->length = 0;
+    array->capacity = initial_capacity;
+    array->elements = metal_alloc(ctx, initial_capacity * sizeof(cell_t));
+
+    if (array->elements) {
+      debug("Created array data with capacity %zu, refcount %d", initial_capacity, array->refcount);
+      return array;
+    }
   }
 
   debug("Failed to allocate array data for capacity %zu", initial_capacity);

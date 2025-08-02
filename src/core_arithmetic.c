@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "dictionary.h"
 #include "error.h"
+#include "memory.h"
 #include "stack.h"
 #include "stringbuilder.h"
 #include "strings.h"
@@ -82,6 +83,7 @@ static void native_add(context_t* ctx) {
 
     string_t* result_str = stringbuilder_finalize(ctx, &builder);
     cell_t result = new_allocated_string(ctx, result_str);
+    metal_free(result_str);
 
     retain(&result);
     release(a);
