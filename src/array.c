@@ -28,25 +28,24 @@ cell_array_t* create_array_data(context_t* ctx, size_t initial_capacity) {
 
   debug("Failed to allocate array data for capacity %zu", initial_capacity);
   error(ctx, "Failed to allocate array data for capacity %zu", initial_capacity);
-  return NULL;  // Never reached due to error()
 }
 
-cell_array_t* resize_array_data(context_t* ctx, cell_array_t* data, size_t new_capacity) {
-  if (!data) return NULL;
-  uint32_t saved_refcount = data->refcount;  // Save refcount across realloc
+void resize_array_data(context_t* ctx, cell_array_t* array, size_t new_capacity) {
+  array->elements = metal_realloc(ctx, array->elements, new_capacity * sizeof(cell_t));
 
-  size_t alloc_size = sizeof(cell_array_t) + (new_capacity * sizeof(cell_t));
-  cell_array_t* new_data = metal_realloc(ctx, data, alloc_size);
-
-  if (!new_data) {
-    debug("Failed to resize array data from %zu to %zu", data->capacity, new_capacity);
-    return NULL;
+  if (!array->elements) {
+    debug("Failed to allocate array data for capacity %zu", new_capacity);
+    error(ctx, "Failed to allocate array data for capacity %zu", new_capacity);
   }
 
-  new_data->refcount = saved_refcount;  // Restore refcount
-  new_data->capacity = new_capacity;
-  debug("Resized array data from capacity %zu to %zu, refcount %d", data->capacity, new_capacity, new_data->refcount);
-  return new_data;
+  array->capacity = new_capacity;
+}
+
+void free_array_data(cell_array_t* array) {
+  // First free the elements array
+  metal_free(array->elements);
+  // Then free the array structure itself
+  metal_free(array);
 }
 
 cell_t new_empty_array(context_t* ctx) {
