@@ -33,15 +33,13 @@ static void native_def(context_t* ctx) {
 
   // Parse next word as the definition name
   char word_buffer[MAX_NAME_LENGTH];
-  token_type_t token_type =
-      parse_next_token(ctx,&ctx->input_pos, word_buffer, sizeof(word_buffer));
+  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
   if (token_type != TOKEN_WORD) {
     error(ctx, "DEF: expected word name");
   }
 
   // Initialize compilation
-  compiling_definition =
-      create_array_data(ctx, 8);  // Start with small capacity
+  compiling_definition = create_array_data(ctx, 8);  // Start with small capacity
   if (!compiling_definition) {
     error(ctx, "DEF: allocation failed");
   }
@@ -66,17 +64,11 @@ static void native_end(context_t* ctx) {
 
   // Add EXIT as the last instruction
   if (compiling_definition->length >= compiling_definition->capacity) {
-    compiling_definition = resize_array_data(
-        ctx, compiling_definition, compiling_definition->capacity * 2);
-    if (!compiling_definition) {
-      error(ctx, "END: failed to resize definition");
-    }
+    resize_array_data(ctx, compiling_definition, compiling_definition->capacity * 2);
   }
 
-  compiling_definition->elements[compiling_definition->length] =
-      exit_word->definition;
+  compiling_definition->elements[compiling_definition->length] = exit_word->definition;
   compiling_definition->length++;
-  retain(&exit_word->definition);
 
   // Create the code cell
   cell_t code_cell = new_code(compiling_definition);
@@ -93,8 +85,7 @@ static void native_end(context_t* ctx) {
 
 // Register all core primitive words
 void add_core_primitive_words(void) {
-  add_native_word_immediate("DEF", native_def,
-                            "( -- ) <name> Start word definition");
+  add_native_word_immediate("DEF", native_def, "( -- ) <name> Start word definition");
   add_native_word_immediate("END", native_end, "( -- ) End word definition");
   add_native_word("EXIT", native_exit, "( -- ) Exit from word definition");
 }

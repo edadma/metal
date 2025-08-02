@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "array.h"
 #include "compat.h"
 #include "debug.h"
 #include "error.h"
@@ -227,12 +228,13 @@ void release(cell_t* cell) {
       debug("Released array cell, refcount now %d", cell->payload.array->refcount);
       if (cell->payload.array->refcount <= 0) {
         // Release all elements first
-        cell_array_t* data = cell->payload.ptr;
+        cell_array_t* data = cell->payload.array;
+
         for (size_t i = 0; i < data->length; i++) {
           release(&data->elements[i]);
         }
-        metal_free(cell->payload.ptr);
-        cell->payload.ptr = NULL;
+
+        free_array_data(cell->payload.array);
       }
     } break;
     default:

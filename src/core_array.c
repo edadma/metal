@@ -24,12 +24,7 @@ static void native_comma(context_t* ctx) {
 
     // Check if we need to resize
     if (data->length >= data->capacity) {
-      data = resize_array_data(ctx, data, data->capacity + 1);
-      if (!data) {
-        error(ctx, ", : failed to resize array");
-      }
-      // Update the array cell's pointer (realloc might have moved it)
-      array_cell.payload.array = data;
+      resize_array_data(ctx, data, data->capacity + 1);
     }
 
     // Add the element

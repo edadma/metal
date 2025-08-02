@@ -58,10 +58,7 @@ void add_definition(const char* name, const char* source, const char* help) {
     error(&main_context, "add_definition: EXIT word not found");
   }
   if (compiling_definition->length >= compiling_definition->capacity) {
-    compiling_definition = resize_array_data(&main_context, compiling_definition, compiling_definition->capacity * 2);
-    if (!compiling_definition) {
-      error(&main_context, "add_definition: failed to resize definition for %s", name);
-    }
+    resize_array_data(&main_context, compiling_definition, compiling_definition->capacity * 2);
   }
   compiling_definition->elements[compiling_definition->length] = exit_word->definition;
   compiling_definition->length++;
@@ -312,11 +309,7 @@ void compile_cell(context_t* ctx, cell_t cell) {
   }
 
   if (target_definition->length >= target_definition->capacity) {
-    target_definition = resize_array_data(ctx, target_definition, target_definition->capacity * 2);
-    if (!target_definition) {
-      error(ctx, "compile_cell: failed to resize definition");
-      return;
-    }
+    resize_array_data(ctx, target_definition, target_definition->capacity * 2);
 
     // Update the global pointer
     if (ctx->anonymous_compilation_mode) {

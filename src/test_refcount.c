@@ -400,14 +400,14 @@ TEST_FUNCTION(test_deep_nested_memory_reclaim) {
 
 // Test large collection memory reclamation
 TEST_FUNCTION(test_large_collection_memory_reclaim) {
+  // Create array with many string elements
+  TEST_INTERPRET("DEF T [] 0 BEGIN DUP 50 < WHILE DUP \" -item\" + 2 PICK SWAP , DROP 1+ REPEAT DROP END");
+
   // Take snapshot before creating large collection
   TEST_INTERPRET("MEM-SNAPSHOT");
 
-  // Create array with many string elements
-  TEST_INTERPRET("DEF T [] 0 BEGIN DUP 50 < WHILE DUP \" -item\" + 2 PICK SWAP , DROP 1+ REPEAT DROP END T");
-
   // Verify array was created with correct size
-  TEST_INTERPRET("DUP LENGTH");
+  TEST_INTERPRET("T DUP LENGTH");
   TEST_STACK_TOP_INT(50);  // Should have 50 elements
   TEST_INTERPRET("DROP");
 
@@ -557,9 +557,9 @@ void register_refcount_tests(void) {
 
   REGISTER_TEST(test_deep_nested_memory_reclaim);
   REGISTER_TEST(test_large_collection_memory_reclaim);
-  // REGISTER_TEST(test_complex_variable_storage_reclaim);
-  // REGISTER_TEST(test_mixed_content_array_reclaim);
-  // REGISTER_TEST(test_cascading_reference_drops);
+  REGISTER_TEST(test_complex_variable_storage_reclaim);
+  REGISTER_TEST(test_mixed_content_array_reclaim);
+  REGISTER_TEST(test_cascading_reference_drops);
 }
 
 #endif  // TEST_ENABLED
