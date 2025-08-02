@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "memory.h"
-#include "strings.h"
 
 // Initialize string builder with initial capacity
 void stringbuilder_init(context_t* ctx, string_builder_t* builder, size_t initial_capacity) {
