@@ -1,7 +1,9 @@
-#include "float.h"
+#include "floats.h"
 
 #include <math.h>
 
+#include "context.h"
+#include "debug.h"
 #include "dictionary.h"
 #include "error.h"
 #include "stack.h"
@@ -248,7 +250,7 @@ void add_float_words(void) {
   add_native_word("EXP", native_exp, "( x -- e^x ) Exponential function");
   add_native_word("LN", native_ln, "( x -- ln(x) ) Natural logarithm, domain (0,∞)");
   add_native_word("LOG10", native_log10, "( x -- log10(x) ) Base-10 logarithm, domain (0,∞)");
-  add_native_word("POW", native_pow, "( base exponent -- base^exponent ) Power function");
+  add_native_word("**", native_pow, "( base exponent -- base^exponent ) Power function");
   add_native_word("SQRT", native_sqrt, "( x -- sqrt(x) ) Square root, domain [0,∞)");
 
   // Rounding functions

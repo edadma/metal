@@ -1,5 +1,5 @@
-#ifndef FLOAT_H
-#define FLOAT_H
+#ifndef FLOATS_H
+#define FLOATS_H
 
 /**
  * Floating Point Math Module
@@ -14,4 +14,4 @@
 // Register all floating point words with the dictionary
 void add_float_words(void);
 
-#endif  // FLOAT_H
+#endif  // FLOAT_H_H

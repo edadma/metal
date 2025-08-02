@@ -126,7 +126,7 @@ elseif (TARGET_PLATFORM STREQUAL "windows")
     endif ()
 elseif (TARGET_PLATFORM STREQUAL "zero")
     target_compile_definitions(metal PRIVATE TARGET_LINUX=1)  # Use Linux target defines
-    target_link_libraries(metal pthread)
+    target_link_libraries(metal m pthread)
 
     # Copy Pi Zero executable to repository root
     if (COPY_EXECUTABLES_TO_ROOT)

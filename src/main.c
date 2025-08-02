@@ -19,7 +19,7 @@
 #include "core_stack.h"
 #include "debug.h"
 #include "dictionary.h"
-#include "float.h"
+#include "floats.h"
 #include "memory.h"
 #include "repl.h"
 #include "test.h"
