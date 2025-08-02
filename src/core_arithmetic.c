@@ -4,6 +4,7 @@
 #include "dictionary.h"
 #include "error.h"
 #include "stack.h"
+#include "stringbuilder.h"
 #include "strings.h"
 
 // Helper functions for mixed-type arithmetic
@@ -57,24 +58,61 @@ static void native_add(context_t* ctx) {
   // Fast path 1: int32 + int32 (most common)
   if (a->type == CELL_INT32 && b->type == CELL_INT32) {
     a->payload.i32 += b->payload.i32;
+    release(b);
     return;
   }
 
   // Fast path 2: float + float (second most common)
   if (a->type == CELL_FLOAT && b->type == CELL_FLOAT) {
     a->payload.f64 += b->payload.f64;
+    release(b);
     return;
   }
 
   // Fast path 3: int64 + int64 (least common numeric)
   if (a->type == CELL_INT64 && b->type == CELL_INT64) {
     a->payload.i64 += b->payload.i64;
+    release(b);
     return;
   }
 
-  // String concatenation
+  // String concatenation: string + string
   if (a->type == CELL_STRING && b->type == CELL_STRING) {
     cell_t result = string_concat(ctx, a, b);
+    retain(&result);
+    release(a);
+    *a = result;
+    release(b);
+    return;
+  }
+
+  // Generalized string concatenation: string + any_type
+  if (a->type == CELL_STRING) {
+    string_builder_t builder;
+    stringbuilder_init(ctx, &builder, string_length(ctx, a) + 64);
+    stringbuilder_append_cell(ctx, &builder, a);
+    stringbuilder_append_cell(ctx, &builder, b);
+
+    string_t* result_str = stringbuilder_finalize(ctx, &builder);
+    cell_t result = new_allocated_string(ctx, result_str);
+
+    retain(&result);
+    release(a);
+    *a = result;
+    release(b);
+    return;
+  }
+
+  // Generalized string concatenation: any_type + string
+  if (b->type == CELL_STRING) {
+    string_builder_t builder;
+    stringbuilder_init(ctx, &builder, string_length(ctx, b) + 64);
+    stringbuilder_append_cell(ctx, &builder, a);
+    stringbuilder_append_cell(ctx, &builder, b);
+
+    string_t* result_str = stringbuilder_finalize(ctx, &builder);
+    cell_t result = new_allocated_string(ctx, result_str);
+
     retain(&result);
     release(a);
     *a = result;
