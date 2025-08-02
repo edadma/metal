@@ -5,6 +5,7 @@
 
 #include "dictionary.h"
 #include "error.h"
+#include "interpreter.h"
 #include "memory.h"
 #include "require.h"
 #include "stack.h"
@@ -152,32 +153,7 @@ static void native_string_empty_q(context_t* ctx) {
   data_push(ctx, new_boolean(empty));
 }
 
-// Register all string words
-void add_string_words(void) {
-  add_native_word("STRING-EMPTY?", native_string_empty_q, "( string -- bool ) Test if string is empty");
-  // add_native_word(
-  //     "FORMAT", native_format,
-  //     "( args... format -- string ) Format string with {} placeholders");
-
-  // Add convenient aliases/definitions
-  // add_definition("PRINTF", "FORMAT PRINT",
-  //                "( args... format -- ) Format and print string");
-}
-
 // String utility functions to handle interned vs allocated strings
-// Add these to src/strings.c
-
-// Get string data pointer regardless of storage type
-// const uint8_t* string_data(context_t* ctx, const cell_t* str) {
-//   require(ctx, str != NULL);
-//   require(ctx, str->type == CELL_STRING);
-//
-//   if (!str->payload.ptr) return "";
-//
-//   if (str->flags & CELL_FLAG_INTERNED) return str->payload.interned_string->data;
-//
-//   return str->payload.allocated_string->string.data;
-// }
 
 // Get both length and data in one call (more efficient)
 string_view_t string_view(context_t* ctx, const cell_t* str) {
@@ -444,4 +420,13 @@ void native_format(context_t* ctx) {
   // Release format string and push result
   release(format_cell);
   data_push(ctx, new_allocated_string(ctx, result_str));
+}
+
+// Register all string words
+void add_string_words(void) {
+  add_native_word("STRING-EMPTY?", native_string_empty_q, "( string -- bool ) Test if string is empty");
+  add_native_word("FORMAT", native_format, "( args... format -- string ) Format string with {} placeholders");
+
+  // Add convenient aliases/definitions
+  add_definition("PRINTF", "FORMAT PRINT", "( args... format -- ) Format and print string");
 }

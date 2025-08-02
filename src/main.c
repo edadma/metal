@@ -36,6 +36,7 @@ void populate_dictionary(void) {
   add_core_words();             // Core language features
   add_tools_words();            // Development tools
   add_float_words();            // Floating-point words
+  add_string_words();           // String operations
 
   // Debug words (only when debug support compiled in)
 #ifdef DEBUG_ENABLED
