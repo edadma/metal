@@ -18,17 +18,6 @@ typedef struct intern {
   intern_t* next;
 } intern_t;
 
-typedef struct {
-  int width;      // minimum width (0 = no width specified)
-  int precision;  // decimal places (-1 = not specified)
-  bool hex;       // use hex formatting
-  enum {
-    ALIGN_LEFT,   // default (no prefix)
-    ALIGN_RIGHT,  // > prefix
-    ALIGN_CENTER  // ^ prefix
-  } alignment;
-} format_spec_t;
-
 static intern_t* intern_list = NULL;
 
 const string_t* intern_lookup(context_t* ctx, const string_t* str) {
@@ -331,6 +320,64 @@ uint32_t string_char_at(context_t* ctx, const string_t* str, size_t index) {
     default:
       error(ctx, "unknown string encoding");
   }
+}
+
+// Parse format specification from string like "10", "x", ".2", ">10", "^8x"
+static bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* result) {
+  // Initialize defaults
+  result->width = 0;
+  result->precision = -1;
+  result->hex = false;
+  result->alignment = ALIGN_LEFT;
+
+  if (spec_len == 0) {
+    return true;  // Empty spec is valid (use defaults)
+  }
+
+  const char* pos = spec;
+  const char* end = spec + spec_len;
+
+  // Parse alignment prefix
+  if (pos < end && (*pos == '>' || *pos == '^')) {
+    if (*pos == '>') {
+      result->alignment = ALIGN_RIGHT;
+    } else if (*pos == '^') {
+      result->alignment = ALIGN_CENTER;
+    }
+    pos++;
+  }
+
+  // Parse width (digits before any other specifiers)
+  if (pos < end && isdigit(*pos)) {
+    result->width = 0;
+    while (pos < end && isdigit(*pos)) {
+      result->width = result->width * 10 + (*pos - '0');
+      pos++;
+    }
+  }
+
+  // Parse hex specifier
+  if (pos < end && *pos == 'x') {
+    result->hex = true;
+    pos++;
+  }
+
+  // Parse precision (.digits)
+  if (pos < end && *pos == '.') {
+    pos++;  // skip dot
+    if (pos < end && isdigit(*pos)) {
+      result->precision = 0;
+      while (pos < end && isdigit(*pos)) {
+        result->precision = result->precision * 10 + (*pos - '0');
+        pos++;
+      }
+    } else {
+      return false;  // . must be followed by digits
+    }
+  }
+
+  // Should have consumed entire spec
+  return pos == end;
 }
 
 // FORMAT implementation - no buffer restrictions!

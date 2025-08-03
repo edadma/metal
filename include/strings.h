@@ -4,6 +4,17 @@
 #include "cell.h"
 #include "context.h"
 
+typedef struct {
+  int width;      // minimum width (0 = no width specified)
+  int precision;  // decimal places (-1 = not specified)
+  bool hex;       // use hex formatting
+  enum {
+    ALIGN_LEFT,   // default (no prefix)
+    ALIGN_RIGHT,  // > prefix
+    ALIGN_CENTER  // ^ prefix
+  } alignment;
+} format_spec_t;
+
 // String helper functions
 size_t string_length(context_t* ctx, cell_t* str);
 bool string_is_empty(context_t* ctx, cell_t* str);
