@@ -78,8 +78,8 @@ static void native_add(context_t* ctx) {
   if (a->type == CELL_STRING || b->type == CELL_STRING) {
     string_builder_t builder;
     stringbuilder_init(ctx, &builder, 64);  // Reasonable initial size
-    stringbuilder_append_cell(ctx, &builder, a, false);
-    stringbuilder_append_cell(ctx, &builder, b, false);
+    stringbuilder_append_cell(ctx, &builder, a, false, NULL);
+    stringbuilder_append_cell(ctx, &builder, b, false, NULL);
 
     string_t* result_str = stringbuilder_finalize(ctx, &builder);
     cell_t result = new_allocated_string(ctx, result_str);

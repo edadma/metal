@@ -94,27 +94,6 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
 
     case CELL_STRING:
       size = string_length(ctx, cell) + (display ? 2 : 0);  // +2 for quotes
-
-      // if (display) stringbuilder_append_codepoint(ctx, builder, '"');
-      //
-      // // Convert existing string to UTF-32 and append
-      // if (!cell->payload.ptr) break;  // Empty string
-      //
-      // const string_t* str;
-      // if (cell->flags & CELL_FLAG_INTERNED) {
-      //   str = cell->payload.interned_string;
-      // } else {
-      //   str = &cell->payload.allocated_string->string;
-      // }
-      //
-      // // For now, simple conversion assuming UTF-8/ASCII (future: proper decode)
-      // stringbuilder_ensure_capacity(ctx, builder, builder->length + str->length);
-      //
-      // for (size_t i = 0; i < str->length; i++) {
-      //   builder->utf32[builder->length++] = (uint32_t)str->data[i];
-      // }
-      //
-      // if (display) stringbuilder_append_codepoint(ctx, builder, '"');
       break;
 
       // case CELL_ARRAY: {
@@ -181,7 +160,31 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
 
   for (int i = 0; i < left_pad; i++) stringbuilder_append_codepoint(ctx, builder, ' ');
 
-  if (sbuf) {
+  if (cell->type == CELL_STRING) {
+    if (display) stringbuilder_append_codepoint(ctx, builder, '"');
+
+    // Convert an existing string to UTF-32 and append
+    if (cell->payload.ptr) {
+      // non-empty string
+
+      const string_t* str;
+
+      if (cell->flags & CELL_FLAG_INTERNED) {
+        str = cell->payload.interned_string;
+      } else {
+        str = &cell->payload.allocated_string->string;
+      }
+
+      // For now, simple conversion assuming UTF-8/ASCII (future: proper decode)
+      stringbuilder_ensure_capacity(ctx, builder, builder->length + str->length);
+
+      for (size_t i = 0; i < str->length; i++) {
+        builder->utf32[builder->length++] = string_char_at(ctx, str, i);
+      }
+    }
+
+    if (display) stringbuilder_append_codepoint(ctx, builder, '"');
+  } else if (sbuf) {
     // Convert existing string to UTF-32 and append
     stringbuilder_ensure_capacity(ctx, builder, builder->length + sbuf->length);
 

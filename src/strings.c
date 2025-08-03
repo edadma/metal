@@ -228,7 +228,7 @@ const uint8_t* string_get_data(context_t* ctx, const cell_t* str) {
   require(ctx, str != NULL);
   require(ctx, str->type == CELL_STRING);
 
-  if (!str->payload.ptr) return (const uint8_t*)"";  // empty string
+  if (!str->payload.ptr) return "";  // empty string
 
   if (str->flags & CELL_FLAG_INTERNED) {
     return str->payload.interned_string->data;
@@ -267,34 +267,34 @@ string_encoding_t string_get_encoding(context_t* ctx, const cell_t* str) {
 
 // Convert string to UTF-8 for printing (for now assumes input is UTF-8)
 // Returns: number of bytes written to buffer (not including null terminator)
-size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t buffer_size) {
-  require(ctx, str != NULL);
-  require(ctx, str->type == CELL_STRING);
-  require(ctx, buffer != NULL);
-  require(ctx, buffer_size > 0);
-
-  if (!str->payload.ptr) {
-    // Empty string
-    if (buffer_size > 0) buffer[0] = '\0';
-    return 0;
-  }
-
-  const uint8_t* data = string_get_data(ctx, str);
-  size_t length = string_get_length(ctx, str);
-  string_encoding_t encoding = string_get_encoding(ctx, str);
-
-  // For now, assume all strings are UTF-8
-  // TODO: Add actual UTF-16/32 to UTF-8 conversion
-  if (encoding != STRING_UTF8) {
-    error(ctx, "string_to_utf8: UTF-16/32 conversion not yet implemented");
-  }
-
-  size_t copy_len = (length < buffer_size - 1) ? length : buffer_size - 1;
-  memcpy(buffer, data, copy_len);
-  buffer[copy_len] = '\0';
-
-  return copy_len;
-}
+// size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t buffer_size) {
+//   require(ctx, str != NULL);
+//   require(ctx, str->type == CELL_STRING);
+//   require(ctx, buffer != NULL);
+//   require(ctx, buffer_size > 0);
+//
+//   if (!str->payload.ptr) {
+//     // Empty string
+//     if (buffer_size > 0) buffer[0] = '\0';
+//     return 0;
+//   }
+//
+//   const uint8_t* data = string_get_data(ctx, str);
+//   size_t length = string_get_length(ctx, str);
+//   string_encoding_t encoding = string_get_encoding(ctx, str);
+//
+//   // For now, assume all strings are UTF-8
+//   // TODO: Add actual UTF-16/32 to UTF-8 conversion
+//   if (encoding != STRING_UTF8) {
+//     error(ctx, "string_to_utf8: UTF-16/32 conversion not yet implemented");
+//   }
+//
+//   size_t copy_len = (length < buffer_size - 1) ? length : buffer_size - 1;
+//   memcpy(buffer, data, copy_len);
+//   buffer[copy_len] = '\0';
+//
+//   return copy_len;
+// }
 
 int get_intern_count(void) {
   int count = 0;
@@ -312,9 +312,9 @@ uint32_t string_char_at(context_t* ctx, const string_t* str, size_t index) {
 
   switch (str->encoding) {
     case STRING_UTF8:
-      return (uint32_t)str->data[index];  // Simple for now (ASCII)
+      return str->data[index];  // Simple for now (ASCII)
     case STRING_UTF16:
-      return (uint32_t)((uint16_t*)str->data)[index];
+      return ((uint16_t*)str->data)[index];
     case STRING_UTF32:
       return ((uint32_t*)str->data)[index];
     default:

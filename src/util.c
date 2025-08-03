@@ -44,7 +44,7 @@ void print_codepoint(context_t* ctx, uint32_t codepoint) {
 void print_cell(context_t* ctx, const cell_t* cell, bool display) {
   string_builder_t builder;
   stringbuilder_init(ctx, &builder, 64);
-  stringbuilder_append_cell(ctx, &builder, (cell_t*)cell, display);
+  stringbuilder_append_cell(ctx, &builder, (cell_t*)cell, display, NULL);
 
   string_t* result_str = stringbuilder_finalize(ctx, &builder);
 
@@ -296,73 +296,73 @@ void dump(const void* data, size_t size) {
   printf("\n");
 }
 
-int join(context_t* ctx, cell_t cell[], size_t length, const char* sep, char* buffer, size_t buffer_size) {
-  if (!buffer || buffer_size == 0) {
-    return 0;
-  }
-
-  int size = 0;
-
-  if (length == 0) {
-    return size;
-  }
-
-  for (size_t i = 0; i < length; i++) {
-    if (i > 0) size += snprintf(buffer + size, buffer_size - size, "%s", sep);
-    size += cell_to_cstr(ctx, &cell[i], true, buffer + size, buffer_size - size);
-  }
-
-  return size;
-}
-
-// Convert cell to C string representation
-int cell_to_cstr(context_t* ctx, cell_t* cell, bool display, char* buffer, size_t buffer_size) {
-  if (!cell || !buffer || buffer_size == 0) {
-    return 0;
-  }
-
-  switch (cell->type) {
-    case CELL_INT32:
-      return snprintf(buffer, buffer_size, "%d", cell->payload.i32);
-
-    case CELL_INT64:
-      return snprintf(buffer, buffer_size, "%lld", (long long)cell->payload.i64);
-
-    case CELL_FLOAT:
-      return snprintf(buffer, buffer_size, "%g", cell->payload.f64);
-
-    case CELL_STRING:
-      char buf[100];
-
-      string_to_utf8(ctx, cell, buf, sizeof(buf));
-      return snprintf(buffer, buffer_size, display ? "\"%s\"" : "%s", buf);
-
-    case CELL_BOOLEAN:
-      return snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
-
-    case CELL_ARRAY:
-      int size = snprintf(buffer, buffer_size, "[");
-
-      size += join(ctx, cell->payload.array->elements, cell->payload.array->length, ", ", buffer + size, buffer_size - size);
-      return size + snprintf(buffer + size, buffer_size - size, "]");
-
-    case CELL_OBJECT:
-      if (!cell->payload.object) {
-        return snprintf(buffer, buffer_size, "{}");
-      }
-
-      return snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
-
-    case CELL_POINTER:
-      return cell_to_cstr(ctx, cell->payload.cell_ptr, false, buffer, buffer_size);
-
-    case CELL_NULL:
-      return snprintf(buffer, buffer_size, "null");
-
-    case CELL_UNDEFINED:
-      return snprintf(buffer, buffer_size, "undefined");
-
-    default:
-      return snprintf(buffer, buffer_size, "<type %d>", cell->type);
-  }
-}
+// int join(context_t* ctx, cell_t cell[], size_t length, const char* sep, char* buffer, size_t buffer_size) {
+//   if (!buffer || buffer_size == 0) {
+//     return 0;
+//   }
+//
+//   int size = 0;
+//
+//   if (length == 0) {
+//     return size;
+//   }
+//
+//   for (size_t i = 0; i < length; i++) {
+//     if (i > 0) size += snprintf(buffer + size, buffer_size - size, "%s", sep);
+//     size += cell_to_cstr(ctx, &cell[i], true, buffer + size, buffer_size - size);
+//   }
+//
+//   return size;
+// }
+//
+// // Convert cell to C string representation
+// int cell_to_cstr(context_t* ctx, cell_t* cell, bool display, char* buffer, size_t buffer_size) {
+//   if (!cell || !buffer || buffer_size == 0) {
+//     return 0;
+//   }
+//
+//   switch (cell->type) {
+//     case CELL_INT32:
+//       return snprintf(buffer, buffer_size, "%d", cell->payload.i32);
+//
+//     case CELL_INT64:
+//       return snprintf(buffer, buffer_size, "%lld", (long long)cell->payload.i64);
+//
+//     case CELL_FLOAT:
+//       return snprintf(buffer, buffer_size, "%g", cell->payload.f64);
+//
+//     case CELL_STRING:
+//       char buf[100];
+//
+//       string_to_utf8(ctx, cell, buf, sizeof(buf));
+//       return snprintf(buffer, buffer_size, display ? "\"%s\"" : "%s", buf);
+//
+//     case CELL_BOOLEAN:
+//       return snprintf(buffer, buffer_size, "%s", cell->payload.boolean ? "true" : "false");
+//
+//     case CELL_ARRAY:
+//       int size = snprintf(buffer, buffer_size, "[");
+//
+//       size += join(ctx, cell->payload.array->elements, cell->payload.array->length, ", ", buffer + size, buffer_size - size);
+//       return size + snprintf(buffer + size, buffer_size - size, "]");
+//
+//     case CELL_OBJECT:
+//       if (!cell->payload.object) {
+//         return snprintf(buffer, buffer_size, "{}");
+//       }
+//
+//       return snprintf(buffer, buffer_size, "{object:%d}", (int)cell->payload.object->length);
+//
+//     case CELL_POINTER:
+//       return cell_to_cstr(ctx, cell->payload.cell_ptr, false, buffer, buffer_size);
+//
+//     case CELL_NULL:
+//       return snprintf(buffer, buffer_size, "null");
+//
+//     case CELL_UNDEFINED:
+//       return snprintf(buffer, buffer_size, "undefined");
+//
+//     default:
+//       return snprintf(buffer, buffer_size, "<type %d>", cell->type);
+//   }
+// }
