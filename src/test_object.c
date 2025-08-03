@@ -781,15 +781,13 @@ TEST_FUNCTION(test_object_special_keys) {
 
 // Test large objects
 TEST_FUNCTION(test_large_object) {
-  TEST_INTERPRET("{}");
-
   // Add many properties (test object growth)
   TEST_INTERPRET("DEF add-props ");
-  TEST_INTERPRET("  0 BEGIN DUP 20 < WHILE");
-  TEST_INTERPRET("    DUP \"key\" SWAP FORMAT");     // Create key like "key0", "key1", etc
-  TEST_INTERPRET("    OVER SWAP");                   // Duplicate object, position key
-  TEST_INTERPRET("    OVER \"value\" SWAP FORMAT");  // Create value like "value0", etc
-  TEST_INTERPRET("    ROT -ROT INDEX!");             // Store key-value pair
+  TEST_INTERPRET("  {} 0 BEGIN DUP 20 < WHILE");
+  TEST_INTERPRET("    \"key-\" OVER +");      // Create key like "key0", "key1", etc
+  TEST_INTERPRET("    2 PICK");               // Duplicate object, position key
+  TEST_INTERPRET("    \"value-\" 3 PICK +");  // Create value like "value0", etc
+  TEST_INTERPRET("    INDEX!");               // Store key-value pair
   TEST_INTERPRET("    1+");
   TEST_INTERPRET("  REPEAT DROP");
   TEST_INTERPRET("END");
