@@ -926,7 +926,9 @@ void add_core_words(void) {
 
   add_definition("MIN", "2DUP > IF SWAP THEN DROP", "( a b -- min ) Return minimum of two numbers");
   add_definition("MAX", "2DUP < IF SWAP THEN DROP", "( a b -- max ) Return maximum of two numbers");
-  add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN", "( n -- -1|0|1 ) Return sign of number");
+  add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN", "( n -- -1 | 0 | 1 ) Return sign of number");
   add_definition("CONST", "CONSTANT", "( value -- ) Define constant");
   add_definition("BL", "32", "( -- 32 ) space character");
+  add_definition("?DUP", "DUP IF DUP THEN", "( n -- n n | n ) Duplicate if non-zero");
+  add_definition("ABS", "DUP 0< IF NEGATE THEN", "( n -- |n| ) Absolute value");
 }
