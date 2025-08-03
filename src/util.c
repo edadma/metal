@@ -79,11 +79,11 @@ bool is_truthy(context_t* ctx, cell_t* cell) {
       return cell->payload.i32 != 0;
     case CELL_INT64:
       return cell->payload.i64 != 0;
-    case CELL_FLOAT:
+    case CELL_FLOAT: {
       // Check for 0.0, -0.0, and NaN
       double val = cell->payload.f64;
       return val != 0.0 && val == val;  // NaN != NaN, so val == val is false for NaN
-
+    }
     case CELL_STRING:
       return !string_is_empty(ctx, cell);
     default:

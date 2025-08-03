@@ -182,7 +182,7 @@ void retain(const cell_t* cell) {
       // For pointers, we don't manage the pointed-to memory's refcount
       // The pointer itself doesn't own the memory
       break;
-    default:
+    default:;
   }
 }
 
@@ -232,6 +232,6 @@ void release(const cell_t* cell) {
         free_array_data(cell->payload.array);
       }
     } break;
-    default:
+    default:;
   }
 }

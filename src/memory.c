@@ -19,12 +19,16 @@
 #define LOCK_MEMORY()        // No-op on Windows
 #define UNLOCK_MEMORY()      // No-op on Windows
 #define INIT_MEMORY_MUTEX()  // No-op on Windows
-#elif defined(TARGET_PICO)
+#elifdef TARGET_PICO
 static mutex_t memory_mutex;
 #define LOCK_MEMORY() mutex_enter_blocking(&memory_mutex)
 #define UNLOCK_MEMORY() mutex_exit(&memory_mutex)
 #define INIT_MEMORY_MUTEX() mutex_init(&memory_mutex)
-#else  // TARGET_LINUX
+#elifdef TARGET_ZERO
+#define LOCK_MEMORY()        // No-op on Windows
+#define UNLOCK_MEMORY()      // No-op on Windows
+#define INIT_MEMORY_MUTEX()  // No-op on Windows
+#elifdef TARGET_LINUX
 static pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK_MEMORY() pthread_mutex_lock(&memory_mutex)
 #define UNLOCK_MEMORY() pthread_mutex_unlock(&memory_mutex)

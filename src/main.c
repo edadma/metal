@@ -72,9 +72,11 @@ int main(int argc, char* argv[]) {
 #define TARGET "Linux"
 #elifdef TARGET_WINDOWS
 #define TARGET "Windows"
+#elifdef TARGET_ZERO
+#define TARGET "Zero"
 #endif
 
-  printf("Metal Language v" METAL_VERSION " - " TARGET "\n");
+  printf("Metal Language v" METAL_VERSION " - " /*TARGET*/ "\n");
   printf("Type 'bye' to exit, '.s' to show stack\n\n");
   printf("Cell size: %u\n", (uint32_t)sizeof(cell_t));
 
