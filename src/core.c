@@ -23,6 +23,21 @@ static void native_print(context_t* ctx) {
   release(cell);
 }
 
+// Add to core_io.c or wherever PRINT is defined:
+static void native_emit(context_t* ctx) {
+  require_params(ctx, 1, "EMIT");
+  cell_t* char_cell = data_pop(ctx);
+
+  if (char_cell->type != CELL_INT32) {
+    error(ctx, "EMIT: argument must be integer");
+  }
+
+  uint32_t codepoint = (uint32_t)char_cell->payload.i32;
+  print_codepoint(ctx, codepoint);
+
+  release(char_cell);
+}
+
 static void native_fetch(context_t* ctx) {
   if (ctx->data_stack_ptr < 1) {
     error(ctx, "@ : stack underflow");
@@ -862,10 +877,12 @@ void add_core_words(void) {
   add_native_word("UNDEFINED?", native_undefined_check, "( a -- bool ) Test if value is undefined");
 
   // I/O
-  add_native_word("PRINT", native_print, "( a -- ) Print value to output");
+  add_native_word("PRINT", native_print, "( value -- ) Print value to output");
+  add_native_word("EMIT", native_emit, "( char -- ) Emit character by Unicode codepoint");
+  add_definition("CR", "10 EMIT", "( -- ) Emit carriage return/newline");
 
-  add_native_word("@", native_fetch, "( ptr -- value ) Fetch value from pointer");
-  add_native_word("!", native_store, "( ptr value -- ) Store value at pointer");
+  add_native_word("@", native_fetch, "( pointer -- value ) Fetch value from pointer");
+  add_native_word("!", native_store, "( pointer value -- ) Store value at pointer");
 
   // Control flow (compilation only)
   add_native_word_immediate("IF", native_if, "( bool -- ) Begin conditional");
@@ -911,4 +928,5 @@ void add_core_words(void) {
   add_definition("MAX", "2DUP < IF SWAP THEN DROP", "( a b -- max ) Return maximum of two numbers");
   add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN", "( n -- -1|0|1 ) Return sign of number");
   add_definition("CONST", "CONSTANT", "( value -- ) Define constant");
+  add_definition("BL", "32", "( -- 32 ) space character");
 }

@@ -16,6 +16,7 @@
 #include "core_array.h"
 #include "core_comparison.h"
 #include "core_logic.h"
+#include "core_object.h"
 #include "core_primitive.h"
 #include "core_stack.h"
 #include "debug.h"
@@ -38,6 +39,7 @@ void populate_dictionary(void) {
   add_tools_words();            // Development tools
   add_float_words();            // Floating-point words
   add_string_words();           // String operations
+  add_core_object_words();      // Object operations
 
   // Debug words (only when debug support compiled in)
 #ifdef DEBUG_ENABLED

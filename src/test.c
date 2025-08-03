@@ -22,6 +22,7 @@
 #include "test_conversion.h"
 #include "test_logic.h"
 #include "test_memory_ops.h"
+#include "test_object.h"
 #include "test_refcount.h"
 #include "test_stack.h"
 #include "test_string.h"
@@ -1180,7 +1181,10 @@ void init_tests(void) {
   register_refcount_tests();
 
   // Array operations tests
-  // register_array_tests();
+  register_array_tests();
+
+  // Object operations tests
+  register_object_tests();
 }
 
 #endif  // TEST_ENABLED
