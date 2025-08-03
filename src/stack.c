@@ -30,7 +30,6 @@ void data_push_no_retain(context_t* ctx, cell_t cell) { data_push_ptr_no_retain(
 void data_push_ptr_no_retain(context_t* ctx, cell_t* cell) {
   if (ctx->data_stack_ptr >= DATA_STACK_SIZE) {
     error(ctx, "Data stack overflow");
-    return;
   }
 
   debug("Pushing cell type %d to data stack (depth: %d)", cell->type, ctx->data_stack_ptr);
@@ -84,7 +83,6 @@ bool is_data_empty(context_t* ctx) { return ctx->data_stack_ptr == 0; }
 void return_push(context_t* ctx, cell_t cell) {
   if (ctx->return_stack_ptr >= RETURN_STACK_SIZE) {
     error(ctx, "Return stack overflow");
-    return;
   }
 
   debug("Pushing cell type %d to return stack (depth: %d)", cell.type, ctx->return_stack_ptr);
@@ -111,7 +109,6 @@ cell_t* return_pop(context_t* ctx) {
 cell_t return_pop_cell(context_t* ctx) {
   if (ctx->return_stack_ptr <= 0) {
     error(ctx, "Return stack underflow");
-    return new_empty_object();
   }
 
   cell_t cell = ctx->return_stack[--ctx->return_stack_ptr];
@@ -124,7 +121,6 @@ cell_t return_pop_cell(context_t* ctx) {
 cell_t return_peek(context_t* ctx, int depth) {
   if (depth >= ctx->return_stack_ptr || depth < 0) {
     error(ctx, "Return stack index out of range");
-    return new_empty_object();
   }
 
   return ctx->return_stack[ctx->return_stack_ptr - 1 - depth];

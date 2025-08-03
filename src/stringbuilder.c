@@ -122,9 +122,29 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
       break;
     }
 
-    case CELL_OBJECT:
-      stringbuilder_append_cstr(ctx, builder, "{}");
+    case CELL_OBJECT: {
+      stringbuilder_append_cstr(ctx, builder, "{");
+
+      if (cell->payload.object) {
+        object_t* obj = cell->payload.object;
+
+        for (size_t i = 0; i < obj->length; i++) {
+          if (i > 0) stringbuilder_append_cstr(ctx, builder, ", ");
+
+          // Add key
+          cell_t key_cell = new_interned_string(obj->pairs[i].key);
+          stringbuilder_append_cell(ctx, builder, &key_cell, true);  // with quotes
+
+          stringbuilder_append_cstr(ctx, builder, ": ");
+
+          // Add value
+          stringbuilder_append_cell(ctx, builder, &obj->pairs[i].value, true);
+        }
+      }
+
+      stringbuilder_append_cstr(ctx, builder, "}");
       break;
+    }
 
     case CELL_POINTER:
       if (cell->payload.cell_ptr) {

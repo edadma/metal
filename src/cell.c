@@ -57,30 +57,16 @@ cell_t new_allocated_string(context_t* ctx, const string_t* str) {
   return cell;
 }
 
-// cell_t* new_preallocated_string(context_t* ctx, cell_t* cell) {
-//   cell->type = CELL_STRING;
-//
-//   size_t len = strlen(utf8);  // Input length (for now, UTF-8 from C strings)
-//   uint8_array_t* str = metal_alloc(ctx, sizeof(uint8_array_t) + len);
-//
-//   str->refcount = 0;  // no owner yet
-//   str->length = len;
-//   str->capacity = len;
-//   memcpy(str->data, utf8, len);
-//
-//   cell.payload.utf8_ptr = str;
-//   return cell;
-// }
-
 cell_t new_empty_string(void) {
   cell_t cell = {0};
   cell.type = CELL_STRING;
   return cell;
 }
 
-cell_t new_empty_object(void) {
+cell_t new_empty_object(context_t* ctx) {
   cell_t cell = {0};
   cell.type = CELL_OBJECT;
+  cell.payload.object = create_object_data(ctx, 0);  // Always allocate, like arrays
   return cell;
 }
 

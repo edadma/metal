@@ -41,23 +41,29 @@ static void native_comma(context_t* ctx) {
 }
 
 static void native_length(context_t* ctx) {
-  if (ctx->data_stack_ptr < 1) {
-    error(ctx, "LENGTH: stack underflow");
-    return;
-  }
+  require_params(ctx, 1, "LENGTH");
+  cell_t* container = data_peek(ctx, 0);
 
-  cell_t cell = data_pop_cell(ctx);
+  if (container->type == CELL_ARRAY) {
+    // Original array logic
+    array_t* data = container->payload.array;
+    int32_t length = data ? (int32_t)data->length : 0;
+    data_push(ctx, new_int32(length));
 
-  if (cell.type == CELL_ARRAY) {
-    array_t* data = cell.payload.array;
-    data_push(ctx, new_int32(data->length));
-  } else if (cell.type == CELL_STRING) {
-    data_push(ctx, new_int32(string_length(ctx, &cell)));  // null string has length 0
+  } else if (container->type == CELL_OBJECT) {
+    // New object logic
+    object_t* obj = container->payload.object;
+    int32_t length = obj ? (int32_t)obj->length : 0;
+    data_push(ctx, new_int32(length));
+
+  } else if (container->type == CELL_STRING) {
+    // Existing string logic
+    size_t len = string_length(ctx, container);
+    data_push(ctx, new_int32((int32_t)len));
+
   } else {
-    error(ctx, "LENGTH: not an array or string");
+    error(ctx, "LENGTH: argument must be array, object, or string");
   }
-
-  release(&cell);
 }
 
 static void native_index(context_t* ctx) {
