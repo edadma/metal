@@ -40,14 +40,14 @@ static void native_put(context_t* ctx) {
 static void native_has_q(context_t* ctx) {
   require_params(ctx, 2, "HAS?");
 
-  cell_t key_cell = data_pop_cell(ctx);
-  cell_t* object_cell = data_peek(ctx, 0);  // Leave object on stack
+  cell_t* key_cell = data_pop(ctx);
+  cell_t* object_cell = data_pop(ctx);
 
   if (object_cell->type != CELL_OBJECT) {
     error(ctx, "HAS?: first argument must be object");
   }
 
-  if (key_cell.type != CELL_STRING) {
+  if (key_cell->type != CELL_STRING) {
     error(ctx, "HAS?: key must be string");
   }
 
@@ -55,19 +55,20 @@ static void native_has_q(context_t* ctx) {
   object_t* obj = object_cell->payload.object;
 
   if (obj) {
-    cell_t* found = object_get(ctx, obj, &key_cell);
-    has_key = (found != NULL);
+    cell_t* found = object_get(ctx, obj, key_cell);
+    has_key = found != NULL;
   }
 
+  release(key_cell);
+  release(object_cell);
   data_push(ctx, new_boolean(has_key));
-  release(&key_cell);
 }
 
 // KEYS ( object -- object keys-array ) Get array of all keys
 static void native_keys(context_t* ctx) {
   require_params(ctx, 1, "KEYS");
 
-  cell_t* object_cell = data_peek(ctx, 0);  // Leave object on stack
+  cell_t* object_cell = data_pop(ctx);
 
   if (object_cell->type != CELL_OBJECT) {
     error(ctx, "KEYS: argument must be object");
@@ -91,6 +92,7 @@ static void native_keys(context_t* ctx) {
     }
   }
 
+  release(object_cell);
   data_push(ctx, keys_array);
 }
 
@@ -98,7 +100,7 @@ static void native_keys(context_t* ctx) {
 static void native_values(context_t* ctx) {
   require_params(ctx, 1, "VALUES");
 
-  cell_t* object_cell = data_peek(ctx, 0);  // Leave object on stack
+  cell_t* object_cell = data_pop(ctx);
 
   if (object_cell->type != CELL_OBJECT) {
     error(ctx, "VALUES: argument must be object");
@@ -122,6 +124,7 @@ static void native_values(context_t* ctx) {
     }
   }
 
+  release(object_cell);
   data_push(ctx, values_array);
 }
 
@@ -129,7 +132,7 @@ static void native_values(context_t* ctx) {
 static void native_entries(context_t* ctx) {
   require_params(ctx, 1, "ENTRIES");
 
-  cell_t* object_cell = data_peek(ctx, 0);  // Leave object on stack
+  cell_t* object_cell = data_pop(ctx);  // Leave object on stack
 
   if (object_cell->type != CELL_OBJECT) {
     error(ctx, "ENTRIES: argument must be object");
@@ -166,6 +169,7 @@ static void native_entries(context_t* ctx) {
     }
   }
 
+  release(object_cell);
   data_push(ctx, entries_array);
 }
 

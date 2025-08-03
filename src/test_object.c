@@ -285,7 +285,7 @@ TEST_FUNCTION(test_keys_word) {
   TEST_INTERPRET("DROP");
 
   // Clean up
-  TEST_INTERPRET("DROP DROP");
+  TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
 
@@ -309,7 +309,7 @@ TEST_FUNCTION(test_values_word) {
   TEST_INTERPRET("DROP");
 
   // Clean up
-  TEST_INTERPRET("DROP DROP");
+  TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
 
@@ -338,7 +338,7 @@ TEST_FUNCTION(test_entries_word) {
   TEST_INTERPRET("DROP");
 
   // Clean up
-  TEST_INTERPRET("DROP DROP DROP");
+  TEST_INTERPRET("DROP DROP");
   TEST_STACK_DEPTH(0);
 }
 
@@ -463,14 +463,14 @@ TEST_FUNCTION(test_object_index_store_refcount_management) {
   TEST_INTERPRET("\"initial-value\"");
   // Check initial string refcount
   TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(1);  // Only our reference
+  TEST_STACK_TOP_INT(2);  // Only our reference
   TEST_INTERPRET("DROP");
 
   // Store in object (should increment refcount)
   TEST_INTERPRET("DUP OVER \"key\" INDEX!");
   // Check refcount increased
   TEST_INTERPRET("DUP REFCOUNT");
-  TEST_STACK_TOP_INT(2);  // Our reference + object's reference
+  TEST_STACK_TOP_INT(3);  // Our reference + object's reference
   TEST_INTERPRET("DROP");
 
   // Replace with new value (should decrement old, increment new)
