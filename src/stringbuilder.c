@@ -61,11 +61,19 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, const 
 
   switch (cell->type) {
     case CELL_INT32:
-      size = sprintf(cbuf, spec && spec->hex ? "%x" : "%d", cell->payload.i32);
+      if (spec && spec->zero_pad && spec->width > 0) {
+        size = sprintf(cbuf, spec->hex ? "%0*x" : "%0*d", spec->width, cell->payload.i32);
+      } else {
+        size = sprintf(cbuf, spec && spec->hex ? "%x" : "%d", cell->payload.i32);
+      }
       break;
 
     case CELL_INT64:
-      size = sprintf(cbuf, spec && spec->hex ? "%llx" : "%lld", (long long)cell->payload.i64);
+      if (spec && spec->zero_pad && spec->width > 0) {
+        size = sprintf(cbuf, spec->hex ? "%0*llx" : "%0*lld", spec->width, (long long)cell->payload.i64);
+      } else {
+        size = sprintf(cbuf, spec && spec->hex ? "%llx" : "%lld", (long long)cell->payload.i64);
+      }
       break;
 
     case CELL_FLOAT:

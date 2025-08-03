@@ -8,6 +8,7 @@ typedef struct {
   int width;      // minimum width (0 = no width specified)
   int precision;  // decimal places (-1 = not specified)
   bool hex;       // use hex formatting
+  bool zero_pad;  // use zero padding instead of spaces
   enum {
     ALIGN_LEFT,   // default (no prefix)
     ALIGN_RIGHT,  // > prefix

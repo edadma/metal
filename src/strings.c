@@ -328,6 +328,7 @@ bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* result)
   result->width = 0;
   result->precision = -1;
   result->hex = false;
+  result->zero_pad = false;
   result->alignment = ALIGN_LEFT;
 
   if (spec_len == 0) {
@@ -349,6 +350,12 @@ bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* result)
 
   // Parse width (digits before any other specifiers)
   if (pos < end && isdigit(*pos)) {
+    // Check for zero padding (leading zero)
+    if (*pos == '0' && pos + 1 < end && isdigit(*(pos + 1))) {
+      result->zero_pad = true;
+      pos++;  // Skip the leading zero
+    }
+
     result->width = 0;
     while (pos < end && isdigit(*pos)) {
       result->width = result->width * 10 + (*pos - '0');
