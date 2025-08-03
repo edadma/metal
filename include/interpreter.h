@@ -14,7 +14,7 @@ typedef enum {
 } metal_result_t;
 
 extern bool compilation_mode;
-extern cell_array_t* compiling_definition;
+extern array_t* compiling_definition;
 extern char compiling_word_name[MAX_NAME_LENGTH];
 
 void add_definition(const char* name, const char* source, const char* help);

@@ -134,7 +134,7 @@ static void native_mem_pressure(context_t* ctx) {
     release(&str_cell);  // Then release it
 
     // Create and destroy array
-    cell_array_t* arr = create_array_data(ctx, 2);
+    array_t* arr = create_array_data(ctx, 2);
     cell_t int_cell1 = new_int32(i);
     cell_t int_cell2 = new_int32(i + 1);
     arr->elements[0] = int_cell1;

@@ -20,7 +20,7 @@ static void native_comma(context_t* ctx) {
   cell_t array_cell = data_pop_cell(ctx);
 
   if (array_cell.type == CELL_ARRAY) {
-    cell_array_t* data = array_cell.payload.array;
+    array_t* data = array_cell.payload.array;
 
     // Check if we need to resize
     if (data->length >= data->capacity) {
@@ -49,7 +49,7 @@ static void native_length(context_t* ctx) {
   cell_t cell = data_pop_cell(ctx);
 
   if (cell.type == CELL_ARRAY) {
-    cell_array_t* data = cell.payload.array;
+    array_t* data = cell.payload.array;
     data_push(ctx, new_int32(data->length));
   } else if (cell.type == CELL_STRING) {
     data_push(ctx, new_int32(string_length(ctx, &cell)));  // null string has length 0
@@ -81,7 +81,7 @@ static void native_index(context_t* ctx) {
     error(ctx, "INDEX: not an array");
   }
 
-  cell_array_t* data = array_cell.payload.array;
+  array_t* data = array_cell.payload.array;
 
   if (index < 0 || index >= data->length) {
     error(ctx, "INDEX: index out of bounds");
@@ -113,7 +113,7 @@ static void native_index_fetch(context_t* ctx) {
     return;
   }
 
-  cell_array_t* data = array_cell.payload.array;
+  array_t* data = array_cell.payload.array;
 
   if (index < 0 || index >= data->length) {
     error(ctx, "INDEX@: index out of bounds");
@@ -148,7 +148,7 @@ static void native_index_store(context_t* ctx) {
     return;
   }
 
-  cell_array_t* data = array_cell.payload.array;
+  array_t* data = array_cell.payload.array;
 
   if (index < 0 || index >= data->length) {
     error(ctx, "INDEX!: index out of bounds");

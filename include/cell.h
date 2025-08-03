@@ -63,7 +63,7 @@ typedef struct {    // extends refcount_t
   string_t string;  // Variable length string data
 } allocated_string_t;
 
-typedef struct cell_array cell_array_t;
+typedef struct cell_array array_t;
 typedef struct object object_t;
 
 #ifdef TARGET_PICO
@@ -81,7 +81,7 @@ typedef struct cell {
     int32_t i32;                           // 32-bit integer
     int64_t i64;                           // 64-bit integer
     double f64;                            // Double precision float
-    cell_array_t* array;                   // Pointer to a cell array
+    array_t* array;                        // Pointer to a cell array
     const string_t* interned_string;       // Pointer to interned string
     allocated_string_t* allocated_string;  // Pointer to allocated string
     char utf8_array[8];                    // 0-8 UTF-8 characters (renamed from utf8)
@@ -130,20 +130,20 @@ typedef struct cell_array {
   size_t length;
   size_t capacity;
   cell_t* elements;
-} cell_array_t;
+} array_t;
 
 // Object key-value pair
 typedef struct {
-  char* key;     // Interned string key (no refcounting needed)
-  cell_t value;  // Value cell
+  string_t* key;  // Interned string key (no refcounting needed)
+  cell_t value;   // Value cell
 } object_pair_t;
 
 // Object structure
 typedef struct object {
-  int refcount;           // First field - embedded refcount
-  size_t length;          // Number of key-value pairs
-  size_t capacity;        // Allocated capacity
-  object_pair_t pairs[];  // Flexible array of key-value pairs
+  int refcount;          // First field - embedded refcount
+  size_t length;         // Number of key-value pairs
+  size_t capacity;       // Allocated capacity
+  object_pair_t* pairs;  // array of key-value pairs
 } object_t;
 
 // Cell creation functions (fundamental immediate types)
@@ -157,7 +157,7 @@ cell_t new_pointer(cell_t* target);
 cell_t new_return(cell_t* target);
 cell_t new_null(void);
 cell_t new_undefined(void);
-cell_t new_code(cell_array_t* code_data);
+cell_t new_code(array_t* code_data);
 cell_t new_boolean(bool value);
 void new_boolean_inplace(bool value, cell_t* ptr);
 cell_t new_rgb(uint8_t r, uint8_t g, uint8_t b);

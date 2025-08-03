@@ -22,14 +22,14 @@
 
 // Global compilation state
 bool compilation_mode = false;
-cell_array_t* compiling_definition = NULL;
+array_t* compiling_definition = NULL;
 char compiling_word_name[MAX_NAME_LENGTH];
 
 // Helper function to add a compiled word definition from source
 void add_definition(const char* name, const char* source, const char* help) {
   // Save current compilation state
   bool saved_compilation_mode = compilation_mode;
-  cell_array_t* saved_compiling_definition = compiling_definition;
+  array_t* saved_compiling_definition = compiling_definition;
   char saved_compiling_word_name[MAX_NAME_LENGTH];
   strncpy(saved_compiling_word_name, compiling_word_name, sizeof(saved_compiling_word_name));
   // Set up compilation
@@ -297,7 +297,7 @@ metal_result_t interpret(context_t* ctx, bool print_errors, const char* input) {
 }
 
 void compile_cell(context_t* ctx, cell_t cell) {
-  cell_array_t* target_definition;
+  array_t* target_definition;
 
   if (ctx->anonymous_compilation_mode) {
     target_definition = ctx->compiling_anonymous_definition;

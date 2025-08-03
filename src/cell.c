@@ -109,7 +109,7 @@ cell_t new_undefined(void) {
   return cell;
 }
 
-cell_t new_code(cell_array_t* code_data) {
+cell_t new_code(array_t* code_data) {
   cell_t cell = {0};
   cell.type = CELL_CODE;
   cell.payload.array = code_data;
@@ -215,7 +215,7 @@ void release(cell_t* cell) {
       debug("Released code, refcount now %d", cell->payload.array->refcount);
       if (cell->payload.array->refcount <= 0) {
         // Release all elements first
-        cell_array_t* data = cell->payload.array;
+        array_t* data = cell->payload.array;
         for (size_t i = 0; i < data->length; i++) {
           release(&data->elements[i]);
         }
@@ -228,7 +228,7 @@ void release(cell_t* cell) {
       debug("Released array cell, refcount now %d", cell->payload.array->refcount);
       if (cell->payload.array->refcount <= 0) {
         // Release all elements first
-        cell_array_t* data = cell->payload.array;
+        array_t* data = cell->payload.array;
 
         for (size_t i = 0; i < data->length; i++) {
           release(&data->elements[i]);

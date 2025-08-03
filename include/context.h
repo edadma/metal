@@ -35,7 +35,7 @@ typedef struct context {
 
   // Anonymous compilation state (add after parsing state)
   bool anonymous_compilation_mode;
-  cell_array_t* compiling_anonymous_definition;
+  array_t* compiling_anonymous_definition;
 } context_t;
 
 extern context_t main_context;
