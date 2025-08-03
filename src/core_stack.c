@@ -96,14 +96,11 @@ void add_core_stack_words(void) {
   // Stack manipulation
   add_native_word("DUP", native_dup, "( a -- a a ) Duplicate top of stack");
   add_native_word("DROP", native_drop, "( a -- ) Remove top of stack");
-  add_native_word("SWAP", native_swap,
-                  "( a b -- b a ) Swap top two stack items");
-  add_native_word("PICK", native_pick,
-                  "( xu...x1 x0 u -- xu...x1 x0 xu ) Copy u-th item");
-  add_native_word("ROLL", native_roll,
-                  "( xu...x1 x0 u -- xu-1...x1 x0 xu ) Move u-th item to top");
+  add_native_word("SWAP", native_swap, "( a b -- b a ) Swap top two stack items");
+  add_native_word("PICK", native_pick, "( xu...x1 x0 u -- xu...x1 x0 xu ) Copy u-th item");
+  add_native_word("ROLL", native_roll, "( xu...x1 x0 u -- xu-1...x1 x0 xu ) Move u-th item to top");
   add_definition("OVER", "1 PICK", "( a b -- a b a ) Copy second item to top");
-  add_definition("2DUP", "OVER OVER",
-                 "( a b -- a b a b ) Duplicate top two items");
+  add_definition("2DUP", "OVER OVER", "( a b -- a b a b ) Duplicate top two items");
   add_definition("ROT", "2 ROLL", "( a b c -- b c a ) Rotate top three items");
+  add_definition("-ROT", "ROT ROT", "( a b c -- c a b ) Rotate 3 values");
 }

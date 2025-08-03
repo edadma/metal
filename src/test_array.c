@@ -184,13 +184,13 @@ TEST_FUNCTION(test_index_fetch_errors) {
 
   // Test INDEX@ with non-array types
   TEST_INTERPRET("[]");
-  TEST_EXPECT_ERROR("42 0 INDEX@", "not an array");
+  TEST_EXPECT_ERROR("42 0 INDEX@", "INDEX@: container must be array or object");
   TEST_INTERPRET("[]");
-  TEST_EXPECT_ERROR("\"hello\" 0 INDEX@", "not an array");
+  TEST_EXPECT_ERROR("\"hello\" 0 INDEX@", "INDEX@: container must be array or object");
   TEST_INTERPRET("[]");
-  TEST_EXPECT_ERROR("3.14 0 INDEX@", "not an array");
+  TEST_EXPECT_ERROR("3.14 0 INDEX@", "INDEX@: container must be array or object");
   TEST_INTERPRET("[]");
-  TEST_EXPECT_ERROR("TRUE 0 INDEX@", "not an array");
+  TEST_EXPECT_ERROR("TRUE 0 INDEX@", "INDEX@: container must be array or object");
 
   // Test INDEX@ with non-integer index
   TEST_INTERPRET("[] 1 ,");
@@ -223,10 +223,10 @@ TEST_FUNCTION(test_index_store_errors) {
   TEST_EXPECT_ERROR("99 OVER 0 INDEX!", "index out of bounds");
 
   // Test INDEX! with non-array types
-  TEST_EXPECT_ERROR("99 42 0 INDEX!", "not an array");
-  TEST_EXPECT_ERROR("99 \"hello\" 0 INDEX!", "not an array");
-  TEST_EXPECT_ERROR("99 3.14 0 INDEX!", "not an array");
-  TEST_EXPECT_ERROR("99 TRUE 0 INDEX!", "not an array");
+  TEST_EXPECT_ERROR("99 42 0 INDEX!", "INDEX!: container must be array or object");
+  TEST_EXPECT_ERROR("99 \"hello\" 0 INDEX!", "INDEX!: container must be array or object");
+  TEST_EXPECT_ERROR("99 3.14 0 INDEX!", "INDEX!: container must be array or object");
+  TEST_EXPECT_ERROR("99 TRUE 0 INDEX!", "INDEX!: container must be array or object");
 
   // Test INDEX! with non-integer index
   TEST_INTERPRET("[] 1 ,");
@@ -246,7 +246,7 @@ TEST_FUNCTION(test_index_store_errors) {
 
   TEST_INTERPRET("99 [] 1 ,");
   TEST_INTERPRET("[] 1 ,");
-  TEST_EXPECT_ERROR("INDEX!", "INDEX!: index must be integer");
+  TEST_EXPECT_ERROR("INDEX!", "INDEX!: array index must be integer");
 }
 
 // === EDGE CASE TESTS ===
