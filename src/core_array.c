@@ -4,6 +4,7 @@
 #include "context.h"
 #include "dictionary.h"
 #include "error.h"
+#include "object.h"
 #include "stack.h"
 #include "strings.h"
 
@@ -100,74 +101,112 @@ static void native_index(context_t* ctx) {
   release(&index_cell);
 }
 
-// INDEX@ ( array index -- value ) Safe array element fetch
+// INDEX@ ( array index -- value ) OR ( object key -- value ) Polymorphic fetch
 static void native_index_fetch(context_t* ctx) {
   require_params(ctx, 2, "INDEX@");
   cell_t index_cell = data_pop_cell(ctx);
-  cell_t array_cell = data_pop_cell(ctx);
+  cell_t container_cell = data_pop_cell(ctx);
 
-  if (index_cell.type != CELL_INT32) {
-    error(ctx, "INDEX@: index must be integer");
+  if (container_cell.type == CELL_ARRAY) {
+    // Original array logic
+    if (index_cell.type != CELL_INT32) {
+      error(ctx, "INDEX@: array index must be integer");
+      return;
+    }
+
+    int32_t index = index_cell.payload.i32;
+    array_t* data = container_cell.payload.array;
+
+    if (index < 0 || index >= data->length) {
+      error(ctx, "INDEX@: index out of bounds");
+      return;
+    }
+
+    // Get the element and push it (data_push will retain it)
+    cell_t element = data->elements[index];
+    data_push(ctx, element);
+
+  } else if (container_cell.type == CELL_OBJECT) {
+    // New object logic
+    if (index_cell.type != CELL_STRING) {
+      error(ctx, "INDEX@: object index must be string");
+      return;
+    }
+
+    object_t* obj = container_cell.payload.object;
+    if (!obj) {
+      // Empty object - return undefined
+      data_push(ctx, new_undefined());
+    } else {
+      cell_t* found = object_get(ctx, obj, &index_cell);
+      if (found) {
+        data_push(ctx, *found);  // data_push will retain
+      } else {
+        data_push(ctx, new_undefined());  // Property doesn't exist
+      }
+    }
+
+  } else {
+    error(ctx, "INDEX@: container must be array or object");
     return;
   }
 
-  int32_t index = index_cell.payload.i32;
-
-  if (array_cell.type != CELL_ARRAY) {
-    error(ctx, "INDEX@: not an array");
-    return;
-  }
-
-  array_t* data = array_cell.payload.array;
-
-  if (index < 0 || index >= data->length) {
-    error(ctx, "INDEX@: index out of bounds");
-    return;
-  }
-
-  // Get the element and push it (data_push will retain it)
-  cell_t element = data->elements[index];
-  data_push(ctx, element);
-
-  release(&array_cell);
+  release(&container_cell);
   release(&index_cell);
 }
 
-// INDEX! ( value array index -- ) Safe array element store
+// INDEX! ( value array index -- ) OR ( value object key -- ) Polymorphic store
 static void native_index_store(context_t* ctx) {
   require_params(ctx, 3, "INDEX!");
 
   cell_t index_cell = data_pop_cell(ctx);
-  cell_t array_cell = data_pop_cell(ctx);
+  cell_t container_cell = data_pop_cell(ctx);
   cell_t value_cell = data_pop_cell(ctx);
 
-  if (index_cell.type != CELL_INT32) {
-    error(ctx, "INDEX!: index must be integer");
+  if (container_cell.type == CELL_ARRAY) {
+    // Original array logic
+    if (index_cell.type != CELL_INT32) {
+      error(ctx, "INDEX!: array index must be integer");
+      return;
+    }
+
+    int32_t index = index_cell.payload.i32;
+    array_t* data = container_cell.payload.array;
+
+    if (index < 0 || index >= data->length) {
+      error(ctx, "INDEX!: index out of bounds");
+      return;
+    }
+
+    // Release the old value at this position
+    release(&data->elements[index]);
+
+    // Store the new value and retain it
+    data->elements[index] = value_cell;
+    retain(&value_cell);
+
+  } else if (container_cell.type == CELL_OBJECT) {
+    // New object logic
+    if (index_cell.type != CELL_STRING) {
+      error(ctx, "INDEX!: object index must be string");
+      return;
+    }
+
+    object_t* obj = container_cell.payload.object;
+    if (!obj) {
+      error(ctx, "INDEX!: cannot set property on empty object");
+      return;
+    }
+
+    // Use object_set which handles key interning
+    object_set(ctx, obj, &index_cell, &value_cell);
+
+  } else {
+    error(ctx, "INDEX!: container must be array or object");
     return;
   }
 
-  int32_t index = index_cell.payload.i32;
-
-  if (array_cell.type != CELL_ARRAY) {
-    error(ctx, "INDEX!: not an array");
-    return;
-  }
-
-  array_t* data = array_cell.payload.array;
-
-  if (index < 0 || index >= data->length) {
-    error(ctx, "INDEX!: index out of bounds");
-    return;
-  }
-
-  // Release the old value at this position
-  release(&data->elements[index]);
-
-  // Store the new value and retain it
-  data->elements[index] = value_cell;
-  retain(&value_cell);
-
-  release(&array_cell);
+  release(&container_cell);
   release(&index_cell);
   release(&value_cell);  // Release our local copy
 }

@@ -59,11 +59,20 @@ void free_object_data(object_t* object) {
 // Helper function to extract string_t* from either interned or allocated string cells
 const string_t* get_string_from_cell(const cell_t* cell) {
   if (cell->type != CELL_STRING) return NULL;
+
   if (cell->flags & CELL_FLAG_INTERNED) {
     return cell->payload.interned_string;
+  } else {
+    // Handle empty string optimization - NULL payload
+    if (cell->payload.allocated_string == NULL) {
+      // Return static empty string for immediate empty strings
+      static const string_t empty_string = {
+          .encoding = STRING_UTF8, .length = 0, .data = {}  // Empty data array
+      };
+      return &empty_string;
+    }
+    return &cell->payload.allocated_string->string;
   }
-
-  return &cell->payload.allocated_string->string;
 }
 
 // Find object property by key (handles both interned and non-interned keys)
