@@ -494,6 +494,8 @@ static void native_format(context_t* ctx) {
     }
   }
 
+  int args_used = depth - 1;
+
   for (size_t pos = 0; pos < format_str->length; pos++) {
     uint32_t c = string_char_at(ctx, format_str, pos);
 
@@ -551,7 +553,7 @@ static void native_format(context_t* ctx) {
         // Peek at next argument and append it with formatting
         cell_t* arg = data_peek(ctx, args_used);
         stringbuilder_append_cell(ctx, &builder, arg, false, &spec);
-        args_used++;
+        args_used--;
 
         // Skip to after the closing }
         pos = spec_end;
@@ -563,7 +565,7 @@ static void native_format(context_t* ctx) {
   string_t* result_str = stringbuilder_finalize(ctx, &builder);
 
   // Pop and release the arguments we consumed
-  for (int i = 0; i < args_used; i++) {
+  for (int i = 0; i < depth; i++) {
     cell_t* popped = data_pop(ctx);
     release(popped);
   }
