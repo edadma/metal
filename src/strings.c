@@ -267,34 +267,34 @@ string_encoding_t string_get_encoding(context_t* ctx, const cell_t* str) {
 
 // Convert string to UTF-8 for printing (for now assumes input is UTF-8)
 // Returns: number of bytes written to buffer (not including null terminator)
-// size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t buffer_size) {
-//   require(ctx, str != NULL);
-//   require(ctx, str->type == CELL_STRING);
-//   require(ctx, buffer != NULL);
-//   require(ctx, buffer_size > 0);
-//
-//   if (!str->payload.ptr) {
-//     // Empty string
-//     if (buffer_size > 0) buffer[0] = '\0';
-//     return 0;
-//   }
-//
-//   const uint8_t* data = string_get_data(ctx, str);
-//   size_t length = string_get_length(ctx, str);
-//   string_encoding_t encoding = string_get_encoding(ctx, str);
-//
-//   // For now, assume all strings are UTF-8
-//   // TODO: Add actual UTF-16/32 to UTF-8 conversion
-//   if (encoding != STRING_UTF8) {
-//     error(ctx, "string_to_utf8: UTF-16/32 conversion not yet implemented");
-//   }
-//
-//   size_t copy_len = (length < buffer_size - 1) ? length : buffer_size - 1;
-//   memcpy(buffer, data, copy_len);
-//   buffer[copy_len] = '\0';
-//
-//   return copy_len;
-// }
+size_t string_to_utf8(context_t* ctx, const cell_t* str, char* buffer, size_t buffer_size) {
+  require(ctx, str != NULL);
+  require(ctx, str->type == CELL_STRING);
+  require(ctx, buffer != NULL);
+  require(ctx, buffer_size > 0);
+
+  if (!str->payload.ptr) {
+    // Empty string
+    if (buffer_size > 0) buffer[0] = '\0';
+    return 0;
+  }
+
+  const uint8_t* data = string_get_data(ctx, str);
+  size_t length = string_get_length(ctx, str);
+  string_encoding_t encoding = string_get_encoding(ctx, str);
+
+  // For now, assume all strings are UTF-8
+  // TODO: Add actual UTF-16/32 to UTF-8 conversion
+  if (encoding != STRING_UTF8) {
+    error(ctx, "string_to_utf8: UTF-16/32 conversion not yet implemented");
+  }
+
+  size_t copy_len = (length < buffer_size - 1) ? length : buffer_size - 1;
+  memcpy(buffer, data, copy_len);
+  buffer[copy_len] = '\0';
+
+  return copy_len;
+}
 
 int get_intern_count(void) {
   int count = 0;
@@ -382,6 +382,79 @@ static bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* 
 
 // FORMAT implementation - no buffer restrictions!
 // Supports {} placeholders and {{ for literal {
+// void native_format(context_t* ctx) {
+//   require_params(ctx, 1, "FORMAT");
+//
+//   // Get format string from top
+//   cell_t* format_cell = data_pop(ctx);
+//   if (format_cell->type != CELL_STRING) {
+//     error(ctx, "FORMAT: format must be a string");
+//   }
+//
+//   // Get the actual string_t regardless of interned/allocated
+//   const string_t* format_str;
+//   if (format_cell->flags & CELL_FLAG_INTERNED) {
+//     format_str = format_cell->payload.interned_string;
+//   } else {
+//     format_str = &format_cell->payload.allocated_string->string;
+//   }
+//
+//   string_builder_t builder;
+//   stringbuilder_init(ctx, &builder, format_str->length + 64);
+//
+//   int args_used = 0;
+//
+//   for (size_t pos = 0; pos < format_str->length; pos++) {
+//     uint32_t c = string_char_at(ctx, format_str, pos);
+//
+//     if (c != '{') {
+//       // Regular character - append directly
+//       stringbuilder_append_codepoint(ctx, &builder, c);
+//     } else {
+//       // Found '{' - check what follows
+//       if (pos + 1 >= format_str->length) {
+//         error(ctx, "FORMAT: unterminated placeholder");
+//       }
+//
+//       uint32_t next = string_char_at(ctx, format_str, pos + 1);
+//       if (next == '{') {
+//         // {{ -> literal {
+//         stringbuilder_append_codepoint(ctx, &builder, '{');
+//         pos++;  // Skip the second {
+//       } else if (next == '}') {
+//         // {} -> placeholder
+//         if (ctx->data_stack_ptr <= args_used) {
+//           error(ctx, "FORMAT: insufficient stack");
+//         }
+//
+//         // Peek at next argument and append it
+//         cell_t* arg = data_peek(ctx, args_used);
+//         stringbuilder_append_cell(ctx, &builder, arg, false, NULL);
+//         args_used++;
+//         pos++;  // Skip the }
+//       } else {
+//         error(ctx, "FORMAT: invalid placeholder syntax");
+//       }
+//     }
+//   }
+//
+//   // Finalize the string
+//   string_t* result_str = stringbuilder_finalize(ctx, &builder);
+//
+//   // Pop and release the arguments we consumed
+//   for (int i = 0; i < args_used; i++) {
+//     cell_t* popped = data_pop(ctx);
+//     release(popped);
+//   }
+//
+//   // Release format string and push result
+//   release(format_cell);
+//   data_push(ctx, new_allocated_string(ctx, result_str));
+//   metal_free(result_str);
+// }
+
+// Enhanced FORMAT implementation with format specifications
+// Supports: {}, {10}, {x}, {8x}, {.2}, {>10}, {^8}, {>10.2}, {{
 void native_format(context_t* ctx) {
   require_params(ctx, 1, "FORMAT");
 
@@ -421,19 +494,49 @@ void native_format(context_t* ctx) {
         // {{ -> literal {
         stringbuilder_append_codepoint(ctx, &builder, '{');
         pos++;  // Skip the second {
-      } else if (next == '}') {
-        // {} -> placeholder
+      } else {
+        // Find the closing }
+        size_t spec_start = pos + 1;
+        size_t spec_end = spec_start;
+        while (spec_end < format_str->length && string_char_at(ctx, format_str, spec_end) != '}') {
+          spec_end++;
+        }
+
+        if (spec_end >= format_str->length) {
+          error(ctx, "FORMAT: unterminated placeholder");
+        }
+
+        // Extract format specification
+        size_t spec_len = spec_end - spec_start;
+        char spec_buffer[32];
+        if (spec_len >= sizeof(spec_buffer)) {
+          error(ctx, "FORMAT: format specification too long");
+        }
+
+        // Copy spec to buffer for parsing
+        for (size_t i = 0; i < spec_len; i++) {
+          spec_buffer[i] = (char)string_char_at(ctx, format_str, spec_start + i);
+        }
+        spec_buffer[spec_len] = '\0';
+
+        // Parse format specification
+        format_spec_t spec;
+        if (!parse_format_spec(spec_buffer, spec_len, &spec)) {
+          error(ctx, "FORMAT: invalid format specification: %s", spec_buffer);
+        }
+
+        // Check we have an argument available
         if (ctx->data_stack_ptr <= args_used) {
           error(ctx, "FORMAT: insufficient stack");
         }
 
-        // Peek at next argument and append it
+        // Peek at next argument and append it with formatting
         cell_t* arg = data_peek(ctx, args_used);
-        stringbuilder_append_cell(ctx, &builder, arg, false);
+        stringbuilder_append_cell(ctx, &builder, arg, false, &spec);
         args_used++;
-        pos++;  // Skip the }
-      } else {
-        error(ctx, "FORMAT: invalid placeholder syntax");
+
+        // Skip to after the closing }
+        pos = spec_end;
       }
     }
   }
