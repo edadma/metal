@@ -146,7 +146,6 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, const 
   size_t left_pad = 0;
   size_t right_pad = padding;
 
-  printf("right_pad: %lu\n", right_pad);
   if (padding > 0 && spec->alignment == ALIGN_RIGHT) {
     left_pad = padding;
     right_pad = 0;
@@ -154,7 +153,6 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, const 
     left_pad = padding / 2;
     right_pad = padding - left_pad;
   }
-  printf("right_pad: %lu\n", right_pad);
 
   for (int i = 0; i < left_pad; i++) stringbuilder_append_codepoint(ctx, builder, ' ');
 
