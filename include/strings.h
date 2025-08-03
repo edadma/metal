@@ -47,4 +47,6 @@ uint32_t string_char_at(context_t* ctx, const string_t* str, size_t index);
 
 int get_intern_count(void);
 
+bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* result);
+
 #endif

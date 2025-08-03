@@ -323,7 +323,7 @@ uint32_t string_char_at(context_t* ctx, const string_t* str, size_t index) {
 }
 
 // Parse format specification from string like "10", "x", ".2", ">10", "^8x"
-static bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* result) {
+bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* result) {
   // Initialize defaults
   result->width = 0;
   result->precision = -1;
