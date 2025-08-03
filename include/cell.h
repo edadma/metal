@@ -134,8 +134,8 @@ typedef struct cell_array {
 
 // Object key-value pair
 typedef struct {
-  string_t* key;  // Interned string key (no refcounting needed)
-  cell_t value;   // Value cell
+  const string_t* key;  // Interned string key (no refcounting needed)
+  cell_t value;         // Value cell
 } object_pair_t;
 
 // Object structure
@@ -166,7 +166,7 @@ cell_t new_coordinate(float lon, float lat);
 cell_t new_complex(float re, float im);
 
 // Cell lifecycle management
-void retain(cell_t* cell);
-void release(cell_t* cell);
+void retain(const cell_t* cell);
+void release(const cell_t* cell);
 
 #endif  // CELL_H

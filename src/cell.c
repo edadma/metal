@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "error.h"
 #include "memory.h"
+#include "object.h"
 
 // Cell creation functions (fundamental immediate types)
 
@@ -165,7 +166,7 @@ cell_t new_complex(float re, float im) {
 
 // Cell lifecycle management
 
-void retain(cell_t* cell) {
+void retain(const cell_t* cell) {
   if (!cell->payload.ptr) return;  // NULL payload
 
   // Only allocated types need refcount management
@@ -176,7 +177,11 @@ void retain(cell_t* cell) {
         debug("Retained string, refcount now %d", cell->payload.allocated_string->refcount);
       }
       break;
-    case CELL_OBJECT:
+    case CELL_OBJECT: {
+      cell->payload.object->refcount++;
+      debug("Retained object, refcount now %d", cell->payload.object->refcount);
+      break;
+    }
     case CELL_CODE: {
       cell->payload.array->refcount++;
       debug("Retained code, refcount now %d", cell->payload.array->refcount);
@@ -195,7 +200,7 @@ void retain(cell_t* cell) {
   }
 }
 
-void release(cell_t* cell) {
+void release(const cell_t* cell) {
   if (!cell->payload.ptr) return;  // NULL payload
 
   switch (cell->type) {
@@ -205,11 +210,16 @@ void release(cell_t* cell) {
         debug("Released string, refcount now %d", cell->payload.allocated_string->refcount);
         if (cell->payload.allocated_string->refcount <= 0) {
           metal_free(cell->payload.ptr);
-          cell->payload.ptr = NULL;
         }
       }
       break;
-    case CELL_OBJECT:
+    case CELL_OBJECT: {
+      cell->payload.object->refcount--;
+      debug("Released object, refcount now %d", cell->payload.object->refcount);
+      if (cell->payload.object->refcount <= 0) {
+        free_object_data(cell->payload.object);
+      }
+    } break;
     case CELL_CODE: {
       cell->payload.array->refcount--;
       debug("Released code, refcount now %d", cell->payload.array->refcount);
@@ -220,7 +230,6 @@ void release(cell_t* cell) {
           release(&data->elements[i]);
         }
         metal_free(cell->payload.ptr);
-        cell->payload.ptr = NULL;
       }
     } break;
     case CELL_ARRAY: {
