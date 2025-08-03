@@ -52,7 +52,8 @@ void get_memory_stats(int* allocs, int* frees) {
 }
 #endif
 
-void* metal_alloc(context_t* ctx, size_t size) {
+// Core allocation function - no tracking
+static void* metal_alloc_untracked(context_t* ctx, size_t size) {
   debug("Allocating %zu bytes", size);
 
   LOCK_MEMORY();
@@ -63,12 +64,22 @@ void* metal_alloc(context_t* ctx, size_t size) {
     error(ctx, "Out of memory");
   }
 
+  return mem;
+}
+
+// Regular allocation with tracking
+void* metal_alloc(context_t* ctx, size_t size) {
+  void* mem = metal_alloc_untracked(ctx, size);
+
 #ifdef TEST_ENABLED
   total_allocs++;
 #endif
 
   return mem;
 }
+
+// Permanent allocation without tracking (for interning, etc.)
+void* metal_alloc_permanent(context_t* ctx, size_t size) { return metal_alloc_untracked(ctx, size); }
 
 void* metal_realloc(context_t* ctx, void* ptr, size_t new_size) {
   LOCK_MEMORY();

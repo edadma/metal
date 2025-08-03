@@ -425,7 +425,7 @@ TEST_FUNCTION(test_object_array_round_trip) {
 
   TEST_INTERPRET("LENGTH");
   TEST_STACK_TOP_INT(3);
-  TEST_INTERPRET("DROP");
+  TEST_INTERPRET("DROP DROP");
   TEST_STACK_DEPTH(0);
 }
 
@@ -595,14 +595,14 @@ TEST_FUNCTION(test_object_refcount_expect_utility) {
   TEST_INTERPRET("{}");
   TEST_INTERPRET("\"test-value\" OVER \"key\" INDEX!");
   // Test REFCOUNT-EXPECT with object
-  TEST_INTERPRET("DUP 1 REFCOUNT-EXPECT");  // Should have refcount 1
+  TEST_INTERPRET("DUP 2 REFCOUNT-EXPECT");  // Should have refcount 1
                                             // Duplicate object
   TEST_INTERPRET("DUP");
-  TEST_INTERPRET("DUP 2 REFCOUNT-EXPECT");  // Should have refcount 2
+  TEST_INTERPRET("DUP 3 REFCOUNT-EXPECT");  // Should have refcount 2
                                             // Access property (shouldn't change object refcount)
   TEST_INTERPRET("DUP \"key\" INDEX@");
   TEST_INTERPRET("DROP");
-  TEST_INTERPRET("DUP 2 REFCOUNT-EXPECT");  // Should still be 2
+  TEST_INTERPRET("DUP 3 REFCOUNT-EXPECT");  // Should still be 2
                                             // Clean up
   TEST_INTERPRET("DROP DROP");
   TEST_STACK_DEPTH(0);
@@ -831,24 +831,24 @@ void register_object_tests(void) {
   REGISTER_TEST(test_object_index_store_refcount_management);
   REGISTER_TEST(test_object_shared_references);
   REGISTER_TEST(test_object_nested_refcount_cascading);
-  // REGISTER_TEST(test_object_property_replacement_release);
-  // REGISTER_TEST(test_object_refcount_expect_utility);
-  // REGISTER_TEST(test_object_immediate_release);
-  // REGISTER_TEST(test_object_array_operations_refcount);
-  //
-  // // Integration tests
-  // REGISTER_TEST(test_object_array_round_trip);
-  //
-  // // Memory management tests
-  // REGISTER_TEST(test_object_memory_leak_detection);
-  // REGISTER_TEST(test_nested_object_structures);
-  //
-  // // Polymorphic tests
-  // REGISTER_TEST(test_object_length);
-  //
-  // // Edge case tests
-  // REGISTER_TEST(test_object_special_keys);
-  // REGISTER_TEST(test_large_object);
+  REGISTER_TEST(test_object_property_replacement_release);
+  REGISTER_TEST(test_object_refcount_expect_utility);
+  REGISTER_TEST(test_object_immediate_release);
+  REGISTER_TEST(test_object_array_operations_refcount);
+
+  // Integration tests
+  REGISTER_TEST(test_object_array_round_trip);
+
+  // Memory management tests
+  REGISTER_TEST(test_object_memory_leak_detection);
+  REGISTER_TEST(test_nested_object_structures);
+
+  // Polymorphic tests
+  REGISTER_TEST(test_object_length);
+
+  // Edge case tests
+  REGISTER_TEST(test_object_special_keys);
+  REGISTER_TEST(test_large_object);
 }
 
 #endif  // TEST_ENABLED

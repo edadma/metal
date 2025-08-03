@@ -52,7 +52,7 @@ const string_t* intern_add(context_t* ctx, const string_t* str) {
   size_t total_size = sizeof(string_t) + data_size;
 
   // Allocate permanent copy of the string_t
-  string_t* permanent_str = metal_alloc(ctx, total_size);
+  string_t* permanent_str = metal_alloc_permanent(ctx, total_size);
 
   // Copy the header
   permanent_str->encoding = str->encoding;
@@ -62,7 +62,7 @@ const string_t* intern_add(context_t* ctx, const string_t* str) {
   memcpy(permanent_str->data, str->data, data_size);
 
   // Allocate and link the intern_t node
-  intern_t* node = metal_alloc(ctx, sizeof(intern_t));
+  intern_t* node = metal_alloc_permanent(ctx, sizeof(intern_t));
   node->string = permanent_str;
   node->next = intern_list;
   intern_list = node;
