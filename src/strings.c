@@ -475,7 +475,24 @@ static void native_format(context_t* ctx) {
   string_builder_t builder;
   stringbuilder_init(ctx, &builder, format_str->length + 64);
 
-  int args_used = 0;
+  int depth = 0;
+
+  for (size_t pos = 0; pos < format_str->length; pos++) {
+    uint32_t c = string_char_at(ctx, format_str, pos);
+
+    if (c == '{') {
+      if (string_char_at(ctx, format_str, pos + 1) == '{')
+        pos++;  // Skip literal {
+      else {
+        // Found '{' - check what follows
+        if (pos + 1 >= format_str->length) {
+          error(ctx, "FORMAT: unterminated placeholder");
+        } else {
+          depth++;
+        }
+      }
+    }
+  }
 
   for (size_t pos = 0; pos < format_str->length; pos++) {
     uint32_t c = string_char_at(ctx, format_str, pos);
