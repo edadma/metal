@@ -8,8 +8,10 @@
 // Forward declaration for circular dependency
 typedef struct context context_t;
 
+typedef uint8_t cell_type_t;
+
 // Cell types
-typedef enum : uint8_t {
+enum {
   // fundamental types
   CELL_INT32,
   CELL_INT64,
@@ -33,12 +35,14 @@ typedef enum : uint8_t {
 
   // combined types
   CELL_INT_PAIR,
-} cell_type_t;
+};
 
-typedef enum : uint8_t {
+typedef uint8_t cell_flags_t;
+
+enum {
   CELL_FLAG_IMMEDIATE = 1 << 0,
   CELL_FLAG_INTERNED = 1 << 1,
-} cell_flags_t;
+};
 
 typedef void (*native_func_t)(context_t* context);
 
