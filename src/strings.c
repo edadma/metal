@@ -96,7 +96,7 @@ void string_from_cstr(const char* cstr, string_t* out_str) {
 }
 
 // Get string length (handles NULL payload)
-size_t string_length(context_t* ctx, cell_t* str) {
+size_t string_length(context_t* ctx, const cell_t* str) {
   require(ctx, str != NULL);
   require(ctx, str->type == CELL_STRING);
 
@@ -455,7 +455,7 @@ static bool parse_format_spec(const char* spec, size_t spec_len, format_spec_t* 
 
 // Enhanced FORMAT implementation with format specifications
 // Supports: {}, {10}, {x}, {8x}, {.2}, {>10}, {^8}, {>10.2}, {{
-void native_format(context_t* ctx) {
+static void native_format(context_t* ctx) {
   require_params(ctx, 1, "FORMAT");
 
   // Get format string from top
@@ -490,6 +490,7 @@ void native_format(context_t* ctx) {
       }
 
       uint32_t next = string_char_at(ctx, format_str, pos + 1);
+
       if (next == '{') {
         // {{ -> literal {
         stringbuilder_append_codepoint(ctx, &builder, '{');

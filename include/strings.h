@@ -16,7 +16,7 @@ typedef struct {
 } format_spec_t;
 
 // String helper functions
-size_t string_length(context_t* ctx, cell_t* str);
+size_t string_length(context_t* ctx, const cell_t* str);
 bool string_is_empty(context_t* ctx, cell_t* str);
 bool string_equal(const string_t* a, const string_t* b);
 void string_from_cstr(const char* cstr, string_t* out_str);

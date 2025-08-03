@@ -19,7 +19,8 @@ typedef struct {
 void stringbuilder_init(context_t* ctx, string_builder_t* builder, size_t initial_capacity);
 void stringbuilder_append_codepoint(context_t* ctx, string_builder_t* builder, uint32_t codepoint);
 void stringbuilder_append_cstr(context_t* ctx, string_builder_t* builder, const char* utf8_cstr);
-void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t* cell, bool display, const format_spec_t* spec);
+void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, const cell_t* cell, bool display,
+                               const format_spec_t* spec);
 string_t* stringbuilder_finalize(context_t* ctx, string_builder_t* builder);
 void stringbuilder_cleanup(context_t* ctx, string_builder_t* builder);
 

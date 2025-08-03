@@ -51,7 +51,8 @@ void stringbuilder_append_cstr(context_t* ctx, string_builder_t* builder, const 
 }
 
 // Append any cell by converting to string representation
-void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t* cell, bool display, const format_spec_t* spec) {
+void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, const cell_t* cell, bool display,
+                               const format_spec_t* spec) {
   if (!cell) error(ctx, "stringbuilder_append_cell: NULL cell pointer");
 
   char cbuf[32];  // Enough for any float or int64
@@ -59,11 +60,6 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
   size_t size;
 
   switch (cell->type) {
-    // case CELL_INT32: {
-    //   snprintf(buffer, sizeof(buffer), "%d", cell->payload.i32);
-    //   stringbuilder_append_cstr(ctx, builder, buffer);
-    //   break;
-    // }
     case CELL_INT32:
       size = sprintf(cbuf, "%d", cell->payload.i32);
       break;
@@ -146,10 +142,11 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
     }
   }
 
-  size_t padding = spec ? spec->width - size : 0;
+  size_t padding = spec && spec->width > size ? spec->width - size : 0;
   size_t left_pad = 0;
   size_t right_pad = padding;
 
+  printf("right_pad: %lu\n", right_pad);
   if (padding > 0 && spec->alignment == ALIGN_RIGHT) {
     left_pad = padding;
     right_pad = 0;
@@ -157,6 +154,7 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
     left_pad = padding / 2;
     right_pad = padding - left_pad;
   }
+  printf("right_pad: %lu\n", right_pad);
 
   for (int i = 0; i < left_pad; i++) stringbuilder_append_codepoint(ctx, builder, ' ');
 
@@ -191,8 +189,9 @@ void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, cell_t
     for (size_t i = 0; i < sbuf->length; i++) {
       builder->utf32[builder->length++] = (uint32_t)sbuf->data[i];
     }
-  } else
+  } else {
     stringbuilder_append_cstr(ctx, builder, cbuf);
+  }
 
   for (int i = 0; i < right_pad; i++) stringbuilder_append_codepoint(ctx, builder, ' ');
 }
