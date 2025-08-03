@@ -68,15 +68,15 @@ int main(int argc, char* argv[]) {
 
   sleep_ms(500);
 #define TARGET "Pico W"
-#elifdef TARGET_LINUX
+#elif defined(TARGET_LINUX)
 #define TARGET "Linux"
-#elifdef TARGET_WINDOWS
+#elif defined(TARGET_WINDOWS)
 #define TARGET "Windows"
-#elifdef TARGET_ZERO
+#elif defined(TARGET_ZERO)
 #define TARGET "Zero"
 #endif
 
-  printf("Metal Language v" METAL_VERSION " - " /*TARGET*/ "\n");
+  printf("Metal Language v" METAL_VERSION " - " TARGET "\n");
   printf("Type 'bye' to exit, '.s' to show stack\n\n");
   printf("Cell size: %u\n", (uint32_t)sizeof(cell_t));
 

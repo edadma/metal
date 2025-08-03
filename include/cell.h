@@ -66,7 +66,7 @@ typedef struct {    // extends refcount_t
 typedef struct cell_array array_t;
 typedef struct object object_t;
 
-#ifdef TARGET_PICO
+#if defined(TARGET_PICO) || defined(TARGET_ZERO)
 #pragma pack(push, 4)
 #endif
 
@@ -111,7 +111,7 @@ typedef struct cell {
   } payload;  // 8 bytes
 } cell_t;
 
-#ifdef TARGET_PICO
+#if defined(TARGET_PICO) || defined(TARGET_ZERO)
 #pragma pack(pop)
 #endif
 
