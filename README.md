@@ -19,7 +19,7 @@ Metal combines the directness and hardware control of Forth with modern convenie
 Metal keeps Forth's "no syntax" approach - just words separated by spaces that manipulate a stack. But it adds modern data types that make real-world programming practical:
 
 ```metal
-"Hello world" PRINT
+"Hello world" PR
 {} 42 : x 3.14 : y CONSTANT point
 [] 1 , 2 , 3 , { DUP * } MAP
 ```
@@ -53,7 +53,7 @@ Reference counting happens automatically. No manual malloc/free, no garbage coll
 Simple objects without inheritance or complex dispatch:
 ```metal
 {} 42 : x 3.14 : y CONSTANT point
-point . x PRINT               \ Access property x
+point . x PR               \ Access property x
 ```
 
 ## Target Platform

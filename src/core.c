@@ -16,14 +16,13 @@
 // I/O words
 
 static void native_print(context_t* ctx) {
-  require_params(ctx, 1, "PRINT");
+  require_params(ctx, 1, "PR");
 
   cell_t* cell = data_pop(ctx);
   print_cell(ctx, cell, false);
   release(cell);
 }
 
-// Add to core_io.c or wherever PRINT is defined:
 static void native_emit(context_t* ctx) {
   require_params(ctx, 1, "EMIT");
   cell_t* char_cell = data_pop(ctx);
@@ -877,7 +876,7 @@ void add_core_words(void) {
   add_native_word("UNDEFINED?", native_undefined_check, "( a -- bool ) Test if value is undefined");
 
   // I/O
-  add_native_word("PRINT", native_print, "( value -- ) Print value to output");
+  add_native_word("PR", native_print, "( value -- ) Print value to output");
   add_native_word("EMIT", native_emit, "( char -- ) Emit character by Unicode codepoint");
   add_definition("CR", "10 EMIT", "( -- ) Emit carriage return/newline");
 

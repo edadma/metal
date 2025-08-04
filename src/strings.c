@@ -589,5 +589,5 @@ void add_string_words(void) {
   add_native_word("FORMAT", native_format, "( args... format -- string ) Format string with {} placeholders");
 
   // Add convenient aliases/definitions
-  add_definition("PRINTF", "FORMAT PRINT", "( args... format -- ) Format and print string");
+  add_definition("PRINTF", "FORMAT PR", "( args... format -- ) Format and print string");
 }
