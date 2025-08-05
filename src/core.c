@@ -346,6 +346,15 @@ static void native_loop_runtime(context_t* ctx) {
     error(ctx, "(LOOP): return stack underflow");
   }
 
+  if (ctx->return_stack_ptr >= 2 && ctx->return_stack[ctx->return_stack_ptr - 1].type == CELL_UNDEFINED) {
+    // Skip loop - clean up markers and exit
+    release(&ctx->return_stack[ctx->return_stack_ptr - 1]);
+    release(&ctx->return_stack[ctx->return_stack_ptr - 2]);
+    ctx->return_stack_ptr -= 2;
+    ctx->ip++;  // Skip the branch instruction
+    return;
+  }
+
   // Get current index and limit
   cell_t* index_cell = &ctx->return_stack[ctx->return_stack_ptr - 1];
   cell_t* limit_cell = &ctx->return_stack[ctx->return_stack_ptr - 2];
@@ -378,6 +387,15 @@ static void native_plus_loop_runtime(context_t* ctx) {
 
   if (ctx->return_stack_ptr < 2) {
     error(ctx, "(+LOOP): return stack underflow");
+  }
+
+  if (ctx->return_stack_ptr >= 2 && ctx->return_stack[ctx->return_stack_ptr - 1].type == CELL_UNDEFINED) {
+    // Skip loop - clean up markers and exit
+    release(&ctx->return_stack[ctx->return_stack_ptr - 1]);
+    release(&ctx->return_stack[ctx->return_stack_ptr - 2]);
+    ctx->return_stack_ptr -= 2;
+    ctx->ip++;  // Skip the branch instruction
+    return;
   }
 
   cell_t increment = data_pop_cell(ctx);
@@ -493,6 +511,50 @@ static void native_plus_loop(context_t* ctx) {
   compile_cell(ctx, branch_cell);
 
   release(do_location_cell);
+}
+
+// (?DO) ( limit start -- ) Runtime: conditional loop setup
+static void native_question_do_runtime(context_t* ctx) {
+  require_params(ctx, 2, "(?DO)");
+
+  cell_t start = data_pop_cell(ctx);
+  cell_t limit = data_pop_cell(ctx);
+
+  if (start.type != CELL_INT32 || limit.type != CELL_INT32) {
+    error(ctx, "(?DO): loop parameters must be integers");
+  }
+
+  if (start.payload.i32 == limit.payload.i32) {
+    // Skip loop - push false so BRANCH_IF_FALSE will jump
+    data_push(ctx, new_boolean(false));
+  } else {
+    // Execute loop - push true so BRANCH_IF_FALSE won't jump
+    return_push(ctx, limit);
+    return_push(ctx, start);
+    data_push(ctx, new_boolean(true));
+  }
+}
+
+// ?DO ( limit start -- ) Compile conditional loop
+static void native_question_do(context_t* ctx) {
+  if (!compilation_mode) {
+    error(ctx, "?DO: only valid during compilation");
+  }
+
+  // Compile (?DO) runtime
+  dictionary_entry_t* question_do_runtime = find_word("(?DO)");
+  compile_cell(ctx, question_do_runtime->definition);
+
+  // Compile BRANCH_IF_FALSE to skip loop if start == limit
+  cell_t branch_cell = {0};
+  branch_cell.type = CELL_BRANCH_IF_FALSE;
+  branch_cell.payload.i32 = 0;  // Placeholder
+  int skip_location = compiling_definition->length;
+  compile_cell(ctx, branch_cell);
+
+  // Push BOTH locations for LOOP to handle
+  return_push(ctx, new_int32(skip_location));                 // Skip branch to patch
+  return_push(ctx, new_int32(compiling_definition->length));  // Loop start
 }
 
 // I ( -- index ) Get current loop index
@@ -898,6 +960,8 @@ void add_core_words(void) {
   add_native_word("(LOOP)", native_loop_runtime, "( -- ) Runtime: increment and test");
   add_native_word("(+LOOP)", native_plus_loop_runtime, "( n -- ) Runtime: increment by n");
   add_native_word_immediate("DO", native_do, "( limit start -- ) Begin counted loop");
+  add_native_word("(?DO)", native_question_do_runtime, "( limit start -- ) Runtime: conditional loop setup");
+  add_native_word_immediate("?DO", native_question_do, "( limit start -- ) Begin conditional counted loop");
   add_native_word_immediate("LOOP", native_loop, "( -- ) End loop, increment by 1");
   add_native_word_immediate("+LOOP", native_plus_loop, "( n -- ) End loop, increment by n");
   add_native_word("I", native_i, "( -- index ) Current loop index");
