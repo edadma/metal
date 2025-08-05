@@ -70,7 +70,7 @@ cell_t new_empty_object(context_t* ctx) {
   return cell;
 }
 
-cell_t new_pointer(cell_t* target) {
+cell_t new_pointer(const cell_t* target) {
   cell_t cell = {0};
   cell.type = CELL_POINTER;
   cell.payload.cell_ptr = target;

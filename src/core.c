@@ -1,5 +1,6 @@
 #include "core.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "array.h"
@@ -102,15 +103,18 @@ static void native_paren_comment(context_t* ctx) {
 // CONSTANT ( value -- ) <name> Define a named constant
 static void native_constant(context_t* ctx) {
   require_params(ctx, 1, "CONSTANT");
+
   // Parse next word as the constant name
   char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
+
   if (token_type != TOKEN_WORD) {
     error(ctx, "CONSTANT: expected constant name");
   }
 
   // Pop the value from stack
   cell_t value = data_pop_cell(ctx);
+
   // Check that value is not undefined
   if (value.type == CELL_UNDEFINED) {
     error(ctx, "CONSTANT: cannot create constant with undefined value");
@@ -121,28 +125,37 @@ static void native_constant(context_t* ctx) {
   debug("Created constant '%s'", word_buffer);
 }
 
-// VARIABLE ( -- ) <name> Define a variable
-static void native_variable(context_t* ctx) {
-  // Parse next word as the variable name
-  char word_buffer[MAX_NAME_LENGTH];
-  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
-  if (token_type != TOKEN_WORD) {
-    error(ctx, "VARIABLE: expected variable name");
-  }
-
+static const cell_t* add_variable_word(const char* name, const cell_t value) {
   // Allocate storage for one cell, initialized to undefined
-  cell_t* storage = metal_alloc(ctx, sizeof(cell_t));
-  if (!storage) {
-    error(ctx, "VARIABLE: allocation failed");
-  }
-  *storage = new_undefined();
+  const cell_t* storage = metal_alloc(&main_context, sizeof(cell_t));
+
+  *storage = value;
+
   // Create pointer cell
   cell_t pointer_cell = new_pointer(storage);
 
   // Add to dictionary
-  add_cell(word_buffer, pointer_cell, "User-defined variable");
+  char help[MAX_NAME_LENGTH + 20];
 
-  debug("Created variable '%s'", word_buffer);
+  snprintf(help, sizeof(help), "Variable '%s'", name);
+  add_cell(name, pointer_cell, help);
+
+  debug("Created variable '%s'", name);
+
+  return pointer_cell.payload.cell_ptr;
+}
+
+// VARIABLE ( -- ) <name> Define a variable
+static const cell_t* native_variable(context_t* ctx) {
+  // Parse next word as the variable name
+  char word_buffer[MAX_NAME_LENGTH];
+  token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
+
+  if (token_type != TOKEN_WORD) {
+    error(ctx, "VARIABLE: expected variable name");
+  }
+
+  return add_variable_word(word_buffer, new_undefined());
 }
 
 static void native_null(context_t* ctx) { data_push(ctx, new_null()); }
@@ -872,6 +885,8 @@ static const cell_t plus_loop_runtime_cell = {
 
 // Register all core words
 void add_core_words(void) {
+  const cell_t* base = add_variable_word("BASE", new_int32(10));
+
   add_native_word("NULL", native_null, "( -- null ) Push null value");
   add_native_word("UNDEFINED?", native_undefined_check, "( a -- bool ) Test if value is undefined");
 

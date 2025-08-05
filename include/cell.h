@@ -88,7 +88,7 @@ typedef struct cell {
     uint16_t utf16_array[4];               // 0-4 UTF-16 characters (renamed from utf16)
     uint32_t utf32_array[2];               // 0-2 UTF-32 characters (renamed from utf32)
     object_t* object;                      // Pointer to object (NEW)
-    struct cell* cell_ptr;                 // Code pointer (using struct tag to avoid issues)
+    const struct cell* cell_ptr;           // Code pointer (using struct tag to avoid issues)
     native_func_t native;                  // Native function pointer
     struct {
       uint8_t r, g, b;
@@ -153,7 +153,7 @@ cell_t new_float(double value);
 cell_t new_allocated_string(context_t* ctx, const string_t* str);
 cell_t new_empty_string(void);
 cell_t new_empty_object(context_t* ctx);
-cell_t new_pointer(cell_t* target);
+cell_t new_pointer(const cell_t* target);
 cell_t new_return(cell_t* target);
 cell_t new_null(void);
 cell_t new_undefined(void);
