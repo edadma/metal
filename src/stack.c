@@ -27,7 +27,7 @@ void data_push(context_t* ctx, cell_t cell) {
 
 void data_push_no_retain(context_t* ctx, cell_t cell) { data_push_ptr_no_retain(ctx, &cell); }
 
-void data_push_ptr_no_retain(context_t* ctx, cell_t* cell) {
+void data_push_ptr_no_retain(context_t* ctx, const cell_t* cell) {
   if (ctx->data_stack_ptr >= DATA_STACK_SIZE) {
     error(ctx, "Data stack overflow");
   }
@@ -38,7 +38,7 @@ void data_push_ptr_no_retain(context_t* ctx, cell_t* cell) {
 }
 
 // Data stack operations
-void data_push_ptr(context_t* ctx, cell_t* cell) {
+void data_push_ptr(context_t* ctx, const cell_t* cell) {
   data_push_ptr_no_retain(ctx, cell);
 
   // Retain reference if needed

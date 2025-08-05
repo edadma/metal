@@ -127,7 +127,7 @@ static void native_constant(context_t* ctx) {
 
 static const cell_t* add_variable_word(const char* name, const cell_t value) {
   // Allocate storage for one cell, initialized to undefined
-  const cell_t* storage = metal_alloc(&main_context, sizeof(cell_t));
+  cell_t* storage = metal_alloc(&main_context, sizeof(cell_t));
 
   *storage = value;
 
@@ -146,7 +146,7 @@ static const cell_t* add_variable_word(const char* name, const cell_t value) {
 }
 
 // VARIABLE ( -- ) <name> Define a variable
-static const cell_t* native_variable(context_t* ctx) {
+static void native_variable(context_t* ctx) {
   // Parse next word as the variable name
   char word_buffer[MAX_NAME_LENGTH];
   token_type_t token_type = parse_next_token(ctx, &ctx->input_pos, word_buffer, sizeof(word_buffer));
@@ -155,7 +155,7 @@ static const cell_t* native_variable(context_t* ctx) {
     error(ctx, "VARIABLE: expected variable name");
   }
 
-  return add_variable_word(word_buffer, new_undefined());
+  add_variable_word(word_buffer, new_undefined());
 }
 
 static void native_null(context_t* ctx) { data_push(ctx, new_null()); }
