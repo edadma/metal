@@ -20,4 +20,6 @@ int cell_to_cstr(context_t* ctx, cell_t* cell, bool display, char* buffer, size_
 void print_codepoint(context_t* ctx, uint32_t codepoint);
 void print_string(context_t* ctx, const string_t* str);
 
+int number_to_string(long long value, int base, char* buffer, int width);
+
 #endif  // UTIL_H

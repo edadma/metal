@@ -26,5 +26,7 @@ void compile_cell(context_t* ctx, cell_t cell);
 void reset_interpreter_state(void);
 
 void init_interpreter(void);
+void set_base_variable(cell_t* base_storage);
+int get_current_base(void);
 
 #endif  // INTERPRETER_H

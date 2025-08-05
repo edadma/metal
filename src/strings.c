@@ -559,7 +559,7 @@ static void native_format(context_t* ctx) {
 
         // Peek at next argument and append it with formatting
         cell_t* arg = data_peek(ctx, args_used);
-        stringbuilder_append_cell(ctx, &builder, arg, false, &spec);
+        stringbuilder_append_cell(ctx, &builder, arg, false, false, &spec);
         args_used--;
 
         // Skip to after the closing }

@@ -4,8 +4,10 @@
 #include <string.h>
 
 #include "error.h"
+#include "interpreter.h"
 #include "memory.h"
 #include "strings.h"
+#include "util.h"
 
 // Initialize string builder with initial capacity
 void stringbuilder_init(context_t* ctx, string_builder_t* builder, size_t initial_capacity) {
@@ -51,29 +53,23 @@ void stringbuilder_append_cstr(context_t* ctx, string_builder_t* builder, const 
 }
 
 // Append any cell by converting to string representation
-void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, const cell_t* cell, bool display,
+void stringbuilder_append_cell(context_t* ctx, string_builder_t* builder, const cell_t* cell, bool observe_base, bool display,
                                const format_spec_t* spec) {
   if (!cell) error(ctx, "stringbuilder_append_cell: NULL cell pointer");
 
   char cbuf[32];  // Enough for any float or int64
   string_t* sbuf = NULL;
   size_t size;
+  int base = spec && spec->hex ? 16 : observe_base ? get_current_base() : 10;
+  int width = spec && spec->zero_pad && spec->width > 0 ? spec->width : 0;
 
   switch (cell->type) {
     case CELL_INT32:
-      if (spec && spec->zero_pad && spec->width > 0) {
-        size = sprintf(cbuf, spec->hex ? "%0*x" : "%0*d", spec->width, cell->payload.i32);
-      } else {
-        size = sprintf(cbuf, spec && spec->hex ? "%x" : "%d", cell->payload.i32);
-      }
+      size = number_to_string(cell->payload.i32, base, cbuf, width);
       break;
 
     case CELL_INT64:
-      if (spec && spec->zero_pad && spec->width > 0) {
-        size = sprintf(cbuf, spec->hex ? "%0*llx" : "%0*lld", spec->width, (long long)cell->payload.i64);
-      } else {
-        size = sprintf(cbuf, spec && spec->hex ? "%llx" : "%lld", (long long)cell->payload.i64);
-      }
+      size = number_to_string(cell->payload.i64, base, cbuf, width);
       break;
 
     case CELL_FLOAT:

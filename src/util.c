@@ -44,7 +44,7 @@ void print_codepoint(context_t* ctx, uint32_t codepoint) {
 void print_cell(context_t* ctx, const cell_t* cell, bool display) {
   string_builder_t builder;
   stringbuilder_init(ctx, &builder, 64);
-  stringbuilder_append_cell(ctx, &builder, (cell_t*)cell, display, NULL);
+  stringbuilder_append_cell(ctx, &builder, (cell_t*)cell, true, display, NULL);
 
   string_t* result_str = stringbuilder_finalize(ctx, &builder);
 
@@ -52,6 +52,47 @@ void print_cell(context_t* ctx, const cell_t* cell, bool display) {
   print_string(ctx, result_str);
 
   metal_free(result_str);
+}
+
+int number_to_string(long long value, int base, char* buffer, int width) {
+  static const char digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  char buf[32];
+  char* ptr = buf;
+  bool negative = false;
+  int size;
+
+  if (value < 0) {
+    negative = true;
+    value = -value;
+  }
+
+  // Convert digits in reverse order
+  do {
+    *ptr++ = digits[value % base];
+    value /= base;
+  } while (value);
+
+  if (negative) *ptr++ = '-';
+  *ptr = '\0';
+
+  size = (int)(ptr - buf);
+  width = width ? width : size;
+
+  // zero padding
+  char* dest = buffer;
+
+  for (int i = 0; i < width - size; i++) {
+    *dest++ = '0';
+  }
+
+  // Reverse the string
+  for (int i = 0; i < size; i++) {
+    *dest++ = *--ptr;
+  }
+
+  *dest = '\0';
+
+  return width;
 }
 
 // Case-insensitive string comparison

@@ -27,7 +27,7 @@ static cell_t* g_base_storage = NULL;
 void set_base_variable(cell_t* base_storage) { g_base_storage = base_storage; }
 
 // Get current base value for number parsing
-static int get_current_base(void) {
+int get_current_base(void) {
   if (!g_base_storage) {
     return 10;  // Default to decimal if not set
   }
