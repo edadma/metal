@@ -7,6 +7,19 @@
 static HANDLE hConsole;
 static CONSOLE_SCREEN_BUFFER_INFO originalConsoleInfo;
 
+// Default do-nothing maintenance function
+static void default_maintenance(void) {
+  // Do nothing - maintains current behavior
+}
+
+// Global maintenance callback (set to default)
+maintenance_callback_t g_maintenance_callback = default_maintenance;
+
+// Function to set maintenance callback
+void set_maintenance_callback(maintenance_callback_t callback) {
+  g_maintenance_callback = callback ? callback : default_maintenance;
+}
+
 void terminal_raw_mode_enter(void) {
   hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
   GetConsoleScreenBufferInfo(hConsole, &originalConsoleInfo);
