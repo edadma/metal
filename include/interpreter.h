@@ -25,4 +25,6 @@ void compile_cell(context_t* ctx, cell_t cell);
 
 void reset_interpreter_state(void);
 
+void init_interpreter(void);
+
 #endif  // INTERPRETER_H

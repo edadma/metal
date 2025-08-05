@@ -22,6 +22,7 @@
 #include "debug.h"
 #include "dictionary.h"
 #include "floats.h"
+#include "interpreter.h"
 #include "memory.h"
 #include "repl.h"
 #include "test.h"
@@ -84,6 +85,7 @@ int main(int argc, char* argv[]) {
   init_memory();
   init_context(&main_context, "main");
   init_dictionary();
+  init_interpreter();
   populate_dictionary();
 
 #ifdef TARGET_LINUX

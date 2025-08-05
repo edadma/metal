@@ -125,26 +125,6 @@ static void native_constant(context_t* ctx) {
   debug("Created constant '%s'", word_buffer);
 }
 
-static const cell_t* add_variable_word(const char* name, const cell_t value) {
-  // Allocate storage for one cell, initialized to undefined
-  cell_t* storage = metal_alloc(&main_context, sizeof(cell_t));
-
-  *storage = value;
-
-  // Create pointer cell
-  cell_t pointer_cell = new_pointer(storage);
-
-  // Add to dictionary
-  char help[MAX_NAME_LENGTH + 20];
-
-  snprintf(help, sizeof(help), "Variable '%s'", name);
-  add_cell(name, pointer_cell, help);
-
-  debug("Created variable '%s'", name);
-
-  return pointer_cell.payload.cell_ptr;
-}
-
 // VARIABLE ( -- ) <name> Define a variable
 static void native_variable(context_t* ctx) {
   // Parse next word as the variable name
@@ -885,8 +865,6 @@ static const cell_t plus_loop_runtime_cell = {
 
 // Register all core words
 void add_core_words(void) {
-  const cell_t* base = add_variable_word("BASE", new_int32(10));
-
   add_native_word("NULL", native_null, "( -- null ) Push null value");
   add_native_word("UNDEFINED?", native_undefined_check, "( a -- bool ) Test if value is undefined");
 
@@ -945,4 +923,8 @@ void add_core_words(void) {
   add_definition("BL", "32", "( -- 32 ) space character");
   add_definition("?DUP", "DUP IF DUP THEN", "( n -- n n | n ) Duplicate if non-zero");
   add_definition("ABS", "DUP 0< IF NEGATE THEN", "( n -- |n| ) Absolute value");
+  add_definition("DECIMAL", "10 BASE !", "Set BASE to 10 (decimal)");
+  add_definition("HEX", "16 BASE !", "Set BASE to 16 (hexadecimal)");
+  add_definition("BINARY", "2 BASE !", "Set BASE to 2 (binary)");
+  add_definition("OCTAL", "8 BASE !", "Set BASE to 8 (octal)");
 }

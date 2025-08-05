@@ -1,10 +1,12 @@
 #include "dictionary.h"
 
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "debug.h"
 #include "error.h"
+#include "memory.h"
 #include "utf8.h"
 #include "util.h"
 
@@ -32,6 +34,26 @@ void add_cell(const char* name, cell_t def, const char* help) {
 
   debug("Added '%s' to dictionary at index %d", name, dict_size);
   dict_size++;
+}
+
+cell_t* add_variable_word(const char* name, const cell_t value) {
+  // Allocate storage for one cell, initialized to undefined
+  cell_t* storage = metal_alloc(&main_context, sizeof(cell_t));
+
+  *storage = value;
+
+  // Create pointer cell
+  cell_t pointer_cell = new_pointer(storage);
+
+  // Add to dictionary
+  char help[MAX_NAME_LENGTH + 20];
+
+  snprintf(help, sizeof(help), "Variable '%s'", name);
+  add_cell(name, pointer_cell, help);
+
+  debug("Created variable '%s'", name);
+
+  return pointer_cell.payload.cell_ptr;
 }
 
 void add_native_word(const char* name, native_func_t func, const char* help) {

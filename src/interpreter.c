@@ -20,6 +20,34 @@
 
 #define MAX_TOKEN_SIZE 256
 
+// Global pointer to BASE variable storage
+static cell_t* g_base_storage = NULL;
+
+// Set the BASE variable pointer (called from initialization)
+void set_base_variable(cell_t* base_storage) { g_base_storage = base_storage; }
+
+// Get current base value for number parsing
+static int get_current_base(void) {
+  if (!g_base_storage) {
+    return 10;  // Default to decimal if not set
+  }
+
+  if (g_base_storage->type == CELL_INT32) {
+    int base = g_base_storage->payload.i32;
+    // Validate base range
+    if (base >= 2 && base <= 36) {
+      return base;
+    }
+  } else if (g_base_storage->type == CELL_INT64) {
+    int base = (int)g_base_storage->payload.i64;
+    if (base >= 2 && base <= 36) {
+      return base;
+    }
+  }
+
+  return 10;  // Default fallback for invalid base
+}
+
 // Global compilation state
 bool compilation_mode = false;
 array_t* compiling_definition = NULL;
@@ -101,9 +129,12 @@ bool try_parse_number(context_t* ctx, const char* token, cell_t* result) {
     }
   }
 
-  // Try integer parsing first
+  // Get current base from BASE variable
+  int current_base = get_current_base();
+
+  // Try integer parsing first using current base
   errno = 0;
-  long long val = strtoll(working_token, &endptr, 10);
+  long long val = strtoll(working_token, &endptr, current_base);
 
   if (*endptr == '\0') {
     // It's definitely meant to be an integer
@@ -338,4 +369,13 @@ void reset_interpreter_state(void) {
   }
 
   compiling_word_name[0] = '\0';
+}
+
+// Initialization (where dictionary is set up)
+void init_interpreter(void) {
+  // Create BASE variable initialized to 10 (decimal)
+  cell_t* base_storage = add_variable_word("BASE", new_int32(10));
+
+  // Tell interpreter where BASE is
+  set_base_variable(base_storage);
 }
