@@ -37,11 +37,20 @@ typedef struct {
   int viewing_entry;  // Currently viewing entry (-1 = current line)
 } history_buffer_t;
 
+// Maintenance callback function type
+typedef void (*maintenance_callback_t)(void);
+
+// Global maintenance callback (set to default do-nothing function)
+extern maintenance_callback_t g_maintenance_callback;
+
+// Function to set maintenance callback
+void set_maintenance_callback(maintenance_callback_t callback);
+
 // Platform-specific function - each target must implement
 key_event_t parse_key_sequence(void);
 
 // Platform-independent line editing
-void enhanced_get_line(char* buffer, size_t max_len);
+void get_line(char* buffer, size_t max_len);
 
 // History management
 void history_init(history_buffer_t* hist);

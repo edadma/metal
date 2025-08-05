@@ -313,7 +313,7 @@ static void handle_key_event(line_buffer_t *line, key_event_t event) {
 }
 
 // Main line editing function
-void enhanced_get_line(char *buffer, size_t max_len) {
+void get_line(char *buffer, size_t max_len) {
   line_buffer_t line = {0};
 
   // Initialize history on first use

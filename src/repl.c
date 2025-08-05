@@ -40,7 +40,7 @@ void repl(context_t* ctx) {
     fflush(stdout);
 
     // Get line with enhanced editing
-    enhanced_get_line(input_line, INPUT_BUFFER_SIZE);
+    get_line(input_line, INPUT_BUFFER_SIZE);
 
     // Skip empty lines
     if (strlen(input_line) == 0) {
