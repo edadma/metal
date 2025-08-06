@@ -5,6 +5,7 @@
 
 #include "compat.h"
 #include "context.h"
+#include "debug.h"
 #include "dictionary.h"
 #include "parser.h"
 #include "stack.h"
@@ -73,10 +74,33 @@ static void native_help(context_t* ctx) {
   }
 }
 
+// Return stack introspection
+static void native_dot_rs(context_t* ctx) { print_return_stack(ctx); }
+
+// CLEAR ( ... -- ) (R: ... -- ) Clear both data and return stacks
+static void native_clear(context_t* ctx) {
+  // Clear data stack
+  while (!is_data_empty(ctx)) {
+    cell_t* cell = data_pop(ctx);
+    release(cell);
+  }
+
+  // Clear return stack
+  while (!is_return_empty(ctx)) {
+    cell_t* cell = return_pop(ctx);
+    release(cell);
+  }
+
+  debug("CLEAR: cleared both data and return stacks");
+}
+
 // Register all tool words
 void add_tools_words(void) {
   // Stack introspection
-  add_native_word(".S", native_dot_s, "( -- ) Show stack contents");
+  add_native_word(".S", native_dot_s, "( -- ) Show data stack contents");
+  add_native_word(".RS", native_dot_rs, "( -- ) Show return stack contents");
+
+  add_native_word("CLEAR", native_clear, "( ... -- ) ( R: ... -- ) Clear both data and return stacks");
 
   // System control
   add_native_word("BYE", native_bye, "( -- ) Exit Metal");

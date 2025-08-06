@@ -182,18 +182,18 @@ static void native_bit_not(context_t* ctx) {
 
 // Left shift
 static void native_left_shift(context_t* ctx) {
-  require_params(ctx, 2, "<<");
+  require_params(ctx, 2, "LSHIFT");
 
   cell_t* shift_cell = data_pop(ctx);
   cell_t* value_cell = data_pop(ctx);
 
   if (!is_bitwise_compatible(value_cell)) {
-    error(ctx, "<< : can only shift integers");
+    error(ctx, "LSHIFT : can only shift integers");
     return;
   }
 
   if (shift_cell->type != CELL_INT32) {
-    error(ctx, "<< : shift amount must be a 32-bit integer");
+    error(ctx, "LSHIFT : shift amount must be a 32-bit integer");
     return;
   }
 
@@ -201,13 +201,13 @@ static void native_left_shift(context_t* ctx) {
 
   // Bounds check shift amount
   if (shift_amount < 0) {
-    error(ctx, "<< : shift amount cannot be negative");
+    error(ctx, "LSHIFT : shift amount cannot be negative");
     return;
   }
 
   if (value_cell->type == CELL_INT32) {
     if (shift_amount >= 32) {
-      error(ctx, "<< : shift amount too large for 32-bit value");
+      error(ctx, "LSHIFT : shift amount too large for 32-bit value");
       return;
     }
     int32_t result = value_cell->payload.i32 << shift_amount;
@@ -216,7 +216,7 @@ static void native_left_shift(context_t* ctx) {
     data_push(ctx, new_int32(result));
   } else {  // CELL_INT64
     if (shift_amount >= 64) {
-      error(ctx, "<< : shift amount too large for 64-bit value");
+      error(ctx, "LSHIFT : shift amount too large for 64-bit value");
       return;
     }
     int64_t result = value_cell->payload.i64 << shift_amount;
@@ -274,18 +274,18 @@ static void native_right_shift(context_t* ctx) {
 
 // Logical right shift (zero-fill)
 static void native_logical_right_shift(context_t* ctx) {
-  require_params(ctx, 2, ">>>");
+  require_params(ctx, 2, "RSHIFT");
 
   cell_t* shift_cell = data_pop(ctx);
   cell_t* value_cell = data_pop(ctx);
 
   if (!is_bitwise_compatible(value_cell)) {
-    error(ctx, ">>> : can only shift integers");
+    error(ctx, "RSHIFT : can only shift integers");
     return;
   }
 
   if (shift_cell->type != CELL_INT32) {
-    error(ctx, ">>> : shift amount must be a 32-bit integer");
+    error(ctx, "RSHIFT : shift amount must be a 32-bit integer");
     return;
   }
 
@@ -293,13 +293,13 @@ static void native_logical_right_shift(context_t* ctx) {
 
   // Bounds check shift amount
   if (shift_amount < 0) {
-    error(ctx, ">>> : shift amount cannot be negative");
+    error(ctx, "RSHIFT : shift amount cannot be negative");
     return;
   }
 
   if (value_cell->type == CELL_INT32) {
     if (shift_amount >= 32) {
-      error(ctx, ">>> : shift amount too large for 32-bit value");
+      error(ctx, "RSHIFT : shift amount too large for 32-bit value");
       return;
     }
     // Cast to unsigned for logical shift
@@ -312,7 +312,7 @@ static void native_logical_right_shift(context_t* ctx) {
     data_push(ctx, new_int32(result));
   } else {  // CELL_INT64
     if (shift_amount >= 64) {
-      error(ctx, ">>> : shift amount too large for 64-bit value");
+      error(ctx, "RSHIFT : shift amount too large for 64-bit value");
       return;
     }
     // Cast to unsigned for logical shift
@@ -344,10 +344,10 @@ void add_core_logic_words(void) {
   add_native_word("~", native_bit_not, "( a -- b ) Bitwise NOT");
 
   // Shift operators
-  add_native_word("<<", native_left_shift,
+  add_native_word("LSHIFT", native_left_shift,
                   "( value shift -- result ) Left shift");
   add_native_word(">>", native_right_shift,
                   "( value shift -- result ) Arithmetic right shift");
-  add_native_word(">>>", native_logical_right_shift,
+  add_native_word("RSHIFT", native_logical_right_shift,
                   "( value shift -- result ) Logical right shift");
 }

@@ -272,7 +272,7 @@ TEST_FUNCTION(test_bitwise_not_errors) {
 // Test left shift (<<) with valid operations
 TEST_FUNCTION(test_left_shift_valid) {
   // Basic int32 left shift
-  TEST_INTERPRET("1 1 <<");
+  TEST_INTERPRET("1 1 LSHIFT");
   TEST_STACK_DEPTH(1);
   TEST_STACK_TOP_INT(2);  // 1 << 1 = 2
   TEST_INTERPRET("CELL-TYPE");
@@ -281,17 +281,17 @@ TEST_FUNCTION(test_left_shift_valid) {
   TEST_STACK_DEPTH(0);
 
   // Shift by multiple bits
-  TEST_INTERPRET("5 3 <<");
+  TEST_INTERPRET("5 3 LSHIFT");
   TEST_STACK_TOP_INT(40);  // 5 << 3 = 40
   TEST_INTERPRET("DROP");
 
   // Shift by zero
-  TEST_INTERPRET("42 0 <<");
+  TEST_INTERPRET("42 0 LSHIFT");
   TEST_STACK_TOP_INT(42);
   TEST_INTERPRET("DROP");
 
   // Basic int64 left shift
-  TEST_INTERPRET("4294967296 1 <<");   // 2^32 << 1
+  TEST_INTERPRET("4294967296 1 LSHIFT");   // 2^32 << 1
   TEST_STACK_TOP_INT64(8589934592LL);  // 2^33
   TEST_INTERPRET("CELL-TYPE");
   TEST_STACK_TOP_INT(1);  // CELL_INT64
@@ -302,43 +302,43 @@ TEST_FUNCTION(test_left_shift_valid) {
 // Test left shift (<<) bounds checking
 TEST_FUNCTION(test_left_shift_bounds) {
   // Negative shift amount
-  TEST_EXPECT_ERROR("5 -1 <<", "shift amount cannot be negative");
+  TEST_EXPECT_ERROR("5 -1 LSHIFT", "shift amount cannot be negative");
 
   // Shift amount too large for int32
-  TEST_EXPECT_ERROR("5 32 <<", "shift amount too large for 32-bit value");
-  TEST_EXPECT_ERROR("5 100 <<", "shift amount too large for 32-bit value");
+  TEST_EXPECT_ERROR("5 32 LSHIFT", "shift amount too large for 32-bit value");
+  TEST_EXPECT_ERROR("5 100 LSHIFT", "shift amount too large for 32-bit value");
 
   // Shift amount too large for int64
-  TEST_EXPECT_ERROR("4294967296 64 <<",
+  TEST_EXPECT_ERROR("4294967296 64 LSHIFT",
                     "shift amount too large for 64-bit value");
-  TEST_EXPECT_ERROR("4294967296 100 <<",
+  TEST_EXPECT_ERROR("4294967296 100 LSHIFT",
                     "shift amount too large for 64-bit value");
 
   // Boundary cases (31 and 63 should work)
-  TEST_INTERPRET("1 31 <<");        // Should work for int32
+  TEST_INTERPRET("1 31 LSHIFT");        // Should work for int32
   TEST_STACK_TOP_INT(-2147483648);  // 2^31 = minimum int32
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("4294967296 63 <<");  // Should work for int64
+  TEST_INTERPRET("4294967296 63 LSHIFT");  // Should work for int64
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
 
-// Test left shift (<<) type errors
+// Test left shift (LSHIFT) type errors
 TEST_FUNCTION(test_left_shift_errors) {
   // Non-integer value
-  TEST_EXPECT_ERROR("3.14 1 <<", "can only shift integers");
-  TEST_EXPECT_ERROR("\"hello\" 1 <<", "can only shift integers");
-  TEST_EXPECT_ERROR("TRUE 1 <<", "can only shift integers");
+  TEST_EXPECT_ERROR("3.14 1 LSHIFT", "can only shift integers");
+  TEST_EXPECT_ERROR("\"hello\" 1 LSHIFT", "can only shift integers");
+  TEST_EXPECT_ERROR("TRUE 1 LSHIFT", "can only shift integers");
 
   // Non-int32 shift amount
-  TEST_EXPECT_ERROR("5 4294967296 <<", "shift amount must be a 32-bit integer");
-  TEST_EXPECT_ERROR("5 3.14 <<", "shift amount must be a 32-bit integer");
-  TEST_EXPECT_ERROR("5 \"two\" <<", "shift amount must be a 32-bit integer");
+  TEST_EXPECT_ERROR("5 4294967296 LSHIFT", "shift amount must be a 32-bit integer");
+  TEST_EXPECT_ERROR("5 3.14 LSHIFT", "shift amount must be a 32-bit integer");
+  TEST_EXPECT_ERROR("5 \"two\" LSHIFT", "shift amount must be a 32-bit integer");
 
   // Stack underflow
-  TEST_EXPECT_ERROR("<<", "insufficient stack");
-  TEST_EXPECT_ERROR("5 <<", "insufficient stack");
+  TEST_EXPECT_ERROR("LSHIFT", "insufficient stack");
+  TEST_EXPECT_ERROR("5 LSHIFT", "insufficient stack");
 }
 
 // Test arithmetic right shift (>>) with valid operations
@@ -417,29 +417,29 @@ TEST_FUNCTION(test_right_shift_errors) {
   TEST_EXPECT_ERROR("5 >>", "insufficient stack");
 }
 
-// Test logical right shift (>>>) with valid operations
+// Test logical right shift (RSHIFT) with valid operations
 TEST_FUNCTION(test_logical_right_shift_valid) {
   // Basic int32 logical right shift
-  TEST_INTERPRET("8 1 >>>");
+  TEST_INTERPRET("8 1 RSHIFT");
   TEST_STACK_DEPTH(1);
-  TEST_STACK_TOP_INT(4);  // 8 >>> 1 = 4
+  TEST_STACK_TOP_INT(4);  // 8 RSHIFT 1 = 4
   TEST_INTERPRET("CELL-TYPE");
   TEST_STACK_TOP_INT(0);  // CELL_INT32
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 
   // Shift by zero
-  TEST_INTERPRET("42 0 >>>");
+  TEST_INTERPRET("42 0 RSHIFT");
   TEST_STACK_TOP_INT(42);
   TEST_INTERPRET("DROP");
 
   // Logical right shift of negative number (zero fill, different from >>)
-  TEST_INTERPRET("-1 1 >>>");
+  TEST_INTERPRET("-1 1 RSHIFT");
   TEST_STACK_TOP_INT(2147483647);  // Fills with zeros, not sign extend
   TEST_INTERPRET("DROP");
 
   // Basic int64 logical right shift
-  TEST_INTERPRET("8589934592 1 >>>");  // 2^33 >>> 1
+  TEST_INTERPRET("8589934592 1 RSHIFT");  // 2^33 RSHIFT 1
   TEST_STACK_TOP_INT64(4294967296LL);  // 2^32
   TEST_INTERPRET("CELL-TYPE");
   TEST_STACK_TOP_INT(1);  // CELL_INT64
@@ -447,46 +447,46 @@ TEST_FUNCTION(test_logical_right_shift_valid) {
   TEST_STACK_DEPTH(0);
 }
 
-// Test logical right shift (>>>) bounds checking
+// Test logical right shift (RSHIFT) bounds checking
 TEST_FUNCTION(test_logical_right_shift_bounds) {
   // Negative shift amount
-  TEST_EXPECT_ERROR("5 -1 >>>", "shift amount cannot be negative");
+  TEST_EXPECT_ERROR("5 -1 RSHIFT", "shift amount cannot be negative");
 
   // Shift amount too large for int32
-  TEST_EXPECT_ERROR("5 32 >>>", "shift amount too large for 32-bit value");
-  TEST_EXPECT_ERROR("5 100 >>>", "shift amount too large for 32-bit value");
+  TEST_EXPECT_ERROR("5 32 RSHIFT", "shift amount too large for 32-bit value");
+  TEST_EXPECT_ERROR("5 100 RSHIFT", "shift amount too large for 32-bit value");
 
   // Shift amount too large for int64
-  TEST_EXPECT_ERROR("4294967296 64 >>>",
+  TEST_EXPECT_ERROR("4294967296 64 RSHIFT",
                     "shift amount too large for 64-bit value");
-  TEST_EXPECT_ERROR("4294967296 100 >>>",
+  TEST_EXPECT_ERROR("4294967296 100 RSHIFT",
                     "shift amount too large for 64-bit value");
 
   // Boundary cases (31 and 63 should work)
-  TEST_INTERPRET("-1 31 >>>");  // Should work for int32
+  TEST_INTERPRET("-1 31 RSHIFT");  // Should work for int32
   TEST_STACK_TOP_INT(1);        // Zero fill
   TEST_INTERPRET("DROP");
 
-  TEST_INTERPRET("4294967296 63 >>>");  // Should work for int64
+  TEST_INTERPRET("4294967296 63 RSHIFT");  // Should work for int64
   TEST_INTERPRET("DROP");
   TEST_STACK_DEPTH(0);
 }
 
-// Test logical right shift (>>>) type errors
+// Test logical right shift (RSHIFT) type errors
 TEST_FUNCTION(test_logical_right_shift_errors) {
   // Non-integer value
-  TEST_EXPECT_ERROR("3.14 1 >>>", "can only shift integers");
-  TEST_EXPECT_ERROR("\"hello\" 1 >>>", "can only shift integers");
-  TEST_EXPECT_ERROR("TRUE 1 >>>", "can only shift integers");
+  TEST_EXPECT_ERROR("3.14 1 RSHIFT", "can only shift integers");
+  TEST_EXPECT_ERROR("\"hello\" 1 RSHIFT", "can only shift integers");
+  TEST_EXPECT_ERROR("TRUE 1 RSHIFT", "can only shift integers");
 
   // Non-int32 shift amount
-  TEST_EXPECT_ERROR("5 4294967296 >>>",
+  TEST_EXPECT_ERROR("5 4294967296 RSHIFT",
                     "shift amount must be a 32-bit integer");
-  TEST_EXPECT_ERROR("5 3.14 >>>", "shift amount must be a 32-bit integer");
+  TEST_EXPECT_ERROR("5 3.14 RSHIFT", "shift amount must be a 32-bit integer");
 
   // Stack underflow
-  TEST_EXPECT_ERROR(">>>", "insufficient stack");
-  TEST_EXPECT_ERROR("5 >>>", "insufficient stack");
+  TEST_EXPECT_ERROR("RSHIFT", "insufficient stack");
+  TEST_EXPECT_ERROR("5 RSHIFT", "insufficient stack");
 }
 
 // Register all bitwise operation tests

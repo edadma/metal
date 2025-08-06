@@ -925,6 +925,28 @@ static const cell_t loop_runtime_cell = {.type = CELL_NATIVE, .flags = 0, .word_
 static const cell_t plus_loop_runtime_cell = {
     .type = CELL_NATIVE, .flags = 0, .word_idx = -1, .payload.native = native_plus_loop_runtime};
 
+// >R ( x -- ) (R: -- x ) Move data stack top to return stack
+static void native_to_r(context_t* ctx) {
+  require_params(ctx, 1, ">R");
+
+  cell_t cell = data_pop_cell(ctx);
+  return_push(ctx, cell);
+
+  debug(">R: moved cell type %d from data to return stack", cell.type);
+}
+
+// R> ( -- x ) (R: x -- ) Move return stack top to data stack
+static void native_r_from(context_t* ctx) {
+  if (is_return_empty(ctx)) {
+    error(ctx, "R>: return stack underflow");
+  }
+
+  cell_t cell = return_pop_cell(ctx);
+  data_push(ctx, cell);
+
+  debug("R>: moved cell type %d from return to data stack", cell.type);
+}
+
 // Register all core words
 void add_core_words(void) {
   add_native_word("NULL", native_null, "( -- null ) Push null value");
@@ -980,6 +1002,9 @@ void add_core_words(void) {
   add_native_word_immediate("[']", native_bracket_tick, "( -- code ) <name> Compile code from dictionary");
   add_native_word("EXECUTE", native_execute, "( code -- ) Execute code cell");
 
+  add_native_word(">R", native_to_r, "( x -- ) ( R: -- x ) Move top of data stack to return stack");
+  add_native_word("R>", native_r_from, "( -- x ) ( R: x -- ) Move top of return stack to data stack");
+
   add_definition("MIN", "2DUP > IF SWAP THEN DROP", "( a b -- min ) Return minimum of two numbers");
   add_definition("MAX", "2DUP < IF SWAP THEN DROP", "( a b -- max ) Return maximum of two numbers");
   add_definition("SIGNUM", "DUP 0 < IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN", "( n -- -1 | 0 | 1 ) Return sign of number");
@@ -991,4 +1016,8 @@ void add_core_words(void) {
   add_definition("HEX", "16 BASE !", "Set BASE to 16 (hexadecimal)");
   add_definition("BINARY", "2 BASE !", "Set BASE to 2 (binary)");
   add_definition("OCTAL", "8 BASE !", "Set BASE to 8 (octal)");
+  add_definition("SPACE", "BL EMIT", "Print a space character");
+  add_definition("2DROP", "DROP DROP", "( x1 x2 -- ) Drop cell pair x1 x2 from the stack");
+  add_definition("2OVER", "3 PICK 3 PICK", "( x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2 ) Copy cell pair x1 x2 to the top of the stack");
+  add_definition("2SWAP", "2 ROT >R ROT R>", "( x1 x2 x3 x4 -- x3 x4 x1 x2 ) Exchange the top two cell pairs");
 }

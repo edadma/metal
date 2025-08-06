@@ -143,10 +143,14 @@ void print_data_stack(context_t* ctx) {
 }
 
 void print_return_stack(context_t* ctx) {
-  printf("Return Stack (%d): ", ctx->return_stack_ptr);
-  for (int i = 0; i < ctx->return_stack_ptr; i++) {
-    if (i > 0) printf(", ");
-    print_cell(ctx, &ctx->return_stack[i], true);
+  if (ctx->return_stack_ptr == 0)
+    printf("Return Stack empty\n");
+  else {
+    printf("Return Stack (%d): ", ctx->return_stack_ptr);
+    for (int i = 0; i < ctx->return_stack_ptr; i++) {
+      if (i > 0) printf(", ");
+      print_cell(ctx, &ctx->return_stack[i], true);
+    }
+    printf("\n");
   }
-  printf("\n");
 }
