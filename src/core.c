@@ -975,6 +975,72 @@ void native_dot_quote(context_t* ctx) {
   }
 }
 
+// (ABORT") ( flag str -- ) Runtime word for compiled ABORT"
+static void native_abort_quote_runtime(context_t* ctx) {
+  require_params(ctx, 2, "(ABORT\")");
+
+  cell_t* string_cell = data_pop(ctx);
+  cell_t* flag_cell = data_pop(ctx);
+
+  bool should_abort = is_truthy(ctx, flag_cell);
+
+  if (should_abort) {
+    // Convert to C string using existing utility
+    char error_msg[256];
+    string_to_utf8(ctx, string_cell, error_msg, sizeof(error_msg));
+
+    // Clean up before calling error (since error() won't return)
+    release(string_cell);
+    release(flag_cell);
+
+    // Call error with the message
+    error(ctx, "%s", error_msg);
+  }
+
+  release(string_cell);
+  release(flag_cell);
+}
+
+// ABORT" ( flag "ccc<quote>" -- ) If flag is true, print message and abort
+static void native_abort_quote(context_t* ctx) {
+  // Parse string content until closing quote
+  buffer_t str_view = parse_until_char(ctx, '"');
+
+  if (compilation_mode) {
+    // Compile mode: compile conditional abort logic
+
+    // Create allocated string cell from the view
+    string_t* str = metal_alloc(ctx, sizeof(string_t) + str_view.length);
+    str->length = str_view.length;
+    str->encoding = STRING_UTF8;
+    memcpy(str->data, str_view.ptr, str_view.length);
+
+    cell_t string_cell = new_allocated_string(ctx, str);
+    compile_cell(ctx, string_cell);
+
+    // Compile direct reference to runtime function
+    static const cell_t abort_quote_runtime_cell = {
+        .type = CELL_NATIVE, .flags = 0, .word_idx = -1, .payload.native = native_abort_quote_runtime};
+    compile_cell(ctx, abort_quote_runtime_cell);
+
+  } else {
+    // Interpret mode: check flag and abort if true
+    require_params(ctx, 1, "ABORT\"");
+
+    cell_t* flag_cell = data_pop(ctx);
+    bool should_abort = is_truthy(ctx, flag_cell);
+    release(flag_cell);
+
+    if (should_abort) {
+      // Print the message and abort with it
+      error(ctx, "%.*s", (int)str_view.length, str_view.ptr);
+    }
+  }
+}
+
+// ABORT ( ... -- ) (R: ... -- ) Clear stacks and abort to REPL
+static void native_abort(context_t* ctx) { error(ctx, "ABORT"); }
+
 // Register all core words
 void add_core_words(void) {
   add_native_word("NULL", native_null, "( -- null ) Push null value");
@@ -1033,6 +1099,9 @@ void add_core_words(void) {
 
   add_native_word(">R", native_to_r, "( x -- ) ( R: -- x ) Move top of data stack to return stack");
   add_native_word("R>", native_r_from, "( -- x ) ( R: x -- ) Move top of return stack to data stack");
+
+  add_native_word("ABORT", native_abort, "( ... -- ) (R: ... -- ) Clear stacks and abort to REPL");
+  add_native_word_immediate("ABORT\"", native_abort_quote, "( flag \"ccc<quote>\" -- ) Abort with message if flag true");
 
   add_definition("MIN", "2DUP > IF SWAP THEN DROP", "( a b -- min ) Return minimum of two numbers");
   add_definition("MAX", "2DUP < IF SWAP THEN DROP", "( a b -- max ) Return maximum of two numbers");
