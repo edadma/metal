@@ -63,8 +63,7 @@ static char process_escape_char(const char c) {
 }
 
 // Parse string literal with escape sequence processing
-static bool parse_string_literal(const char** input_pos, char* buffer,
-                                 size_t buffer_size) {
+static bool parse_string_literal(const char** input_pos, char* buffer, size_t buffer_size) {
   const char* pos = *input_pos;
   // Skip opening quote
   if (*pos != '"') {
@@ -100,8 +99,7 @@ static bool parse_string_literal(const char** input_pos, char* buffer,
   return true;
 }
 
-token_type_t parse_next_token(context_t* ctx, const char** input_pos,
-                              char* buffer, size_t buffer_size) {
+token_type_t parse_next_token(context_t* ctx, const char** input_pos, char* buffer, size_t buffer_size) {
   skip_whitespace(input_pos);
   if (!**input_pos) {
     return TOKEN_EOF;
@@ -119,7 +117,7 @@ token_type_t parse_next_token(context_t* ctx, const char** input_pos,
   const char* start = *input_pos;
   const char* end = start;
   // Parse until whitespace, quote, or end of input
-  while (*end && !isspace(*end) && *end != '"') {
+  while (*end && !isspace(*end)) {
     // Stop at // comment start
     if (*end == '/' && *(end + 1) == '/') {
       break;
@@ -141,35 +139,37 @@ token_type_t parse_next_token(context_t* ctx, const char** input_pos,
   return TOKEN_WORD;
 }
 
-char* parse_until_char(context_t* ctx, char delimiter) {
+buffer_t parse_until_char(context_t* ctx, char delimiter) {
+  buffer_t result = {0};
+
   if (!ctx->input_pos) {
     debug("parse_until_char: not in parsing context");
-    return NULL;
+    return result;
   }
+
+  skip_whitespace(&ctx->input_pos);
+
   const char* start = ctx->input_pos;
   const char* end = start;
+
   // Find delimiter
   while (*end && *end != delimiter) {
     end++;
   }
+
   if (*end != delimiter) {
     debug("parse_until_char: delimiter '%c' not found", delimiter);
-    return NULL;
+    error(ctx, "parse_until_char: delimiter '%c' not found", delimiter);
   }
-  // Copy content
-  size_t length = end - start;
-  char* result = malloc(length + 1);
-  if (!result) {
-    debug("parse_until_char: allocation failed");
-    return NULL;
-  }
-  strncpy(result, start, length);
-  result[length] = '\0';
+
+  // Set up result
+  result.ptr = start;
+  result.length = end - start;
 
   // Advance context past delimiter
   ctx->input_pos = end + 1;
 
-  debug("parse_until_char: parsed '%s'", result);
+  debug("parse_until_char: parsed %zu chars", result.length);
   return result;
 }
 

@@ -92,12 +92,11 @@ static void native_store(context_t* ctx) {
 
 // Comment word
 static void native_paren_comment(context_t* ctx) {
-  char* comment = parse_until_char(ctx, ')');
-  if (!comment) {
+  buffer_t comment = parse_until_char(ctx, ')');
+  if (comment.ptr == NULL) {
     error(ctx, "( : missing closing )");
   }
-  // It's a comment, so just discard it
-  metal_free(comment);
+  // It's a comment, so just discard it (no need to free anything)
 }
 
 // CONSTANT ( value -- ) <name> Define a named constant
@@ -947,6 +946,35 @@ static void native_r_from(context_t* ctx) {
   debug("R>: moved cell type %d from return to data stack", cell.type);
 }
 
+void native_dot_quote(context_t* ctx) {
+  // Parse string content until closing quote
+  buffer_t str_view = parse_until_char(ctx, '"');
+
+  if (compilation_mode) {
+    // Compile mode: compile string and PRINT call
+
+    // Create allocated string cell from the view
+    string_t* str = metal_alloc(ctx, sizeof(string_t) + str_view.length);
+    str->length = str_view.length;
+    str->encoding = STRING_UTF8;
+    memcpy(str->data, str_view.ptr, str_view.length);
+
+    cell_t string_cell = new_allocated_string(ctx, str);
+    compile_cell(ctx, string_cell);
+
+    // Compile PRINT word reference
+    dictionary_entry_t* print_word = find_word("PRINT");
+    if (!print_word) {
+      error(ctx, "PRINT word not found");
+    }
+    compile_cell(ctx, print_word->definition);
+
+  } else {
+    // Interpret mode: print directly
+    printf("%.*s", (int)str_view.length, str_view.ptr);
+  }
+}
+
 // Register all core words
 void add_core_words(void) {
   add_native_word("NULL", native_null, "( -- null ) Push null value");
@@ -989,6 +1017,7 @@ void add_core_words(void) {
   add_native_word("I", native_i, "( -- index ) Current loop index");
   add_native_word("J", native_j, "( -- outer_index ) Outer loop index");
   add_native_word("UNLOOP", native_unloop, "( -- ) Remove loop parameters");
+  add_native_word(".\"", native_dot_quote, "( \"ccc<quote>\" -- ) Display ccc");
 
   // Memory combination words
   add_native_word("+!", native_plus_store, "( n addr -- ) Add n to memory location");
