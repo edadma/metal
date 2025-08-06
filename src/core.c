@@ -963,7 +963,7 @@ void native_dot_quote(context_t* ctx) {
     compile_cell(ctx, string_cell);
 
     // Compile PRINT word reference
-    dictionary_entry_t* print_word = find_word("PRINT");
+    dictionary_entry_t* print_word = find_word("PR");
     if (!print_word) {
       error(ctx, "PRINT word not found");
     }
@@ -1017,7 +1017,7 @@ void add_core_words(void) {
   add_native_word("I", native_i, "( -- index ) Current loop index");
   add_native_word("J", native_j, "( -- outer_index ) Outer loop index");
   add_native_word("UNLOOP", native_unloop, "( -- ) Remove loop parameters");
-  add_native_word(".\"", native_dot_quote, "( \"ccc<quote>\" -- ) Display ccc");
+  add_native_word_immediate(".\"", native_dot_quote, "( \"ccc<quote>\" -- ) Display ccc");
 
   // Memory combination words
   add_native_word("+!", native_plus_store, "( n addr -- ) Add n to memory location");
